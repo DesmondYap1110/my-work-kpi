@@ -4,8 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Login') | {{ config('app.name') }}</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-sm.svg') }}">
+    <title>@yield('title', 'Login') | {{ \App\Support\Branding::name() }}</title>
+    <x-branding-head />
+
+    {{-- Before the theme sheets: the login sheet's mobile rules drop the
+         background image, and that override only wins if it comes later. --}}
+    <x-branding-styles background="#form-section" />
 
     <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet">
@@ -23,7 +27,7 @@
             <div class="row justify-content-center">
                 <div class="col-lg-5">
                     <div id="logo-div">
-                        <img src="{{ asset('images/logo-light.svg') }}" alt="{{ config('app.name') }}">
+                        <img src="{{ \App\Support\Branding::logo('login') }}" alt="{{ \App\Support\Branding::name() }}">
                     </div>
                     <div id="form-div">
                         @yield('content')

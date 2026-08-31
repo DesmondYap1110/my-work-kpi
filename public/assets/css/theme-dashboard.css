@@ -1,7 +1,7 @@
 /* Structural CSS for authenticated pages - ported verbatim from legacy/adm/dashboard/inc/header-cons.php */
 	/*GENERAL SECTION*/
 	h1, h2, h3, h4, h5, h6, span, button, a, li, p {
-	    font-family: 'Roboto', sans-serif !important;
+	    font-family: var(--brand-font-body, 'Roboto', sans-serif) !important;
 	}
 	button {
 		border: unset;

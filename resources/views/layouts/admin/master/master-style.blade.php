@@ -14,5 +14,8 @@
 
 <link href="{{ asset('assets/css/app-custom.css') }}" rel="stylesheet">
 
+{{-- Branding tokens (config/branding.php) - last, so they win. --}}
+<x-branding-styles />
+
 @yield('css')
 @stack('styles')

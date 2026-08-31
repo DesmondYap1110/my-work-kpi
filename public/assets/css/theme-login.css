@@ -4,7 +4,7 @@
 	    background: rgb(0 0 0 / 30%);
 	}
 	::-webkit-scrollbar-thumb {
-	    background: #F19820;
+	    background: var(--brand-highlight, #F19820);
 	}
 	::-webkit-scrollbar {
 	    width: 3px;
@@ -26,7 +26,7 @@
 		justify-content: center;
 		background-size: cover;
 		background-repeat: no-repeat;
-		background-image: url(../img/bg/bg-3.jpg)
+		/* background-image is set from config/branding.php - see <x-branding-styles /> */
 	}
 	#form-section:before {
 	    content: "";
@@ -82,7 +82,7 @@
 		margin-bottom: 0;
 	}
 	#form-p b {
-		color: #00b7ff;
+		color: var(--brand-info, #00b7ff);
 	}
 	.input-div {
 		margin-bottom: 15px;
@@ -125,7 +125,7 @@
     	background: linear-gradient(58deg, #151b24, #1d2634) !important;
     }
     .select2-container--default .select2-results__option--selected, .select2-container--default .select2-results__option[aria-selected=true]:hover, .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
-	    background-color: #00b7ff !important;
+	    background-color: var(--brand-info, #00b7ff) !important;
 	}
 	.select2-container--open .select2-selection--single .select2-selection__arrow b {
 		border-color: transparent transparent #ffffff transparent!important;
@@ -156,7 +156,7 @@
 	}
 	.btn1 {
 		color: #fff;
-        background: linear-gradient(#24EBC5,#18a6bd);
+        background: linear-gradient(var(--brand-accent, #24EBC5),#18a6bd);
 		
 	}
 	
@@ -175,7 +175,7 @@
 		color: #f9f9f9;
 	}
 	#link-p a, .form-check-label a {
-		color: #24EBC5;
+		color: var(--brand-accent, #24EBC5);
 		transition: all 0.3s;
 	}
 	#link-p a:hover, .form-check-label a:hover {
@@ -187,8 +187,8 @@
     	border-color: #fff;
 	}
 	.form-check-input:checked {
-		background-color: #24EBC5;
-    	border-color: #24EBC5;
+		background-color: var(--brand-accent, #24EBC5);
+    	border-color: var(--brand-accent, #24EBC5);
 	}
 	.form-check-label {
 		font-size: 13px;
@@ -269,14 +269,14 @@
 	    right: 10px;
 	    height: 100%;
 	    display: flex;
-	    color: #F19820;
+	    color: var(--brand-highlight, #F19820);
 	    align-items: center;
 	    cursor: pointer;
 	    position: absolute;
 	}
 	@media (max-width: 991px){
 		body, html {
-		    background: #000f2d;
+		    background: var(--brand-sidebar, #000f2d);
 		}
 		#form-section {
 			height: unset;
@@ -285,7 +285,7 @@
 			align-items: unset;
 			justify-content: unset;
 			background-image: unset;
-			background: #000f2d;
+			background: var(--brand-sidebar, #000f2d);
 		}
 		#form-section:before {
 			display: none;

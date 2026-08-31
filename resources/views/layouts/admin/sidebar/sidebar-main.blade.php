@@ -1,8 +1,8 @@
 <div class="app-menu navbar-menu sidebar-d">
     <div class="navbar-brand-box sidebar-logo-d">
         <a href="{{ route('dashboard') }}" class="logo logo-light">
-            <span class="logo-sm"><img src="{{ asset('images/logo-sm.svg') }}" class="sb-sm-logo" alt="MyKPI"></span>
-            <span class="logo-lg"><img src="{{ asset('images/logo-light.svg') }}" class="sb-bg-logo" alt="MyKPI"></span>
+            <span class="logo-sm"><img src="{{ \App\Support\Branding::logo('mobile') }}" class="sb-sm-logo" alt="{{ \App\Support\Branding::name() }}"></span>
+            <span class="logo-lg"><img src="{{ \App\Support\Branding::logo('sidebar') }}" class="sb-bg-logo" alt="{{ \App\Support\Branding::name() }}"></span>
         </a>
     </div>
 

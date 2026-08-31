@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title') | {{ config('app.name') }}</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-sm.svg') }}">
+    <title>@yield('title') | {{ \App\Support\Branding::name() }}</title>
+    <x-branding-head />
 
     <script src="{{ asset('assets/js/layout.js') }}"></script>
 
