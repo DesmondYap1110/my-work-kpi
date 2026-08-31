@@ -38,6 +38,10 @@ add your own JS/CSS pipeline.)
 
 ## Rebranding This Template
 
+> **Full step-by-step runbook: [`docs/BRANDING.md`](docs/BRANDING.md)** — includes
+> verification steps, a troubleshooting table, and the contrast guidance for
+> picking sidebar colours. The section below is the summary.
+
 Everything below is driven by `config/branding.php`, which reads from `.env`.
 **You should not need to edit a single Blade file or stylesheet to rebrand.**
 
