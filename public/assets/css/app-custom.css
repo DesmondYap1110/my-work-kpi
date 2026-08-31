@@ -1,0 +1,63 @@
+/*
+ * Deliberate deviations from the legacy theme. The theme-*.css files are
+ * verbatim ports of the legacy stylesheets and should stay that way, so any
+ * intentional change to them belongs here instead. Loaded last.
+ */
+
+/*
+ * Legacy leaves 30px between the sidebar logo box and the first nav item,
+ * which reads as a gap here because our wordmark is cropped tight to its
+ * artwork rather than sitting in a tall padded box like the legacy PNG.
+ */
+.navbar-nav {
+    padding-top: 12px;
+}
+
+/* Loading overlay - see resources/views/components/loader.blade.php */
+.loading-panel {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    background: rgb(0 15 45 / 35%);
+}
+.loading-panel.is-visible {
+    display: block;
+}
+.loading-content {
+    top: 50%;
+    left: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+}
+.loader {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 4px solid rgb(255 255 255 / 30%);
+    border-top-color: #1896bd;
+    animation: app-loader-spin 0.8s linear infinite;
+}
+@keyframes app-loader-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/*
+ * Legacy hides DataTables' empty row (.dataTables_empty { display: none })
+ * because its tables were rendered by PHP loops and simply emitted nothing
+ * when there were no rows, leaving a blank gap under the header. These tables
+ * are AJAX-driven, so we show the empty row and style it like a normal cell.
+ */
+#table-div .dataTables_empty {
+    display: table-cell !important;
+    color: #737c91;
+    padding: 20px 8px;
+    font-size: 12px;
+    text-align: center;
+    background: #fff;
+}

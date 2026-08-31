@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.75 2.25 114.5 26.5" width="229" height="53" role="img" aria-label="MyKPI">
+    <!--
+        textLength + lengthAdjust pin each word to an exact width, so the mark
+        keeps these proportions even where the font stack falls back - without
+        it the artwork's real size depends on the viewer's installed fonts and
+        no longer matches this viewBox.
+    -->
+    <g font-family="'Segoe UI', Verdana, Arial, sans-serif" font-weight="800" font-size="26">
+        <text x="0" y="22" textLength="42" lengthAdjust="spacingAndGlyphs" fill="#FFFFFF">my</text>
+        <circle cx="50" cy="14" r="4" fill="#F7A339"/>
+        <text x="58" y="22" textLength="58" lengthAdjust="spacingAndGlyphs" fill="#FFFFFF">kpi</text>
+    </g>
+</svg>
