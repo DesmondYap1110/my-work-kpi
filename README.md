@@ -222,6 +222,45 @@ and return the trail from `getBreadcrumbs()`. A view composer in
 
 ---
 
+## JavaScript structure
+
+There is no bundler, so scripts are plain `<script>` tags. `core.js` gives them
+one shape and one boot point:
+
+```
+public/js/
+    core.js                  App namespace + module registry
+    modules/                 TEMPLATE code - keep in a new project
+        layout.js            sidebar toggle + fullscreen button
+        loader.js            page/AJAX loading overlay
+        image-preview.js     data-image-preview file inputs
+        datatables.js        generic AJAX table initialiser
+    project/                 PROJECT code - replace in a new project
+        modals.js            edit-modal wiring for these screens
+```
+
+Register a module instead of writing your own `DOMContentLoaded` wrapper:
+
+```js
+App.module('my-feature', function () {
+    // runs once, on DOM ready
+});
+```
+
+Two properties worth knowing:
+
+- **A failing module can't take down the others.** Each runs in its own
+  try/catch. This is exactly how the theme's `app.js` broke the sidebar — one
+  null reference early in a single IIFE aborted everything after it.
+- **Load order doesn't matter.** A module registered after boot runs
+  immediately, so a late-injected script still initialises.
+
+The `modules/` vs `project/` split is the important part for reuse: `modules/`
+is generic, while `project/modals.js` names specific screens (positions, teams,
+KPI objectives). A new project deletes `project/` and keeps `modules/`. Shared
+helpers are published on the namespace — `App.datatables.populateEditModal` is
+how project code reuses the generic modal behaviour.
+
 ## Stylesheet layers
 
 | File | Role | Edit it? |
