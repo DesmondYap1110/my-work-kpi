@@ -6,6 +6,7 @@ use App\Http\Requests\StorePositionRequest;
 use App\Http\Requests\UpdatePositionRequest;
 use App\Interfaces\BreadcrumbInterfaces;
 use App\Models\StaffPosition;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -23,16 +24,26 @@ class PositionController extends Controller implements BreadcrumbInterfaces
         return view('positions.index');
     }
 
-    public function store(StorePositionRequest $request): RedirectResponse
+    public function store(StorePositionRequest $request): RedirectResponse|JsonResponse
     {
         StaffPosition::create($request->validated());
+
+
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'ok']);
+        }
 
         return back()->with('status', 'Position added successfully.');
     }
 
-    public function update(UpdatePositionRequest $request, StaffPosition $position): RedirectResponse
+    public function update(UpdatePositionRequest $request, StaffPosition $position): RedirectResponse|JsonResponse
     {
         $position->update($request->validated());
+
+
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'ok']);
+        }
 
         return back()->with('status', 'Position updated successfully.');
     }

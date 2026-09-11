@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
 use App\Interfaces\BreadcrumbInterfaces;
 use App\Models\Team;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -23,16 +24,26 @@ class TeamController extends Controller implements BreadcrumbInterfaces
         return view('teams.index');
     }
 
-    public function store(StoreTeamRequest $request): RedirectResponse
+    public function store(StoreTeamRequest $request): RedirectResponse|JsonResponse
     {
         Team::create($request->validated() + ['team_status' => true]);
+
+
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'ok']);
+        }
 
         return back()->with('status', 'Team added successfully.');
     }
 
-    public function update(UpdateTeamRequest $request, Team $team): RedirectResponse
+    public function update(UpdateTeamRequest $request, Team $team): RedirectResponse|JsonResponse
     {
         $team->update($request->validated());
+
+
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'ok']);
+        }
 
         return back()->with('status', 'Team updated successfully.');
     }

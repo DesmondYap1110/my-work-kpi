@@ -53,6 +53,7 @@ Route::middleware(['auth', 'admin.position'])->group(function () {
         ->except(['show']);
     Route::patch('/staff/{staff}/toggle-status', [StaffController::class, 'toggleStatus'])->name('staff.toggle-status');
     Route::get('/staff/{staff}/kpi', [StaffController::class, 'viewKpi'])->name('staff.view-kpi');
+    Route::post('/staff/check-unique', [StaffController::class, 'checkUnique'])->name('staff.check-unique');
 
     Route::resource('projects', ProjectController::class)->except(['show']);
     Route::post('/projects/{project}/cancel', [ProjectController::class, 'cancel'])->name('projects.cancel');

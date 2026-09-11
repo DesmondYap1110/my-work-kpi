@@ -12,14 +12,36 @@ class UpdateStaffRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Blank optional identifiers are stored as NULL rather than '', so that
+     * any number of staff can be left without an IC or contact number while
+     * the unique rules below still apply to real values.
+     */
+    protected function prepareForValidation(): void
+    {
+        foreach (['ic', 'contact'] as $field) {
+            if ($this->has($field) && trim((string) $this->input($field)) === '') {
+                $this->merge([$field => null]);
+            }
+        }
+    }
+
     public function rules(): array
     {
+        $ignore = $this->route('staff')->staff_id;
+
         return [
             'staff_name' => ['required', 'string', 'max:255'],
             'gender' => ['nullable', 'in:Male,Female'],
-            'ic' => ['nullable', 'string', 'max:50'],
+            'ic' => [
+                'nullable', 'string', 'max:50',
+                Rule::unique('staff', 'ic')->whereNull('deleted_at')->ignore($ignore, 'staff_id'),
+            ],
             'dob' => ['nullable', 'date'],
-            'contact' => ['nullable', 'string', 'max:50'],
+            'contact' => [
+                'nullable', 'string', 'max:50',
+                Rule::unique('staff', 'contact')->whereNull('deleted_at')->ignore($ignore, 'staff_id'),
+            ],
             'email' => [
                 'required', 'email', 'max:255',
                 Rule::unique('staff', 'email')

@@ -53,6 +53,49 @@ abstract class Datatables
     }
 
     /**
+     * Opt a list into inline add/edit: rows become editable in place and a
+     * blank "new" row is appended under the last page, instead of the user
+     * going through a modal.
+     *
+     * Return a map of column key => field definition. Only columns listed
+     * here become editable; everything else renders read-only.
+     *
+     *   ['team_name' => ['type' => 'text', 'required' => true, 'placeholder' => 'Team name']]
+     *
+     * Supported types: text, textarea, select (with 'options' => [value => label]).
+     * Rows must also expose their raw values - see inlineValues().
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function inlineFields(): array
+    {
+        return [];
+    }
+
+    /**
+     * Where the inline row posts to. 'update' uses __id__ as the placeholder,
+     * matching the convention already used by the edit modals.
+     *
+     * @return array{store?: string, update?: string}
+     */
+    public function inlineRoutes(): array
+    {
+        return [];
+    }
+
+    /**
+     * Raw (unrendered) values for the editable columns of one row, so the
+     * inline editor can populate its inputs. Listing rows carry this under
+     * the _inline key; DataTables ignores keys it has no column for.
+     *
+     * @return array<string, mixed>
+     */
+    protected function inlineValues(array $values): array
+    {
+        return $values;
+    }
+
+    /**
      * Column keys rendered centre-aligned, matching the legacy tables where
      * dates, counts, status pills and the action buttons are centred while
      * free-text columns stay left-aligned. Subclasses add their own; the
@@ -88,7 +131,15 @@ abstract class Datatables
                 : "<th>{$label}</th>")
             ->implode('');
 
-        $table = '<table class="table table-bordered nowrap table-striped align-middle ajax-datatable w-100" data-class="'.$class.'" data-cols="'.$dataCols.'" data-centered="'.$dataCentered.'" data-page-length="'.static::PAGINATION_NUMBER.'" data-extra=\''.$dataExtra.'\'>'
+        $inlineFields = $object->inlineFields();
+        $inlineAttributes = '';
+
+        if ($inlineFields) {
+            $inlineAttributes = ' data-inline-fields=\''.e(json_encode($inlineFields)).'\''
+                .' data-inline-routes=\''.e(json_encode($object->inlineRoutes())).'\'';
+        }
+
+        $table = '<table class="table table-bordered nowrap table-striped align-middle ajax-datatable w-100" data-class="'.$class.'" data-cols="'.$dataCols.'" data-centered="'.$dataCentered.'" data-page-length="'.static::PAGINATION_NUMBER.'" data-extra=\''.$dataExtra.'\''.$inlineAttributes.'>'
             ."<thead><tr>{$headers}</tr></thead><tbody></tbody></table>";
 
         return '<div id="tb-box" class="general-box"><div id="table-padding"><div id="table-div">'.$table.'</div></div></div>';
@@ -183,6 +234,18 @@ abstract class Datatables
      * (#tb-ac-btn-N), not the class, because that is how the theme's
      * stylesheet targets it.
      */
+    /**
+     * A text link inside a cell, for making the record's own name clickable
+     * instead of spending an action button on it. Uses the theme's #tb-link
+     * styling (colour lives on the id, as with the tb-ac-btn-* buttons).
+     */
+    protected function tbTextLink(string $url, string $label, string $tooltip = ''): string
+    {
+        $title = $tooltip !== '' ? ' title="'.e($tooltip).'"' : '';
+
+        return '<a href="'.$url.'" id="tb-link"'.$title.'>'.e($label).'</a>';
+    }
+
     protected function tbLink(string $url, string $icon, string $colorId, string $tooltip): string
     {
         return '<a href="'.$url.'" class="tb-ac-btn" id="'.$colorId.'" title="'.e($tooltip).'"><i class="'.$icon.'"></i></a>';

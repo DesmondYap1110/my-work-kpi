@@ -13,13 +13,7 @@ App.module('project-modals', function () {
     var $ = window.jQuery;
     var populateEditModal = App.datatables.populateEditModal;
 
-    $(document).on('click', '.js-edit-position', function () {
-        populateEditModal('#editPositionModal', { position_name: 'name', job_scope: 'scope' }, $(this));
-    });
 
-    $(document).on('click', '.js-edit-team', function () {
-        populateEditModal('#editTeamModal', { team_name: 'name' }, $(this));
-    });
 
     $(document).on('click', '.js-edit-kpi', function () {
         populateEditModal('#editKpiModal', { kpi_title: 'title' }, $(this));

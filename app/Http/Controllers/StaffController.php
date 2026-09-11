@@ -11,6 +11,7 @@ use App\Models\Staff;
 use App\Models\StaffPosition;
 use App\Models\Team;
 use App\Services\StaffKpiScoreService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class StaffController extends Controller implements BreadcrumbInterfaces
@@ -108,6 +110,41 @@ class StaffController extends Controller implements BreadcrumbInterfaces
         $staff->delete();
 
         return back()->with('status', 'Member deleted successfully.');
+    }
+
+    /**
+     * Fields the live duplicate check may be asked about. An allowlist, so a
+     * crafted request can't probe arbitrary columns.
+     *
+     * @var array<int, string>
+     */
+    private const UNIQUE_FIELDS = ['email', 'ic', 'contact'];
+
+    /**
+     * Live duplicate check for the unique fields on the staff form.
+     *
+     * Advisory only - StoreStaffRequest/UpdateStaffRequest still validate on
+     * submit, and the database has unique constraints behind that. This just
+     * tells the user before they fill in the rest of the form.
+     *
+     * Soft-deleted staff release their values, matching the validation rules,
+     * and `ignore` lets the edit form skip the record being edited so it
+     * doesn't flag the staff member's own details.
+     */
+    public function checkUnique(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'field' => ['required', 'string', Rule::in(self::UNIQUE_FIELDS)],
+            'value' => ['required', 'string', 'max:255'],
+            'ignore' => ['nullable', 'integer'],
+        ]);
+
+        $taken = Staff::withoutTrashed()
+            ->where($validated['field'], $validated['value'])
+            ->when($validated['ignore'] ?? null, fn ($query, $id) => $query->where('staff_id', '!=', $id))
+            ->exists();
+
+        return response()->json(['taken' => $taken]);
     }
 
     public function viewKpi(Request $request, Staff $staff, StaffKpiScoreService $scoreService): View

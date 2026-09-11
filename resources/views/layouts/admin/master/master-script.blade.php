@@ -6,7 +6,6 @@
 <script src="{{ asset('assets/js/datatable/dataTables.responsive.min.js') }}"></script>
 
 <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-<script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
 <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
 <script src="{{ asset('assets/libs/feather-icons/feather.min.js') }}"></script>
 
@@ -17,6 +16,8 @@
 <script src="{{ asset('js/modules/layout.js') }}"></script>
 <script src="{{ asset('js/modules/loader.js') }}"></script>
 <script src="{{ asset('js/modules/image-preview.js') }}"></script>
+<script src="{{ asset('js/modules/unique-check.js') }}"></script>
+<script src="{{ asset('js/modules/inline-edit.js') }}"></script>
 <script>window.datatablesEndpoint = @json(route('datatables.listing'));</script>
 <script src="{{ asset('js/modules/datatables.js') }}"></script>
 

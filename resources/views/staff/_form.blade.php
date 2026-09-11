@@ -27,7 +27,11 @@
     <div class="col-lg-6">
         <div class="input-group">
             <label>IC No<span>*</span></label>
-            <input type="text" class="form-control" name="ic" maxlength="30" value="{{ old('ic', $staff->ic ?? '') }}" required>
+            <input type="text" class="form-control" name="ic" maxlength="30"
+                   value="{{ old('ic', $staff->ic ?? '') }}" required
+                   data-unique-check="{{ route('staff.check-unique') }}"
+                   data-unique-check-message="This IC number is already registered."
+                   @isset($staff) data-unique-check-ignore="{{ $staff->staff_id }}" @endisset>
         </div>
     </div>
     <div class="col-lg-6">
@@ -49,13 +53,21 @@
     <div class="col-lg-6">
         <div class="input-group">
             <label>Contact No.<span>*</span></label>
-            <input type="tel" class="form-control" name="contact" maxlength="30" value="{{ old('contact', $staff->contact ?? '') }}" required>
+            <input type="tel" class="form-control" name="contact" maxlength="30"
+                   value="{{ old('contact', $staff->contact ?? '') }}" required
+                   data-unique-check="{{ route('staff.check-unique') }}"
+                   data-unique-check-message="This contact number is already registered."
+                   @isset($staff) data-unique-check-ignore="{{ $staff->staff_id }}" @endisset>
         </div>
     </div>
     <div class="col-lg-6">
         <div class="input-group">
             <label>Email Address<span>*</span></label>
-            <input type="email" class="form-control" name="email" maxlength="200" value="{{ old('email', $staff->email ?? '') }}" required>
+            <input type="email" class="form-control" name="email" maxlength="200"
+                   value="{{ old('email', $staff->email ?? '') }}" required
+                   data-unique-check="{{ route('staff.check-unique') }}"
+                   data-unique-check-message="This email is already registered."
+                   @isset($staff) data-unique-check-ignore="{{ $staff->staff_id }}" @endisset>
         </div>
     </div>
     <div class="col-lg-6">

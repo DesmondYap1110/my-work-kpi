@@ -61,3 +61,77 @@
     text-align: center;
     background: var(--brand-surface, #fff);
 }
+
+/*
+ * Inline "already taken" warning - see public/js/modules/unique-check.js
+ *
+ * Plain red text on --brand-danger, matching how the theme already marks
+ * things red (label span for the required asterisk, .tb-red-p in tables),
+ * rather than the white-on-red badge the legacy app used inline.
+ */
+.unique-check-feedback {
+    display: block;
+    font-size: 11px;
+    font-style: normal;
+    line-height: 1.4;
+    margin-top: 4px;
+    color: var(--brand-danger, #ff4d4d);
+}
+.input-group .form-control.is-invalid {
+    border: 1px solid var(--brand-danger, #ff4d4d) !important;
+}
+
+/*
+ * Scrollable sidebar menu.
+ *
+ * The theme's markup has a #scrollbar wrapper that Velzon's app.js turns into
+ * a SimpleBar instance. That file isn't loaded here (it crashed on this app's
+ * trimmed-down markup), so the menu simply overflowed with no way to reach the
+ * items below the fold. Native overflow is used instead of re-adding SimpleBar,
+ * because app.min.css forces `overflow: visible !important` on
+ * .simplebar-content-wrapper, which would defeat it anyway.
+ *
+ * 70px is the height of .navbar-brand-box above it.
+ */
+.app-menu #scrollbar {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: calc(100vh - 70px);
+    scrollbar-width: thin;
+}
+.app-menu #scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+.app-menu #scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.app-menu #scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: var(--brand-primary, #1896bd);
+}
+
+/*
+ * Inline add/edit rows - see public/js/modules/inline-edit.js
+ * Inputs sit flush inside the cell so the row still reads as a table row.
+ */
+.js-inline-row .form-control {
+    width: 100%;
+    font-size: 12px;
+    padding: 4px 8px;
+    line-height: 1.4;
+    border-radius: 3px;
+    border: 1px solid var(--brand-border, #e9e9e9);
+}
+.js-inline-row textarea.form-control {
+    resize: vertical;
+}
+.js-inline-row .form-control:focus {
+    outline: none;
+    border-color: var(--brand-input-focus, #1896bd);
+}
+.js-inline-row .form-control.is-invalid {
+    border-color: var(--brand-danger, #ff4d4d);
+}
+.js-inline-row .js-inline-error {
+    margin-top: 4px;
+}

@@ -84,6 +84,13 @@ App.module('datatables', function () {
             });
         }
 
+        // Inline add/edit is opt-in per list class (see inlineFields() in
+        // App\Components\Datatables\Datatables) and lives in its own module,
+        // so tables without it pull in nothing extra.
+        if (App.datatables.inlineEdit) {
+            App.datatables.inlineEdit($table, table);
+        }
+
         return table;
     }
 
