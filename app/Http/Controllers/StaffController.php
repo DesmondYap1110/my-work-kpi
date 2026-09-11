@@ -24,6 +24,11 @@ use Illuminate\View\View;
 
 class StaffController extends Controller implements BreadcrumbInterfaces
 {
+    /**
+     * Shared placeholder shown for staff without an uploaded photo.
+     */
+    public const DEFAULT_PHOTO = 'default.jpg';
+
     public function getBreadcrumbs(): array
     {
         $current = match (request()->route()->getName()) {
@@ -61,7 +66,7 @@ class StaffController extends Controller implements BreadcrumbInterfaces
     public function store(StoreStaffRequest $request): RedirectResponse
     {
         $data = $request->safe()->except('photo');
-        $data['staffimg'] = $this->storePhoto($request) ?? 'default.jpg';
+        $data['staffimg'] = $this->storePhoto($request) ?? self::DEFAULT_PHOTO;
         $data['staffstatus'] = true;
         // Real password is set by the staff member via the emailed link
         // below; this placeholder is never shown or usable as-is.
@@ -90,7 +95,11 @@ class StaffController extends Controller implements BreadcrumbInterfaces
         $data['staffstatus'] = $request->boolean('staffstatus');
 
         if ($photo = $this->storePhoto($request)) {
+            $this->deletePhoto($staff->staffimg);
             $data['staffimg'] = $photo;
+        } elseif ($request->boolean('remove_photo')) {
+            $this->deletePhoto($staff->staffimg);
+            $data['staffimg'] = self::DEFAULT_PHOTO;
         }
 
         $staff->update($data);
@@ -178,6 +187,20 @@ class StaffController extends Controller implements BreadcrumbInterfaces
             'overallScore' => $scoreService->totalScore($staff),
             'projectScore' => $selectedProjectId ? $scoreService->totalScore($staff, $selectedProjectId) : null,
         ]);
+    }
+
+    /**
+     * Removes a staff member's uploaded photo from disk. The shared
+     * placeholder is never deleted - every member without a photo points at
+     * it, so removing it would break all of them.
+     */
+    private function deletePhoto(?string $filename): void
+    {
+        if (blank($filename) || $filename === self::DEFAULT_PHOTO) {
+            return;
+        }
+
+        Storage::disk('public')->delete('staff-photos/'.$filename);
     }
 
     private function storePhoto(Request $request): ?string

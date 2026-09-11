@@ -42,6 +42,22 @@ App.module('image-preview', function () {
         // never shows a file that won't be submitted.
         var originalSrc = target.getAttribute('src');
 
+        var scope = input.closest('form') || document;
+        var defaultSrc = input.getAttribute('data-image-default');
+        var flagName = input.getAttribute('data-image-remove-flag');
+        var flag = flagName ? scope.querySelector('input[name="' + flagName + '"]') : null;
+        var removeBtn = scope.querySelector('.js-image-remove[data-for="' + input.id + '"]');
+
+        function setRemoved(removed) {
+            if (flag) {
+                flag.value = removed ? '1' : '0';
+            }
+
+            if (removeBtn) {
+                removeBtn.hidden = removed;
+            }
+        }
+
         input.addEventListener('change', function () {
             var file = input.files && input.files[0];
 
@@ -54,6 +70,9 @@ App.module('image-preview', function () {
                 return;
             }
 
+            // Choosing a file cancels a pending removal.
+            setRemoved(false);
+
             var reader = new FileReader();
 
             reader.addEventListener('load', function () {
@@ -62,6 +81,17 @@ App.module('image-preview', function () {
 
             reader.readAsDataURL(file);
         });
+
+        if (removeBtn && defaultSrc) {
+            removeBtn.addEventListener('click', function () {
+                // Clearing the file input matters: without it a previously
+                // chosen file would still be submitted and overwrite the
+                // removal the user just asked for.
+                input.value = '';
+                target.src = defaultSrc;
+                setRemoved(true);
+            });
+        }
     }
 
     document.querySelectorAll('input[type="file"][data-image-preview]').forEach(bind);

@@ -135,3 +135,53 @@
 .js-inline-row .js-inline-error {
     margin-top: 4px;
 }
+
+/*
+ * Remove button on the avatar picker - see the image-upload component.
+ *
+ * Top-right, opposite the camera button, and revealed on hover so it stays
+ * out of the way until wanted. [hidden] still wins when there is no photo
+ * to remove, because the hover rules only touch opacity/visibility.
+ */
+#profile-img-div {
+    position: relative;
+    display: inline-block;
+}
+.image-remove-btn {
+    top: 0;
+    right: 0;
+    border: none;
+    opacity: 0;
+    cursor: pointer;
+    background: none;
+    visibility: hidden;
+    position: absolute;
+    transition: opacity 0.2s linear, visibility 0.2s linear;
+}
+/* The camera button colours its .avatar-title from the theme; this one is
+   the same shape and size, just in the danger colour. */
+.image-remove-btn .avatar-title {
+    color: #fff;
+    font-size: 13px;
+    background: var(--brand-danger, #ff4d4d);
+}
+#profile-img-div .profile-photo-edit {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s linear, visibility 0.2s linear;
+}
+#profile-img-div:hover .image-remove-btn,
+#profile-img-div:hover .profile-photo-edit,
+.image-remove-btn:focus-visible,
+#profile-img-div .profile-img-file-input:focus-visible ~ .profile-photo-edit {
+    opacity: 1;
+    visibility: visible;
+}
+/* Touch devices have no hover, so neither button would ever appear. */
+@media (hover: none) {
+    .image-remove-btn,
+    #profile-img-div .profile-photo-edit {
+        opacity: 1;
+        visibility: visible;
+    }
+}
