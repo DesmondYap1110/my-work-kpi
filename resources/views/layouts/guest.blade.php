@@ -38,7 +38,8 @@
     </section>
 
     <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ asset('js/loader.js') }}"></script>
+    <script src="{{ asset('js/core.js') }}"></script>
+    <script src="{{ asset('js/modules/loader.js') }}"></script>
     @stack('scripts')
 </body>
 </html>

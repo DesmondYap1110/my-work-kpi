@@ -6,17 +6,7 @@
 @endphp
 <div class="row">
     <div class="col-lg-12">
-        <div id="profile-img-div" class="profile-user">
-            <img src="{{ $photoUrl }}" alt="Profile" title="Profile" class="user-profile-image">
-            <div class="avatar-xs p-0 rounded-circle profile-photo-edit">
-                <input type="file" class="profile-img-file-input" id="profile-img-file-input" name="photo" accept="image/png,image/jpeg">
-                <label for="profile-img-file-input" class="profile-photo-edit avatar-xs">
-                    <span class="avatar-title rounded-circle text-body">
-                        <i class="ri-camera-fill"></i>
-                    </span>
-                </label>
-            </div>
-        </div>
+        <x-form.image-upload name="photo" id="profile-img-file-input" :src="$photoUrl" />
     </div>
     @isset($staff)
         <div class="col-lg-12">

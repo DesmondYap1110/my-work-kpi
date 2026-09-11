@@ -11,7 +11,7 @@
     @param string|null $action   form action; omit for a content-only modal
     @param string      $method   POST|PUT|PATCH|DELETE (spoofed as needed)
     @param string|null $urlTemplate  data-url-template for JS-populated edit
-                                     modals (see public/js/datatables.js)
+                                     modals (see public/js/project/modals.js)
     @param string      $confirm  label for the confirm button
 --}}
 @props([

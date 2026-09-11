@@ -6,7 +6,7 @@
  * hides it again when the browser restores the page from the back/forward
  * cache - otherwise going "back" would land on a page stuck behind the veil.
  */
-(function () {
+App.module('loader', function () {
     'use strict';
 
     var panel = document.getElementById('loader_master');
@@ -65,4 +65,4 @@
     });
 
     window.addEventListener('pageshow', loader.hide);
-})();
+});

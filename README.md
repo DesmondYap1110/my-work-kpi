@@ -187,6 +187,9 @@ markup, so they inherit the branding tokens automatically.
 <x-form.select name="team_id" label="Team" :options="$teams" placeholder="Select Team" required />
 <x-form.textarea name="remark" label="Remark" :rows="4" />
 
+{{-- Circular image picker with live preview; several per page is fine --}}
+<x-form.image-upload name="photo" :src="$photoUrl" />
+
 <x-alert type="success">Saved.</x-alert>
 ```
 
