@@ -16,6 +16,7 @@
     'name',
     'src' => null,
     'id' => null,
+    'accept' => 'image/png,image/jpeg',
 ])
 
 @php
