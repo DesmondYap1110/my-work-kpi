@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Team;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Validator;
 
 class StoreProjectRequest extends FormRequest
 {
@@ -15,23 +13,13 @@ class StoreProjectRequest extends FormRequest
 
     public function rules(): array
     {
+        // No team: a project belongs to the people with tasks on it, and those
+        // are chosen task by task once it exists.
         return [
             'title' => ['required', 'string', 'max:255'],
             'added_date' => ['required', 'date'],
             'start_date' => ['required', 'date', 'after_or_equal:added_date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'team_id' => ['required', 'exists:team,id'],
         ];
-    }
-
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator) {
-            $teamId = $this->input('team_id');
-
-            if ($teamId && ! Team::find($teamId)?->hasActiveStaff()) {
-                $validator->errors()->add('team_id', 'The selected team has no active members and cannot be assigned a project.');
-            }
-        });
     }
 }

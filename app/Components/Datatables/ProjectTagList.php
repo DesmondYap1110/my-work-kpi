@@ -61,7 +61,7 @@ class ProjectTagList extends Datatables
                 'name' => e($tag->name),
                 // Trimmed so 0.20 reads as 0.2 and 13.00 as 13.
                 'points' => rtrim(rtrim(number_format((float) $tag->points, 2, '.', ''), '0'), '.'),
-                'usage_count' => $tag->phases_count,
+                'usage_count' => $tag->tasks_count,
                 'action' => $this->actionButtons($tag),
                 '_inline' => [
                     'name' => $tag->name,

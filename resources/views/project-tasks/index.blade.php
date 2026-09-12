@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Manage Project Phase')
+@section('title', 'Task')
 
 @section('content')
-    {!! show_datatable_filter('ProjectPhaseList') !!}
+    {!! show_datatable_filter('ProjectTaskList') !!}
 
-    {!! show_datatables('ProjectPhaseList') !!}
+    {!! show_datatables('ProjectTaskList') !!}
 
-    <div class="modal fade" id="attachmentsModal" tabindex="-1" data-url-template="{{ route('project-phases.attachments', '__id__') }}">
+    <div class="modal fade" id="attachmentsModal" tabindex="-1" data-url-template="{{ route('project-tasks.attachments', '__id__') }}">
         <div class="modal-dialog" id="md-dialog">
             <div class="modal-content general-box" id="md-content">
                 <div class="modal-header">

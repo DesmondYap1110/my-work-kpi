@@ -24,6 +24,8 @@
 <script src="{{ \App\Support\Asset::url('js/modules/collapse.js') }}"></script>
 <script src="{{ \App\Support\Asset::url('js/modules/confirm.js') }}"></script>
 <script src="{{ \App\Support\Asset::url('js/modules/quick-create.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/status-select.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/modal-errors.js') }}"></script>
 <script>window.datatablesEndpoint = @json(route('datatables.listing'));</script>
 <script src="{{ \App\Support\Asset::url('js/modules/datatables.js') }}"></script>
 

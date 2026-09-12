@@ -11,6 +11,6 @@ class TeamListQuery
     {
         return Team::query()
             ->withCount(['staff' => fn ($q) => $q->active()])
-            ->latest('team_id');
+            ->latest('id');
     }
 }

@@ -43,7 +43,7 @@ abstract class Datatables
     /**
      * The filter fields this list offers, e.g. [new SelectFilter(...),
      * new DateFilter(...)]. Empty by default - only lists that actually
-     * have a filter bar (Staff, Project, ProjectPhase) override this.
+     * have a filter bar (Staff, Project, ProjectTask) override this.
      *
      * @return array<int, Filter>
      */

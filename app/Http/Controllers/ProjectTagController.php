@@ -19,8 +19,8 @@ class ProjectTagController extends Controller implements BreadcrumbInterfaces
     public function getBreadcrumbs(): array
     {
         return [
-            ['name' => 'Settings', 'route' => '', 'active' => false],
-            ['name' => 'Project Tags', 'route' => '', 'active' => true],
+            ['name' => 'Project Setup', 'route' => '', 'active' => false],
+            ['name' => 'Tag', 'route' => '', 'active' => true],
         ];
     }
 
@@ -31,10 +31,16 @@ class ProjectTagController extends Controller implements BreadcrumbInterfaces
 
     public function store(StoreProjectTagRequest $request): RedirectResponse|JsonResponse
     {
-        ProjectTag::create($request->validated());
+        $tag = ProjectTag::create($request->validated());
 
         if ($request->expectsJson()) {
-            return response()->json(['status' => 'ok']);
+            // The new row travels back so a task form can add it to its tag
+            // dropdown without reloading - see public/js/modules/quick-create.js.
+            return response()->json([
+                'status' => 'ok',
+                'id' => $tag->id,
+                'label' => $tag->name.' ('.rtrim(rtrim(number_format((float) $tag->points, 2), '0'), '.').' pts)',
+            ]);
         }
 
         return back()->with('status', 'Tag added successfully.');

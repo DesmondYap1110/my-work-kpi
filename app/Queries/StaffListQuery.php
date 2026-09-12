@@ -15,6 +15,6 @@ class StaffListQuery
             ->excludingAdmin()
             ->when($request->filled('pid'), fn ($q) => $q->where('position_id', $request->integer('pid')))
             ->when($request->filled('teamid'), fn ($q) => $q->where('team_id', $request->integer('teamid')))
-            ->latest('staff_id');
+            ->latest('id');
     }
 }

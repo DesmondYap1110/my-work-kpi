@@ -448,3 +448,155 @@ button.tb-status:hover {
 [data-layout="vertical"][data-sidebar-size="sm-hover"] .navbar-menu:hover .navbar-brand-box {
     text-align: center;
 }
+
+/* ---------------------------------------------------------------------------
+   Project workspace: tasks grouped by status, subtasks nested underneath.
+   Shares the KPI tree's vocabulary (.kpi-group, .kpi-inline-form, .kpi-count)
+   so the two screens read as the same app.
+--------------------------------------------------------------------------- */
+.task-row {
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+    background: var(--brand-surface-muted, #f8f9fc);
+    border-left: 3px solid transparent;
+    transition: background 0.3s linear;
+}
+.task-main {
+    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+.task-identity {
+    gap: 8px;
+    display: flex;
+    min-width: 0;
+    align-items: center;
+}
+.task-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brand-text, #282828);
+}
+.task-meta {
+    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 11px;
+    margin-top: 2px;
+    align-items: center;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.task-meta i {
+    margin-right: 3px;
+}
+.task-due.is-overdue {
+    font-weight: 600;
+    color: var(--brand-danger, #ff4d4d);
+}
+.task-controls {
+    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.task-points {
+    font-size: 11px;
+    padding: 2px 8px;
+    font-weight: 500;
+    border-radius: 10px;
+    color: var(--brand-text-muted, #6e6e6e);
+    background: var(--brand-background, #eaedf7);
+}
+/* The status dropdown sits inline in a task row rather than in a form, so
+   it has to opt out of the full-width field styling.
+
+   !important is unavoidable here: theme-dashboard.css declares
+   .form-control { width: 100% !important }, and nothing without !important can
+   beat that however specific. Left as a full-width field, the select filled the
+   row and pushed the tag and the buttons onto lines of their own, making every
+   task three rows tall. 116px fits the longest label, "In Progress". */
+select.task-status {
+    width: 116px !important;
+    height: 30px !important;
+    flex: 0 0 auto;
+    font-size: 11px;
+    padding: 0 26px 0 8px;
+}
+/* A milestone is a checkpoint, not just another row - it gets the accent. */
+.task-row.is-milestone {
+    border-left-color: var(--brand-primary, #1896bd);
+}
+.task-milestone-icon {
+    margin-right: 4px;
+    color: var(--brand-primary, #1896bd);
+}
+.task-row.is-done .task-title {
+    text-decoration: line-through;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+/* Brief flash so a change made through a dropdown is still noticeable. */
+.task-row.is-status-changed {
+    background: var(--brand-background, #eaedf7);
+}
+.task-children {
+    margin: 4px 0 10px 26px;
+    padding-left: 12px;
+    border-left: 1px dashed #00000026;
+}
+
+/* How much of the project is done, above the groups. */
+.project-progress {
+    gap: 10px;
+    display: flex;
+    align-items: center;
+    padding-bottom: 12px;
+}
+.project-progress-bar {
+    height: 6px;
+    flex: 1 1 auto;
+    overflow: hidden;
+    border-radius: 10px;
+    background: var(--brand-background, #eaedf7);
+}
+.project-progress-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 10px;
+    background: var(--brand-success, #22d65d);
+    transition: width 0.3s linear;
+}
+.project-progress-label {
+    font-size: 11px;
+    white-space: nowrap;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+
+@media (max-width: 767px) {
+    .task-main,
+    .task-controls {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+/* KPI weighting screen - a percentage reads better with its unit attached. */
+.weighting-field {
+    gap: 8px;
+    display: flex;
+    align-items: center;
+}
+.weighting-field .form-control {
+    max-width: 120px;
+}
+.weighting-suffix {
+    font-size: 12px;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.weighting-cell {
+    width: 90px;
+    margin: 0 auto;
+    text-align: center;
+}

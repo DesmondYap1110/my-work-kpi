@@ -7,7 +7,9 @@ use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Interfaces\BreadcrumbInterfaces;
 use App\Models\Project;
-use App\Models\Team;
+use App\Models\ProjectTag;
+use App\Models\ProjectTask;
+use App\Models\Staff;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -16,21 +18,21 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
     public function getBreadcrumbs(): array
     {
         $current = match (request()->route()->getName()) {
-            'projects.create' => 'Add Project',
             'projects.edit' => 'Edit Project',
+            'projects.show' => request()->route('project')?->title,
             default => null,
         };
 
         if ($current === null) {
             return [
-                ['name' => 'Project', 'route' => '', 'active' => false],
-                ['name' => 'Manage Project', 'route' => '', 'active' => true],
+                ['name' => 'Project Setup', 'route' => '', 'active' => false],
+                ['name' => 'Project', 'route' => '', 'active' => true],
             ];
         }
 
         return [
-            ['name' => 'Project', 'route' => '', 'active' => false],
-            ['name' => 'Manage Project', 'route' => 'projects.index', 'active' => false],
+            ['name' => 'Project Setup', 'route' => '', 'active' => false],
+            ['name' => 'Project', 'route' => 'projects.index', 'active' => false],
             ['name' => $current, 'route' => '', 'active' => true],
         ];
     }
@@ -40,9 +42,32 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
         return view('projects.index');
     }
 
-    public function create(): View
+    /**
+     * The project workspace: its tasks, grouped by status.
+     *
+     * Everything is added and edited in place here, so the structure you are
+     * building stays on screen while you build it.
+     */
+    public function show(Project $project): View
     {
-        return view('projects.create', ['teams' => Team::active()->orderBy('team_name')->get()]);
+        $tasks = $project->rootTasks()
+            ->with(['assignee', 'tag', 'children.assignee', 'children.tag'])
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        return view('projects.show', [
+            'project' => $project,
+            // Keyed by status value so the view can render every column,
+            // including the empty ones - a board with no "Blocked" column
+            // reads as though nothing can be blocked.
+            'tasksByStatus' => $tasks->groupBy(fn (ProjectTask $task) => $task->status->value),
+            'taskCount' => $tasks->count(),
+            // Anyone active can be given a task - work is assigned to a
+            // person, not to whichever team the project belonged to.
+            'assignees' => Staff::active()->excludingAdmin()->orderBy('staff_name')->get(),
+            'tags' => ProjectTag::active()->orderBy('sort_order')->orderBy('name')->get(),
+        ]);
     }
 
     public function store(StoreProjectRequest $request): RedirectResponse
@@ -57,7 +82,7 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
 
     public function edit(Project $project): View
     {
-        return view('projects.edit', ['project' => $project, 'teams' => Team::active()->orderBy('team_name')->get()]);
+        return view('projects.edit', ['project' => $project]);
     }
 
     public function update(UpdateProjectRequest $request, Project $project): RedirectResponse

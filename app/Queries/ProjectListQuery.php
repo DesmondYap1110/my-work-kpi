@@ -11,7 +11,6 @@ class ProjectListQuery
     public function forRequest(Request $request): Builder
     {
         return Project::query()
-            ->with('team')
             ->when($request->filled('project_id'), fn ($q) => $q->where('id', $request->integer('project_id')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->integer('status')))
             ->when(

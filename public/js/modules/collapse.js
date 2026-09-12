@@ -22,20 +22,36 @@ App.module('collapse', function () {
     var SHUT_ICON = 'ri-arrow-down-s-line';
     var STORE_KEY = 'collapse:' + window.location.pathname;
 
-    function readOpen() {
-        try {
-            return JSON.parse(window.localStorage.getItem(STORE_KEY)) || [];
-        } catch (error) {
-            return [];
-        }
-    }
+    /**
+     * id => true/false, for sections the reader has actually toggled.
+     *
+     * Both states are recorded, not just the open ones. Storing only "what is
+     * open" means an unlisted section reads as closed, so opening one thing
+     * silently collapsed every section that was meant to start open.
+     */
+    function readState() {
+        var stored;
 
-    function writeOpen(ids) {
         try {
-            window.localStorage.setItem(STORE_KEY, JSON.stringify(ids));
+            stored = JSON.parse(window.localStorage.getItem(STORE_KEY));
         } catch (error) {
-            // Private window, or storage disabled - nothing to do.
+            return {};
         }
+
+        if (!stored) {
+            return {};
+        }
+
+        // An earlier version stored a plain array of open ids.
+        if (Array.isArray(stored)) {
+            return stored.reduce(function (map, id) {
+                map[id] = true;
+
+                return map;
+            }, {});
+        }
+
+        return stored;
     }
 
     function remember(id, isOpen) {
@@ -43,13 +59,14 @@ App.module('collapse', function () {
             return;
         }
 
-        var ids = readOpen().filter(function (stored) { return stored !== id; });
+        var state = readState();
+        state[id] = isOpen;
 
-        if (isOpen) {
-            ids.push(id);
+        try {
+            window.localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        } catch (error) {
+            // Private window, or storage disabled - nothing to do.
         }
-
-        writeOpen(ids);
     }
 
     /**
@@ -85,12 +102,20 @@ App.module('collapse', function () {
         }
     });
 
-    // Restore whatever was open before the last reload.
-    var open = readOpen();
+    // Restore whatever the reader last chose, section by section.
+    var state = readState();
 
     $('.js-collapse').each(function () {
         var $section = $(this);
-        var isOpen = open.indexOf($section.attr('id')) !== -1;
+        var id = $section.attr('id');
+
+        // Their own choice for this section wins. Failing that,
+        // data-collapse-default="open" starts it open: a long reference list
+        // is better closed, but a board is not - its whole purpose is showing
+        // the work, and making someone open every column first defeats it.
+        var isOpen = Object.prototype.hasOwnProperty.call(state, id)
+            ? state[id] === true
+            : $section.data('collapse-default') === 'open';
 
         // false: restoring is not a change worth writing back.
         set($section, isOpen, false);

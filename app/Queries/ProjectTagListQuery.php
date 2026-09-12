@@ -10,7 +10,7 @@ class ProjectTagListQuery
     public function build(): Builder
     {
         return ProjectTag::query()
-            ->withCount('phases')
+            ->withCount('tasks')
             ->orderBy('sort_order')
             ->orderBy('name');
     }

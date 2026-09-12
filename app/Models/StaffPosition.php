@@ -23,6 +23,7 @@ class StaffPosition extends Model
     protected $fillable = [
         'position_name',
         'job_scope',
+        'project_weight',
     ];
 
     public function staff(): HasMany

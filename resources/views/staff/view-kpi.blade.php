@@ -272,10 +272,38 @@
                                 </div>
                             </div>
                             <div>
+                                {{-- The blended figure when the company counts
+                                     delivery, otherwise the objective score on
+                                     its own. --}}
                                 <p id="bg-ft-title">Total Score</p>
-                                <p id="bg-ft-p">{{ $overallScore['percentage'] }} %</p>
+                                <p id="bg-ft-p">{{ $finalScore['percentage'] ?? $overallScore['percentage'] }} %</p>
                             </div>
                         </div>
+                        @if ($finalScore['weight'] > 0)
+                            <div id="bg-ft-box">
+                                <div id="bg-ft-icon-div">
+                                    <div id="bg-ft-icon" class="bg-ft-icon-1">
+                                        <i class="ri-truck-line"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p id="bg-ft-title">
+                                        Delivery ({{ round($finalScore['weight'] * 100) }}%)
+                                    </p>
+                                    <p id="bg-ft-p">
+                                        @if ($finalScore['delivery'] === null)
+                                            &ndash;
+                                        @else
+                                            {{ $finalScore['delivery'] }} %
+                                        @endif
+                                    </p>
+                                    <p id="footer-p" class="mb-0">
+                                        {{ $finalScore['delivery_detail']['done'] }}/{{ $finalScore['delivery_detail']['total'] }} tasks
+                                        &middot; {{ $finalScore['delivery_detail']['earned'] }}/{{ $finalScore['delivery_detail']['assigned'] }} pts
+                                    </p>
+                                </div>
+                            </div>
+                        @endif
                         <div id="bg-ft-box">
                             <div id="bg-ft-icon-div">
                                 <div id="bg-ft-icon" class="bg-ft-icon-3">

@@ -36,15 +36,7 @@
             <input type="date" class="form-control" name="end_date" value="{{ old('end_date', optional($project->end_date ?? null)->format('Y-m-d')) }}" required>
         </div>
     </div>
-    <div class="col-lg-6">
-        <div class="input-group">
-            <label>Team<span>*</span></label>
-            <select class="form-control" name="team_id" required>
-                <option value="" disabled @selected(is_null(old('team_id', $project->team_id ?? null)))>Select Team</option>
-                @foreach ($teams as $team)
-                    <option value="{{ $team->id }}" @selected((int) old('team_id', $project->team_id ?? null) === $team->id)>{{ $team->team_name }}</option>
-                @endforeach
-            </select>
-        </div>
-    </div>
 </div>
+
+{{-- No team field: work is assigned person by person on the project's own
+     page, once it exists. --}}

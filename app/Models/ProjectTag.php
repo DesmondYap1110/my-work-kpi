@@ -33,9 +33,9 @@ class ProjectTag extends Model
         'is_active' => 'boolean',
     ];
 
-    public function phases(): HasMany
+    public function tasks(): HasMany
     {
-        return $this->hasMany(ProjectPhase::class, 'tag_id', 'id');
+        return $this->hasMany(ProjectTask::class, 'tag_id', 'id');
     }
 
     public function scopeActive($query)

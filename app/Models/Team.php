@@ -27,11 +27,6 @@ class Team extends Model
         return $this->hasMany(Staff::class, 'team_id', 'id');
     }
 
-    public function projects(): HasMany
-    {
-        return $this->hasMany(Project::class, 'team_id', 'id');
-    }
-
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

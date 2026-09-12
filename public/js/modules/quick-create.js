@@ -75,10 +75,19 @@ App.module('quick-create', function () {
             dataType: 'json',
             headers: { Accept: 'application/json' },
         }).done(function (res) {
-            $select
-                .append($('<option>', { value: res.id, text: res.label }))
-                .val(res.id)
-                .trigger('change');
+            // The target can match several dropdowns - a page with one task
+            // form per row has a tag select in each. Every one of them learns
+            // about the new option...
+            $select.append(function () {
+                return $('<option>', { value: res.id, text: res.label });
+            });
+
+            // ...but only the form the user actually has open gets it chosen,
+            // so creating a tag never silently rewrites a row they were not
+            // editing.
+            var $visible = $select.filter(':visible');
+
+            ($visible.length ? $visible : $select).val(res.id).trigger('change');
 
             form.reset();
             bootstrap.Modal.getInstance($modal[0]).hide();

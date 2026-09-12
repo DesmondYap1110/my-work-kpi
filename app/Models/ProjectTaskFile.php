@@ -7,14 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ProjectPhaseFile extends Model
+/**
+ * An attachment on a task. Files live on the public disk under
+ * project-task-files/; this records what was uploaded, when and by whom.
+ */
+class ProjectTaskFile extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'project_phase_files';
+    protected $table = 'project_task_files';
 
     protected $fillable = [
-        'phase_id',
+        'task_id',
         'filename',
         'uploaded_at',
         'staff_id',
@@ -24,9 +28,9 @@ class ProjectPhaseFile extends Model
         'uploaded_at' => 'datetime',
     ];
 
-    public function phase(): BelongsTo
+    public function task(): BelongsTo
     {
-        return $this->belongsTo(ProjectPhase::class, 'phase_id', 'id');
+        return $this->belongsTo(ProjectTask::class, 'task_id', 'id');
     }
 
     public function staff(): BelongsTo

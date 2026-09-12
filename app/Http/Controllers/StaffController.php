@@ -161,7 +161,7 @@ class StaffController extends Controller implements BreadcrumbInterfaces
     {
         $staff->load(['position.objectives.infos', 'team']);
 
-        $completedProjects = $scoreService->completedTeamProjects($staff);
+        $completedProjects = $scoreService->completedProjectsFor($staff);
         $selectedProjectId = $request->integer('pid') ?: null;
 
         $entries = $staff->projectKpis()
@@ -177,6 +177,9 @@ class StaffController extends Controller implements BreadcrumbInterfaces
             'entries' => $entries,
             'overallScore' => $scoreService->totalScore($staff),
             'projectScore' => $selectedProjectId ? $scoreService->totalScore($staff, $selectedProjectId) : null,
+            // The other half of the score: project work actually delivered,
+            // priced by each task's tag. See ProjectDeliveryScoreService.
+            'finalScore' => $scoreService->finalScore($staff),
         ]);
     }
 

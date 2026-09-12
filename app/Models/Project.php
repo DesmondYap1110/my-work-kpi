@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Enums\ProjectStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +21,6 @@ class Project extends Model
         'added_date',
         'start_date',
         'end_date',
-        'team_id',
         'assigned_date',
         'status',
         'complete_date',
@@ -36,14 +35,31 @@ class Project extends Model
         'status' => ProjectStatus::class,
     ];
 
-    public function team(): BelongsTo
+    /**
+     * The people on this project: whoever has a task on it.
+     *
+     * A project used to belong to a team, which made everyone on that team
+     * equally "on" every one of its projects. Assignment lives on the task now,
+     * so this is both truer and already recorded.
+     */
+    public function assignees(): Builder
     {
-        return $this->belongsTo(Team::class, 'team_id', 'id');
+        return Staff::query()
+            ->whereIn('id', $this->tasks()->whereNotNull('assignee_id')->select('assignee_id'));
     }
 
-    public function phases(): HasMany
+    public function tasks(): HasMany
     {
-        return $this->hasMany(ProjectPhase::class, 'project_id', 'id');
+        return $this->hasMany(ProjectTask::class, 'project_id', 'id');
+    }
+
+    /**
+     * Top-level tasks only - subtasks are reached through their parent, so a
+     * project page lists them nested rather than twice.
+     */
+    public function rootTasks(): HasMany
+    {
+        return $this->tasks()->whereNull('parent_id');
     }
 
     public function projectKpis(): HasMany
@@ -62,9 +78,14 @@ class Project extends Model
     }
 
     /**
-     * Seed a blank project_kpi row for every (active staff on this
-     * project's team) x (objective on that staff's position's KPI)
-     * combination, ready for the staff to self-add their mark later.
+     * Seed a blank project_kpi row for every (staff who worked on this
+     * project) x (objective on that staff's position's KPI) combination,
+     * ready for the staff to self-add their mark later.
+     *
+     * "Worked on" means assigned a task. It used to mean "is on the team",
+     * which scored everyone identically no matter who did the work - the
+     * assumption per-task assignees exist to correct. A project nobody is
+     * assigned to scores nobody, which is the honest answer.
      *
      * The unique index on project_kpi plus firstOrCreate() is the
      * duplicate-guard the legacy cascade lacked, so calling this more
@@ -73,7 +94,7 @@ class Project extends Model
     public function seedKpiEntriesForCompletion(): void
     {
         DB::transaction(function () {
-            $activeStaff = $this->team->staff()->active()->with('position.objectives.infos')->get();
+            $activeStaff = $this->staffWhoWorkedOnIt();
 
             foreach ($activeStaff as $staff) {
                 $position = $staff->position;
@@ -94,5 +115,18 @@ class Project extends Model
                 }
             }
         });
+    }
+
+    /**
+     * Active staff with a task on this project.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Staff>
+     */
+    private function staffWhoWorkedOnIt(): \Illuminate\Database\Eloquent\Collection
+    {
+        return $this->assignees()
+            ->active()
+            ->with('position.objectives.infos')
+            ->get();
     }
 }
