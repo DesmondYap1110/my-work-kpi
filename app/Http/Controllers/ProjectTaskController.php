@@ -32,6 +32,10 @@ class ProjectTaskController extends Controller implements BreadcrumbInterfaces
 {
     public function getBreadcrumbs(): array
     {
+        if (request()->routeIs('my.tasks')) {
+            return [['name' => 'My Tasks', 'route' => '', 'active' => true]];
+        }
+
         return [
             ['name' => 'Project Setup', 'route' => '', 'active' => false],
             ['name' => 'Task', 'route' => '', 'active' => true],
@@ -44,6 +48,19 @@ class ProjectTaskController extends Controller implements BreadcrumbInterfaces
     public function index(): View
     {
         return view('project-tasks.index');
+    }
+
+    /**
+     * The same list, reached by a staff member as their own work.
+     *
+     * There is no second query here: ProjectTaskListQuery already narrows the
+     * rows to whoever is asking, so this is the administrator's page under a
+     * different title. Only staff are given the link - an administrator has
+     * no tasks of their own to find here.
+     */
+    public function mine(): View
+    {
+        return view('project-tasks.index', ['heading' => 'My Tasks']);
     }
 
     public function store(StoreProjectTaskRequest $request): RedirectResponse
@@ -96,6 +113,8 @@ class ProjectTaskController extends Controller implements BreadcrumbInterfaces
      */
     public function updateStatus(UpdateTaskStatusRequest $request, ProjectTask $projectTask): JsonResponse
     {
+        $this->authorizeTask($projectTask);
+
         $projectTask->update(['status' => $request->integer('status')]);
         $this->syncProjectStatus($projectTask->project);
 
@@ -152,6 +171,8 @@ class ProjectTaskController extends Controller implements BreadcrumbInterfaces
 
     public function attachments(ProjectTask $projectTask): JsonResponse
     {
+        $this->authorizeTask($projectTask);
+
         $files = $projectTask->files()->latest('uploaded_at')->get()->map(fn ($file) => [
             'name' => $file->filename,
             'url' => Storage::disk('public')->url('project-task-files/'.$file->filename),
@@ -159,6 +180,22 @@ class ProjectTaskController extends Controller implements BreadcrumbInterfaces
         ]);
 
         return response()->json(['files' => $files]);
+    }
+
+    /**
+     * The two actions a staff member may take on a task - move it along, and
+     * read what is attached to it - reach past the administrator-only group,
+     * so each has to establish for itself that the task is theirs.
+     *
+     * Without this, any signed-in member could change the status of a task
+     * belonging to anyone else simply by knowing its id, and delivery points
+     * are earned by tasks reaching Done.
+     */
+    private function authorizeTask(ProjectTask $task): void
+    {
+        $staff = Auth::user();
+
+        abort_unless($staff && ($staff->isAdmin() || (int) $task->assignee_id === (int) $staff->id), 403);
     }
 
     /**

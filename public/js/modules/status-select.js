@@ -65,7 +65,13 @@ App.module('status-select', function () {
         });
     });
 
-    // Remember the starting value, so a failed change has something to go back to.
+    // Remember the starting value, so a failed change has something to go back
+    // to. Delegated as well as run at boot, because the task list draws its
+    // rows over AJAX - those selects do not exist yet when this runs.
+    $(document).on('focus', '.js-task-status', function () {
+        $(this).data('previous', $(this).val());
+    });
+
     $('.js-task-status').each(function () {
         $(this).data('previous', $(this).val());
     });

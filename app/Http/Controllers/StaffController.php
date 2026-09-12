@@ -30,6 +30,12 @@ class StaffController extends Controller implements BreadcrumbInterfaces
 
     public function getBreadcrumbs(): array
     {
+        // A staff member reading their own scorecard did not come from the
+        // Member list and cannot open it, so the trail is one crumb long.
+        if (request()->routeIs('my.kpi')) {
+            return [['name' => 'My KPI', 'route' => '', 'active' => true]];
+        }
+
         $current = match (request()->route()->getName()) {
             'staff.create' => 'Add Member',
             'staff.edit' => 'Edit Member',
@@ -159,6 +165,29 @@ class StaffController extends Controller implements BreadcrumbInterfaces
 
     public function viewKpi(Request $request, Staff $staff, StaffKpiScoreService $scoreService): View
     {
+        return view('staff.view-kpi', $this->kpiPayload($request, $staff, $scoreService));
+    }
+
+    /**
+     * The same scorecard, read by the person it is about.
+     *
+     * Staff have no Member list to come from and nothing to edit here, so the
+     * page is handed the same data with $self set and drops the two buttons
+     * that only make sense to an administrator.
+     */
+    public function myKpi(Request $request, StaffKpiScoreService $scoreService): View
+    {
+        return view('staff.view-kpi', array_merge(
+            $this->kpiPayload($request, $request->user(), $scoreService),
+            ['self' => true]
+        ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function kpiPayload(Request $request, Staff $staff, StaffKpiScoreService $scoreService): array
+    {
         $staff->load(['position.objectives.infos', 'team']);
 
         $completedProjects = $scoreService->completedProjectsFor($staff);
@@ -170,7 +199,7 @@ class StaffController extends Controller implements BreadcrumbInterfaces
             ->when($selectedProjectId, fn ($q) => $q->where('project_id', $selectedProjectId))
             ->get();
 
-        return view('staff.view-kpi', [
+        return [
             'staff' => $staff,
             'completedProjects' => $completedProjects,
             'selectedProjectId' => $selectedProjectId,
@@ -180,7 +209,8 @@ class StaffController extends Controller implements BreadcrumbInterfaces
             // The other half of the score: project work actually delivered,
             // priced by each task's tag. See ProjectDeliveryScoreService.
             'finalScore' => $scoreService->finalScore($staff),
-        ]);
+            'self' => false,
+        ];
     }
 
     /**

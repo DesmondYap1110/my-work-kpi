@@ -23,7 +23,7 @@ class ProjectTaskList extends Datatables
 {
     public static function getTableColumns(): array
     {
-        return [
+        $columns = [
             'title' => 'Task',
             'project_title' => 'Project',
             'assignee' => 'Assignee',
@@ -32,19 +32,44 @@ class ProjectTaskList extends Datatables
             'status' => 'Status',
             'action' => 'Actions',
         ];
+
+        // For anyone but the administrator every row is their own, so a column
+        // repeating their name down the page says nothing.
+        if (! static::viewerIsAdmin()) {
+            unset($columns['assignee']);
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Staff reach this list as "My Tasks" - scoped to their own work by
+     * ProjectTaskListQuery, which is what makes it safe to open.
+     */
+    public static function adminOnly(): bool
+    {
+        return false;
     }
 
     public function filters(): array
     {
         $statuses = collect(TaskStatus::cases())->mapWithKeys(fn ($s) => [$s->value => $s->label()])->all();
 
-        return [
+        $filters = [
             new SelectFilter('project_id', 'Project', Project::orderBy('title')->pluck('title', 'id')->all()),
-            new SelectFilter('assignee_id', 'Assignee', Staff::excludingAdmin()->orderBy('staff_name')->pluck('staff_name', 'id')->all()),
+        ];
+
+        // Every row already belongs to the viewer when they are not an
+        // administrator, so a person filter would only ever have one answer.
+        if ($this->viewerIsAdmin()) {
+            $filters[] = new SelectFilter('assignee_id', 'Assignee', Staff::excludingAdmin()->orderBy('staff_name')->pluck('staff_name', 'id')->all());
+        }
+
+        return array_merge($filters, [
             new SelectFilter('status', 'Status', $statuses),
             new DateFilter('due_from', 'Due From'),
             new DateFilter('due_to', 'Due To'),
-        ];
+        ]);
     }
 
     public function centeredColumns(): array
@@ -66,15 +91,15 @@ class ProjectTaskList extends Datatables
     public function listing(Request $request, LengthAwarePaginator $result): array
     {
         $rows = $result->getCollection()->map(function (ProjectTask $task) {
-            return [
+            return array_filter([
                 'title' => $this->titleCell($task),
                 'project_title' => e($task->project->title ?? '-'),
-                'assignee' => e($task->assignee->staff_name ?? 'Unassigned'),
+                'assignee' => static::viewerIsAdmin() ? e($task->assignee->staff_name ?? 'Unassigned') : null,
                 'tag' => $this->tagCell($task),
                 'due_date' => $this->dueCell($task),
-                'status' => $this->tbStatus($task->status->label(), $task->status->colourId()),
+                'status' => $this->statusCell($task),
                 'action' => $this->actionButtons($task),
-            ];
+            ], fn ($cell) => $cell !== null);
         })->all();
 
         return $this->respond($request, $result, $rows);
@@ -126,18 +151,41 @@ class ProjectTaskList extends Datatables
             : $date;
     }
 
+    /**
+     * Status is a control, not a label: this is the list a person works from,
+     * and moving a task along is the whole reason they opened it.
+     *
+     * See public/js/modules/status-select.js - the same dropdown the project
+     * page uses, PATCHing the row rather than reloading the table.
+     */
+    private function statusCell(ProjectTask $task): string
+    {
+        $options = collect(TaskStatus::cases())
+            ->map(fn (TaskStatus $status) => '<option value="'.$status->value.'"'
+                .($task->status === $status ? ' selected' : '').'>'.e($status->label()).'</option>')
+            ->implode('');
+
+        return '<select class="form-control task-status js-task-status" aria-label="Task status"'
+            .' data-url="'.route('project-tasks.status', $task->id).'">'.$options.'</select>';
+    }
+
     private function actionButtons(ProjectTask $task): string
     {
-        $buttons = [
-            $this->tbLink(
+        // Opening the project means the workspace where tasks are added and
+        // deleted, so both belong to the administrator. What is left for
+        // everyone else is the attachment list - the brief for the work.
+        $buttons = [$this->tbButton('ri-attachment-2', 'tb-ac-btn-6', 'Attachments', ['id' => $task->id], 'js-show-attachments')];
+
+        if (static::viewerIsAdmin()) {
+            array_unshift($buttons, $this->tbLink(
                 route('projects.show', $task->project_id),
                 'ri-external-link-line',
                 'tb-ac-btn-4',
                 'Open in its project'
-            ),
-            $this->tbButton('ri-attachment-2', 'tb-ac-btn-6', 'Attachments', ['id' => $task->id], 'js-show-attachments'),
-            $this->tbDeleteForm(route('project-tasks.destroy', $task->id)),
-        ];
+            ));
+
+            $buttons[] = $this->tbDeleteForm(route('project-tasks.destroy', $task->id));
+        }
 
         return implode(' ', $buttons);
     }

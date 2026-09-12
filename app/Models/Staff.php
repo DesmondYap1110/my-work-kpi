@@ -75,11 +75,18 @@ class Staff extends Authenticatable
 
     public function scopeExcludingAdmin($query)
     {
-        return $query->where('position_id', '!=', 1);
+        return $query->where('position_id', '!=', StaffPosition::ADMIN_ID);
     }
 
+    /**
+     * The system administrator: the only member who may set the company up -
+     * its teams, positions, members, tags, KPIs and weighting. Everyone else
+     * signs in to their own KPI and their own tasks.
+     *
+     * @see \App\Http\Middleware\EnsureIsAdmin
+     */
     public function isAdmin(): bool
     {
-        return (int) $this->position_id === 1;
+        return (int) $this->position_id === StaffPosition::ADMIN_ID;
     }
 }

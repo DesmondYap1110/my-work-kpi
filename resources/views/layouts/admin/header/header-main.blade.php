@@ -20,7 +20,10 @@
                             </div>
                             <span class="text-start ms-xl-2">
                                 <p id="hd-username">{{ auth()->user()->email }}</p>
-                                <p id="hd-position">Admin</p>
+                                {{-- Was hard-coded "Admin", from when the
+                                     administrator was the only person who
+                                     could sign in. --}}
+                                <p id="hd-position">{{ auth()->user()->position->position_name ?? 'Member' }}</p>
                             </span>
                         </span>
                     </button>

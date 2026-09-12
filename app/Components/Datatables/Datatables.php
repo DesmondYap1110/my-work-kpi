@@ -41,6 +41,24 @@ abstract class Datatables
     abstract public function listing(Request $request, LengthAwarePaginator $result): array;
 
     /**
+     * Whether only the system administrator may pull this list.
+     *
+     * Every table in the app is served by one AJAX endpoint that takes the
+     * class name from the request, so a page being absent from someone's
+     * sidebar does not put its rows out of reach - a hand-made POST naming
+     * TeamList would still answer. Lists default to administrator-only and a
+     * list that ordinary staff may read says so, rather than the other way
+     * round: forgetting to mark a new list then closes it, instead of leaking
+     * it.
+     *
+     * @see \App\Http\Controllers\DatatablesController
+     */
+    public static function adminOnly(): bool
+    {
+        return true;
+    }
+
+    /**
      * The filter fields this list offers, e.g. [new SelectFilter(...),
      * new DateFilter(...)]. Empty by default - only lists that actually
      * have a filter bar (Staff, Project, ProjectTask) override this.
@@ -268,6 +286,18 @@ abstract class Datatables
     protected function tbDeleteForm(string $url): string
     {
         return $this->tbForm($url, 'DELETE', 'ri-delete-bin-6-line', 'tb-ac-btn-2', 'Delete', 'js-confirm-delete');
+    }
+
+    /**
+     * Whether the person looking at this table is the system administrator.
+     *
+     * Lists open to everyone use it to leave out the columns, filters and
+     * buttons that only an administrator has any use for. Static so that
+     * getTableColumns(), which renders the header, can ask it too.
+     */
+    protected static function viewerIsAdmin(): bool
+    {
+        return (bool) \Illuminate\Support\Facades\Auth::user()?->isAdmin();
     }
 
     /**

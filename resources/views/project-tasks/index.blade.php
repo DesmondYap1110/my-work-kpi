@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
-@section('title', 'Task')
+{{-- Reached two ways: "Task" (every task, administrator) and "My Tasks"
+     (the viewer's own). The rows are narrowed by ProjectTaskListQuery, not
+     here - see ProjectTaskController::mine(). --}}
+@section('title', $heading ?? 'Task')
 
 @section('content')
     {!! show_datatable_filter('ProjectTaskList') !!}

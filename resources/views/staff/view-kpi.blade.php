@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'View Member KPI')
+@section('title', ($self ?? false) ? 'My KPI' : 'View Member KPI')
 
 @push('styles')
     <style type="text/css">
@@ -261,8 +261,13 @@
                 </div>
                 <div class="col-lg-7">
                     <div id="bg-btn-div" class="dropdown">
-                        <a href="{{ route('staff.index') }}" id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
-                        <a href="{{ route('staff.edit', $staff->id) }}" id="general-btn" class="btn1"><i class="ri-edit-2-line"></i>Edit Member</a>
+                        {{-- Both lead into Member administration, which is
+                             where a staff member reading their own scorecard
+                             cannot follow. --}}
+                        @unless ($self ?? false)
+                            <a href="{{ route('staff.index') }}" id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
+                            <a href="{{ route('staff.edit', $staff->id) }}" id="general-btn" class="btn1"><i class="ri-edit-2-line"></i>Edit Member</a>
+                        @endunless
                     </div>
                     <div id="bg-ft-div">
                         <div id="bg-ft-box">

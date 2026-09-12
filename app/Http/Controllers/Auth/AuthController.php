@@ -31,7 +31,11 @@ class AuthController extends Controller
 
         $staff = Auth::user();
 
-        if (! $staff->isAdmin() || ! $staff->is_active) {
+        // Any active member may sign in; what they see once they are in is
+        // decided by the 'admin' middleware, not here. A deactivated member is
+        // refused in the same words as a wrong password, so the form never
+        // confirms that an address exists.
+        if (! $staff->is_active) {
             Auth::logout();
 
             return back()->withErrors(['email' => 'Invalid login credentials. Please try to login again.'])->onlyInput('email');
