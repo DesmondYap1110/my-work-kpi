@@ -16,9 +16,6 @@
         @endif
     </div>
     <div class="kpi-item-meta">
-        <span class="tb-status" id="tb-status-{{ $item->objective_type->value === 0 ? '4' : '3' }}">
-            {{ $item->objective_type->label() }}
-        </span>
         <span class="kpi-marks">
             {{ $item->allowedMarks()
                 ? implode(', ', array_map(fn ($m) => ($m > 0 ? '+' : '').$m, $item->allowedMarks()))
@@ -29,7 +26,9 @@
             <i class="ri-edit-2-line"></i>
         </button>
         <form action="{{ route('kpi.objectives.items.destroy', [$position->id, $objective->id, $item->id]) }}"
-              method="POST" class="d-inline js-confirm-delete">
+              method="POST" class="d-inline js-confirm-delete"
+              data-confirm-title="Delete item"
+              data-confirm="Delete the item &quot;{{ $item->title }}&quot;?">
             @csrf @method('DELETE')
             <button type="submit" class="tb-ac-btn" id="tb-ac-btn-2" title="Delete item">
                 <i class="ri-delete-bin-6-line"></i>

@@ -18,4 +18,19 @@ abstract class Filter
     }
 
     abstract public function getHTML(): string;
+
+    /**
+     * What this filter should show when the page opens.
+     *
+     * Taken from the query string, so a link that carries a filter -
+     * /staff?pid=9 from the position list's "View members" - arrives with the
+     * field already set. The datatable reads its first AJAX draw off these
+     * fields, so a filter that renders blank is a filter that was ignored.
+     */
+    protected function currentValue(): string
+    {
+        $value = request()->query($this->name);
+
+        return is_scalar($value) ? (string) $value : '';
+    }
 }

@@ -10,6 +10,7 @@ use App\Models\KpiObjective;
 use App\Models\StaffPosition;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 /**
@@ -49,8 +50,10 @@ class KpiObjectiveController extends Controller implements BreadcrumbInterfaces
             'position' => $position,
             // Driven by the categories, not the objectives: a category is
             // created first and then filled, so an empty one still has to
-            // appear (with its own "add objective" button).
-            'categories' => KpiCategory::orderBy('name')->get(),
+            // appear (with its own "add objective" button). Scoped to this
+            // position - categories are not shared between jobs.
+            'categories' => KpiCategory::forPosition($position->id)
+                ->orderBy('sort_order')->orderBy('name')->get(),
             'objectivesByCategory' => $objectives,
         ]);
     }
@@ -60,7 +63,7 @@ class KpiObjectiveController extends Controller implements BreadcrumbInterfaces
         $position->objectives()->create([
             'title' => $request->input('title'),
             'description' => $request->input('description'),
-            'category_id' => $this->resolveCategory($request),
+            'category_id' => $this->resolveCategory($request, $position),
         ]);
 
         return back()->with('status', 'Objective added successfully.');
@@ -71,7 +74,7 @@ class KpiObjectiveController extends Controller implements BreadcrumbInterfaces
         $objective->update([
             'title' => $request->input('title'),
             'description' => $request->input('description'),
-            'category_id' => $this->resolveCategory($request),
+            'category_id' => $this->resolveCategory($request, $position),
         ]);
 
         return back()->with('status', 'Objective updated successfully.');
@@ -79,16 +82,23 @@ class KpiObjectiveController extends Controller implements BreadcrumbInterfaces
 
     public function destroy(StaffPosition $position, KpiObjective $objective): RedirectResponse
     {
-        // Its items cascade with it at the database level.
+        // Its items go with it - see KpiObjective::booted().
+        $items = $objective->infos()->count();
         $objective->delete();
 
-        return back()->with('status', 'Objective deleted successfully.');
+        return back()->with('status', $items > 0
+            ? 'Objective deleted, along with its '.$items.' '.Str::plural('item', $items).'.'
+            : 'Objective deleted successfully.');
     }
 
     /**
      * An existing category, none, or a new one named in the form.
+     *
+     * A chosen category is checked against this position before it is
+     * accepted, so a tampered form cannot file an objective under another
+     * job's heading.
      */
-    private function resolveCategory(Request $request): ?int
+    private function resolveCategory(Request $request, StaffPosition $position): ?int
     {
         $value = $request->input('category_id');
 
@@ -97,11 +107,14 @@ class KpiObjectiveController extends Controller implements BreadcrumbInterfaces
         }
 
         if ($value !== StoreKpiObjectiveRequest::NEW) {
-            return (int) $value;
+            return KpiCategory::forPosition($position->id)
+                ->whereKey((int) $value)
+                ->value('id');
         }
 
-        return KpiCategory::firstOrCreate(
-            ['name' => trim($request->input('category_name'))]
-        )->id;
+        return KpiCategory::firstOrCreate([
+            'position_id' => $position->id,
+            'name' => trim($request->input('category_name')),
+        ])->id;
     }
 }

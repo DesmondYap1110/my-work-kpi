@@ -52,15 +52,6 @@
                                           placeholder="How this item is judged"></textarea>
                             </div>
                             <div class="input-group">
-                                <label>Type<span>*</span></label>
-                                <select class="form-control" name="objective_type" required>
-                                    <option value="" disabled @selected($mode === 'add')>Select Type</option>
-                                    @foreach (\App\Enums\ObjectiveType::cases() as $type)
-                                        <option value="{{ $type->value }}">{{ $type->label() }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="input-group">
                                 <label>Allowed Marks<span>*</span></label>
                                 {{-- Any values may be used - see public/js/modules/mark-list.js --}}
                                 <div class="js-mark-list" id="{{ $mode }}-mark-list"

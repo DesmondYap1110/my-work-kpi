@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserLog extends Model
 {
-    public $timestamps = false;
-
     protected $table = 'user_logs';
 
     protected $fillable = [

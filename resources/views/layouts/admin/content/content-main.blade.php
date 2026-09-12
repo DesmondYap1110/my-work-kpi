@@ -9,3 +9,5 @@
         </div>
     </section>
 </div>
+
+@include('layouts.admin.content.confirm-modal')

@@ -2,12 +2,6 @@
 
 @section('title', 'KPI Objectives - '.$position->position_name)
 
-@php
-    // A category with no objectives for this position still appears, so the
-    // flow is: create the category, then fill it.
-    $uncategorised = $objectivesByCategory->get(null, collect());
-@endphp
-
 @section('content')
     <div id="tb-box" class="general-box mb-3">
         <div id="table-padding" class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -32,6 +26,7 @@
         <form class="js-inline-form kpi-inline-form" id="add-category" method="POST"
               action="{{ route('kpi-categories.store') }}" hidden>
             @csrf
+            <input type="hidden" name="position_id" value="{{ $position->id }}">
             <div class="row">
                 <div class="col-lg-6">
                     <div class="input-group">
@@ -54,6 +49,17 @@
             $headId = 'head-category-'.$category->id;
             $editId = 'edit-category-'.$category->id;
             $addId = 'add-objective-'.$category->id;
+            $bodyId = 'body-category-'.$category->id;
+
+            // Deleting a category takes its objectives - and their items -
+            // with it, so the dialog says so rather than asking about "this
+            // record".
+            $count = $objectives->count();
+            $confirm = $count > 0
+                ? 'Delete "'.$category->name.'"? This also removes '.$count.' '
+                    .Str::plural('objective', $count).' and everything scored under '
+                    .($count === 1 ? 'it' : 'them').'.'
+                : 'Delete the category "'.$category->name.'"?';
         @endphp
 
         <div id="tb-box" class="general-box mb-3 kpi-group">
@@ -64,6 +70,11 @@
                         <span class="kpi-count">{{ $objectives->count() }}</span>
                     </p>
                     <span>
+                        <button type="button" class="tb-ac-btn tb-ac-toggle" title="Show"
+                                aria-expanded="false" aria-controls="{{ $bodyId }}"
+                                data-collapse="#{{ $bodyId }}">
+                            <i class="ri-arrow-down-s-line"></i>
+                        </button>
                         <button type="button" class="tb-ac-btn" id="tb-ac-btn-6" title="Add objective"
                                 data-inline-form="#{{ $addId }}">
                             <i class="ri-add-line"></i>
@@ -73,7 +84,9 @@
                             <i class="ri-edit-2-line"></i>
                         </button>
                         <form action="{{ route('kpi-categories.destroy', $category->id) }}" method="POST"
-                              class="d-inline js-confirm-delete">
+                              class="d-inline js-confirm-delete"
+                              data-confirm-title="Delete category"
+                              data-confirm="{{ $confirm }}">
                             @csrf @method('DELETE')
                             <button type="submit" class="tb-ac-btn" id="tb-ac-btn-2" title="Delete category">
                                 <i class="ri-delete-bin-6-line"></i>
@@ -101,6 +114,9 @@
                     </div>
                 </form>
 
+                {{-- Closed by default: the page is a list of headings until you
+                     open the one you want. See public/js/modules/collapse.js --}}
+                <div class="js-collapse" id="{{ $bodyId }}" hidden>
                 @forelse ($objectives as $objective)
                     @include('kpi.objectives._objective', ['objective' => $objective, 'position' => $position])
                 @empty
@@ -133,6 +149,7 @@
                         <a href="javascript:void(0);" id="general-btn" class="btn2 js-inline-form-cancel"><i class="ri-close-fill"></i>Cancel</a>
                     </div>
                 </form>
+                </div>
             </div>
         </div>
     @empty
@@ -145,20 +162,4 @@
         </div>
     @endforelse
 
-    @if ($uncategorised->isNotEmpty())
-        <div id="tb-box" class="general-box mb-3 kpi-group">
-            <div id="table-padding">
-                <div class="kpi-group-head">
-                    <p id="tb-title" class="mb-0">
-                        <i class="ri-price-tag-3-line"></i>Uncategorised
-                        <span class="kpi-count">{{ $uncategorised->count() }}</span>
-                    </p>
-                </div>
-
-                @foreach ($uncategorised as $objective)
-                    @include('kpi.objectives._objective', ['objective' => $objective, 'position' => $position])
-                @endforeach
-            </div>
-        </div>
-    @endif
 @endsection

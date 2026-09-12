@@ -9,13 +9,13 @@ class KpiListQuery
 {
     /**
      * "KPIs" are positions that have one assigned - there is no separate KPI
-     * record, so this lists positions flagged with has_kpi along with how
+     * record, so this lists positions that have objectives, along with how
      * many objectives each carries.
      */
     public function build(): Builder
     {
         return StaffPosition::query()
-            ->where('has_kpi', true)
+            ->has('objectives')
             ->withCount('objectives')
             ->latest('id');
     }

@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\ObjectiveType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * One scored item under a KpiObjective: what it is, which marks it allows,
@@ -13,9 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class KpiObjectiveInfo extends Model
 {
-    use HasFactory;
-
-    public $timestamps = false;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'kpi_objective_info';
 
@@ -24,12 +22,10 @@ class KpiObjectiveInfo extends Model
         'title',
         'description',
         'allowed_marks',
-        'objective_type',
     ];
 
     protected $casts = [
         'allowed_marks' => 'array',
-        'objective_type' => ObjectiveType::class,
     ];
 
     public function objective(): BelongsTo

@@ -63,7 +63,6 @@ class KpiObjectiveItemController extends Controller implements BreadcrumbInterfa
         return [
             'title' => $request->input('title'),
             'description' => $request->input('description'),
-            'objective_type' => $request->integer('objective_type'),
             // The inputs post the mark values themselves; duplicates are
             // folded and the order preserved.
             'allowed_marks' => array_values(array_unique(

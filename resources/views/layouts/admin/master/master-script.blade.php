@@ -21,6 +21,8 @@
 <script src="{{ asset('js/modules/mark-list.js') }}"></script>
 <script src="{{ asset('js/modules/select-or-new.js') }}"></script>
 <script src="{{ asset('js/modules/inline-form.js') }}"></script>
+<script src="{{ asset('js/modules/collapse.js') }}"></script>
+<script src="{{ asset('js/modules/confirm.js') }}"></script>
 <script>window.datatablesEndpoint = @json(route('datatables.listing'));</script>
 <script src="{{ asset('js/modules/datatables.js') }}"></script>
 

@@ -424,7 +424,7 @@
                                             <tr>
                                                 <td colspan="3" id="tb-sub-til">{{ $staff->position->job_scope ?? '-' }}</td>
                                             </tr>
-                                            @foreach ($standardEntries as $entry)
+                                            @forelse ($entries as $entry)
                                                 <tr>
                                                     <td>{{ $entry->objectiveInfo->title ?? '-' }}</td>
                                                     <td class="text-center">{{ $entry->mark }}</td>
@@ -440,27 +440,11 @@
                                                         @endif
                                                     </td>
                                                 </tr>
-                                            @endforeach
-                                            <tr>
-                                                <td colspan="3" id="tb-sub-til">Extra Point</td>
-                                            </tr>
-                                            @foreach ($extraEntries as $entry)
+                                            @empty
                                                 <tr>
-                                                    <td>{{ $entry->objectiveInfo->title ?? '-' }}</td>
-                                                    <td class="text-center">{{ $entry->mark }}</td>
-                                                    <td class="text-center">
-                                                        @if (is_null($entry->submitted_at) && is_null($entry->status))
-                                                            -
-                                                        @elseif (is_null($entry->status))
-                                                            <span class="tb-status" id="tb-status-3">Pending</span>
-                                                        @elseif ($entry->status === \App\Enums\ProjectKpiStatus::Approved)
-                                                            <span class="tb-status" id="tb-status-1">Approved</span>
-                                                        @else
-                                                            <span class="tb-status" id="tb-status-2">Reject</span>
-                                                        @endif
-                                                    </td>
+                                                    <td colspan="3" class="text-center">No Record</td>
                                                 </tr>
-                                            @endforeach
+                                            @endforelse
                                         </tbody>
                                     </table>
                                 </div>

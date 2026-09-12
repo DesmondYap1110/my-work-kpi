@@ -10,8 +10,9 @@ use Illuminate\Http\RedirectResponse;
 
 /**
  * A "KPI" is a position with objectives attached - there is no KPI record of
- * its own. Assigning one flips the position's has_kpi; unassigning clears
- * it and removes the objectives.
+ * its own, and no flag either. A position "has a KPI" exactly when it has
+ * objectives, so assigning one means going and adding them, and removing one
+ * means deleting them.
  */
 class KpiController extends Controller implements BreadcrumbInterfaces
 {
@@ -34,23 +35,22 @@ class KpiController extends Controller implements BreadcrumbInterfaces
             return back()->withErrors(['position_id' => 'The Administrator position is not assessed.']);
         }
 
-        $position->update(['has_kpi' => true]);
-
         if ($request->expectsJson()) {
             return response()->json(['status' => 'ok']);
         }
 
-        // A KPI with no objectives is useless, so assigning one drops the
-        // user straight into adding them.
+        // Nothing to record: a KPI *is* its objectives. This just opens the
+        // page where they get added - which is what "assign" always meant.
         return redirect()
             ->route('kpi.objectives.index', $position->id)
-            ->with('status', 'KPI assigned. Add its objectives below.');
+            ->with('status', 'Add the objectives for this position below.');
     }
 
     public function destroy(StaffPosition $position): RedirectResponse
     {
-        $position->objectives()->delete();
-        $position->update(['has_kpi' => false]);
+        // Deleting the objectives is what removes the KPI - each takes its
+        // own scored items with it (see KpiObjective::booted()).
+        $position->objectives()->get()->each->delete();
 
         return back()->with('status', 'KPI removed from this position.');
     }

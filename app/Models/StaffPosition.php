@@ -23,11 +23,6 @@ class StaffPosition extends Model
     protected $fillable = [
         'position_name',
         'job_scope',
-        'has_kpi',
-    ];
-
-    protected $casts = [
-        'has_kpi' => 'boolean',
     ];
 
     public function staff(): HasMany
@@ -37,7 +32,7 @@ class StaffPosition extends Model
 
     /**
      * A position's KPI is simply its objectives - there is no separate KPI
-     * record; has_kpi records whether one has been assigned.
+     * record, and no stored flag either: see hasKpi().
      */
     public function objectives(): HasMany
     {
@@ -59,11 +54,39 @@ class StaffPosition extends Model
     }
 
     /**
+     * Whether this position has a KPI.
+     *
+     * Derived, not stored. A has_kpi column used to record it, and it drifted:
+     * assigning a KPI set the flag and dropped you on the objectives page, so
+     * walking away without adding anything left a position reading "Yes" with
+     * nothing behind it. Having objectives IS having a KPI.
+     *
+     * Uses the eager-loaded count when the caller asked for one
+     * (->withCount('objectives')), so a list does not run a query per row.
+     */
+    public function hasKpi(): bool
+    {
+        if ($this->objectives_count !== null) {
+            return $this->objectives_count > 0;
+        }
+
+        return $this->objectives()->exists();
+    }
+
+    /**
+     * Positions that already have objectives.
+     */
+    public function scopeWithKpi($query)
+    {
+        return $query->has('objectives')->excludingAdmin();
+    }
+
+    /**
      * Positions that can still be given a KPI. Administrator is excluded
      * rather than merely unassigned, so it never turns up as a candidate.
      */
     public function scopeWithoutKpi($query)
     {
-        return $query->where('has_kpi', false)->excludingAdmin();
+        return $query->doesntHave('objectives')->excludingAdmin();
     }
 }

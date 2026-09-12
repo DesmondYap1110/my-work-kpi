@@ -54,7 +54,10 @@ class KpiObjectiveInfoSeeder extends Seeder
         ];
 
         foreach ($structure as $categoryName => $objectives) {
-            $category = KpiCategory::firstOrCreate(['name' => $categoryName]);
+            $category = KpiCategory::firstOrCreate([
+                'position_id' => $position->id,
+                'name' => $categoryName,
+            ]);
 
             foreach ($objectives as $objectiveTitle => $items) {
                 $objective = KpiObjective::firstOrCreate([
@@ -68,12 +71,11 @@ class KpiObjectiveInfoSeeder extends Seeder
                         ['objective_id' => $objective->id, 'title' => $title],
                         // A 1-5 scale, matching the rating scale on a typical
                         // confirmation assessment form.
-                        ['allowed_marks' => [5, 4, 3, 2, 1], 'objective_type' => 0]
+                        ['allowed_marks' => [5, 4, 3, 2, 1]]
                     );
                 }
             }
         }
 
-        $position->update(['has_kpi' => true]);
     }
 }

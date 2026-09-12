@@ -78,7 +78,7 @@ class Project extends Model
             foreach ($activeStaff as $staff) {
                 $position = $staff->position;
 
-                if (! $position || ! $position->has_kpi) {
+                if (! $position || ! $position->hasKpi()) {
                     continue;
                 }
 

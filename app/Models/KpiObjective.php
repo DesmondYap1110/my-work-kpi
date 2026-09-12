@@ -26,6 +26,27 @@ class KpiObjective extends Model
         'description',
     ];
 
+    /**
+     * Takes its items down with it.
+     *
+     * The foreign key is ON DELETE CASCADE, but that only fires on a real
+     * DELETE. A soft delete is an UPDATE that stamps deleted_at, so the
+     * database cascade never runs and the items would be left live under a
+     * deleted parent. Deleting them here keeps deleted_at meaningful: every
+     * row records the moment it went, and a force delete still hands the job
+     * back to the database.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (KpiObjective $objective) {
+            if ($objective->isForceDeleting()) {
+                return;
+            }
+
+            $objective->infos()->get()->each->delete();
+        });
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(KpiCategory::class, 'category_id', 'id');

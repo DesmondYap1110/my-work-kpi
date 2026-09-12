@@ -234,8 +234,53 @@ button.tb-status:hover {
     margin-bottom: 12px;
     border-bottom: 1px dashed #00000026;
 }
-.kpi-group-head i {
+/* The tag icon beside the category name only - a bare "i" here would also
+   catch the icons inside the action buttons and knock them off centre. */
+.kpi-group-head > p i {
     margin-right: 6px;
+}
+/* A status pill for a row where the action does not apply at all - the
+   Administrator's "KPI Assigned" cell. Grey and inert, matching the disabled
+   action buttons (#tb-ac-btn-5) so "unavailable" looks the same everywhere. */
+/* Two classes, so this outweighs the "button.tb-status { cursor: pointer }"
+   rule above. */
+.tb-status.tb-status-disabled,
+.tb-status.tb-status-disabled:hover {
+    color: #fff;
+    border: none;
+    background: #cdcdcd;
+    cursor: not-allowed;
+}
+
+/* The confirmation dialog's question - see public/js/modules/confirm.js */
+.confirm-modal-message {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--brand-text, #282828);
+}
+
+/* A heading whose contents are folded away needs no divider under it - the
+   rule would otherwise hang there separating the heading from nothing.
+   ":has" is unsupported in older browsers, where this simply doesn't apply. */
+.kpi-group:has(> div > .js-collapse[hidden]) .kpi-group-head,
+.kpi-objective:has(> .js-collapse[hidden]) .kpi-objective-head {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+/* Show / hide. Deliberately quiet: it is the button pressed most often, so it
+   should not compete with add, edit and delete for attention. */
+.tb-ac-toggle {
+    color: var(--brand-text, #282828);
+    background: var(--brand-background, #eaedf7);
+}
+.tb-ac-toggle:hover {
+    color: #fff;
+    background: var(--brand-primary, #1896bd);
+}
+.tb-ac-toggle i {
+    font-size: 16px;
+    transition: transform 0.2s;
 }
 .kpi-count {
     font-size: 10px;

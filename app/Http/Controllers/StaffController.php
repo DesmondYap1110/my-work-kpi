@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ObjectiveType;
 use App\Http\Requests\StoreStaffRequest;
 use App\Http\Requests\UpdateStaffRequest;
 use App\Interfaces\BreadcrumbInterfaces;
@@ -173,10 +172,7 @@ class StaffController extends Controller implements BreadcrumbInterfaces
             'staff' => $staff,
             'completedProjects' => $completedProjects,
             'selectedProjectId' => $selectedProjectId,
-            // The Standard/Extra flag lives on the scored item itself now, so
-            // each entry carries its own type through objectiveInfo.
-            'standardEntries' => $entries->filter(fn ($entry) => $entry->objectiveInfo?->objective_type === ObjectiveType::Standard),
-            'extraEntries' => $entries->filter(fn ($entry) => $entry->objectiveInfo?->objective_type === ObjectiveType::Extra),
+            'entries' => $entries,
             'overallScore' => $scoreService->totalScore($staff),
             'projectScore' => $selectedProjectId ? $scoreService->totalScore($staff, $selectedProjectId) : null,
         ]);

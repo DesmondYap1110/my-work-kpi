@@ -19,20 +19,7 @@
                    value="{{ $item?->description }}" placeholder="How this item is judged">
         </div>
     </div>
-    <div class="col-lg-2">
-        <div class="input-group">
-            <label>Type<span>*</span></label>
-            <select class="form-control" name="objective_type" required>
-                <option value="" disabled @selected($item === null)>Select</option>
-                @foreach (\App\Enums\ObjectiveType::cases() as $type)
-                    <option value="{{ $type->value }}" @selected($item?->objective_type === $type)>
-                        {{ $type->label() }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-    </div>
-    <div class="col-lg-2">
+    <div class="col-lg-4">
         <div class="input-group">
             <label>Allowed Marks<span>*</span></label>
             {{-- Any values may be used - see public/js/modules/mark-list.js --}}

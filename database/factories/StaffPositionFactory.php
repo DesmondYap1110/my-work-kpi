@@ -14,7 +14,6 @@ class StaffPositionFactory extends Factory
         return [
             'position_name' => fake()->unique()->jobTitle(),
             'job_scope' => fake()->paragraph(),
-            'has_kpi' => false,
         ];
     }
 }

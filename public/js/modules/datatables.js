@@ -114,18 +114,7 @@ App.module('datatables', function () {
         initTable($(this));
     });
 
-    // Destructive actions are injected as plain HTML by the list classes, so
-    // the confirm prompt has to be delegated rather than bound to elements
-    // that don't exist until the AJAX draw happens.
-    $(document).on('submit', '.js-confirm-delete', function (e) {
-        if (!confirm('Are you sure you want to delete this record?')) {
-            e.preventDefault();
-        }
-    });
-
-    $(document).on('submit', '.js-confirm-cancel', function (e) {
-        if (!confirm('Are you sure you want to cancel this project?')) {
-            e.preventDefault();
-        }
-    });
+    // Confirmation for the destructive actions the list classes inject
+    // (js-confirm-delete / js-confirm-cancel) is handled in its own module -
+    // see public/js/modules/confirm.js.
 });

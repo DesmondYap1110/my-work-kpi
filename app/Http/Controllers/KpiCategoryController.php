@@ -6,11 +6,13 @@ use App\Http\Requests\StoreKpiCategoryRequest;
 use App\Http\Requests\UpdateKpiCategoryRequest;
 use App\Models\KpiCategory;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 
 /**
- * Categories group objectives - "Soft Skill", "Technical Skill". They are
- * shared across positions, so this only creates and renames them; which
- * objectives sit under them is decided per position.
+ * Categories group a position's objectives - "Soft Skill", "Service".
+ *
+ * Each belongs to one position, so a restaurant role is never offered a
+ * developer role's headings. Only the name is editable after creation.
  */
 class KpiCategoryController extends Controller
 {
@@ -30,10 +32,12 @@ class KpiCategoryController extends Controller
 
     public function destroy(KpiCategory $category): RedirectResponse
     {
-        // Objectives survive; they simply fall back to "uncategorised".
-        $category->objectives()->update(['category_id' => null]);
+        // The objectives and their items go with it - see KpiCategory::booted().
+        $objectives = $category->objectives()->count();
         $category->delete();
 
-        return back()->with('status', 'Category deleted. Its objectives are now uncategorised.');
+        return back()->with('status', $objectives > 0
+            ? 'Category deleted, along with its '.$objectives.' '.Str::plural('objective', $objectives).'.'
+            : 'Category deleted successfully.');
     }
 }

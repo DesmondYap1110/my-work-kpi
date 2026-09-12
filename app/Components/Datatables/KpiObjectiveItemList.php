@@ -7,8 +7,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 
 /**
- * The scored items under one objective: what each is, the marks it allows,
- * and whether it counts as Standard or Extra.
+ * The scored items under one objective: what each is and the marks it allows.
  */
 class KpiObjectiveItemList extends Datatables
 {
@@ -17,7 +16,6 @@ class KpiObjectiveItemList extends Datatables
         return [
             'title' => 'Item',
             'description' => 'Description',
-            'objective_type' => 'Type',
             'allowed_marks' => 'Allowed Marks',
             'action' => 'Actions',
         ];
@@ -25,7 +23,7 @@ class KpiObjectiveItemList extends Datatables
 
     public function centeredColumns(): array
     {
-        return ['objective_type', 'allowed_marks'];
+        return ['allowed_marks'];
     }
 
     public function filter(Request $request): LengthAwarePaginator
@@ -33,7 +31,7 @@ class KpiObjectiveItemList extends Datatables
         return $this->paginateFromRequest(
             app(KpiObjectiveItemListQuery::class)->forRequest($request),
             $request,
-            ['title' => null, 'objective_type' => null]
+            ['title' => null]
         );
     }
 
@@ -45,7 +43,6 @@ class KpiObjectiveItemList extends Datatables
             return [
                 'title' => e($item->title),
                 'description' => e(\Illuminate\Support\Str::limit($item->description, 60)) ?: '-',
-                'objective_type' => $item->objective_type->label(),
                 'allowed_marks' => $marks
                     ? implode(', ', array_map(fn ($m) => ($m > 0 ? '+' : '').$m, $marks))
                     : '-',
@@ -62,7 +59,6 @@ class KpiObjectiveItemList extends Datatables
             'id' => $item->id,
             'title' => $item->title,
             'description' => $item->description,
-            'type' => $item->objective_type->value,
             // The allowed marks travel as a JSON array, which jQuery's .data()
             // parses back into a real array on the other side.
             'marks' => json_encode($item->allowedMarks()),

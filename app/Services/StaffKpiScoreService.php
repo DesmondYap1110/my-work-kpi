@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\ObjectiveType;
 use App\Enums\ProjectKpiStatus;
 use App\Enums\ProjectStatus;
 use App\Models\Staff;
@@ -16,28 +15,24 @@ class StaffKpiScoreService
 {
     /**
      * Highest achievable mark for one completed project, for this staff
-     * member's position: the sum of each standard objective's best allowed
-     * mark, plus a flat +2 if the KPI has any "extra" (bonus) objective.
+     * member's position: the sum of every scored item's best allowed mark.
+     *
+     * The legacy app split items into Standard and Extra, adding a flat +2
+     * when any Extra existed. That flag is gone - an item worth more than the
+     * others simply allows higher marks, which the sum already reflects.
      */
     public function maxMarkPerProject(Staff $staff): int
     {
         $position = $staff->position;
 
-        if (! $position || ! $position->has_kpi) {
+        if (! $position || ! $position->hasKpi()) {
             return 0;
         }
 
-        // The scored items hang off each objective and carry both the mark
-        // range and the Standard/Extra flag.
-        $items = $position->objectives()->with('infos')->get()->flatMap->infos;
-
-        $standardMax = $items
-            ->filter(fn ($item) => $item->objective_type === ObjectiveType::Standard)
+        // The scored items hang off each objective and carry the mark range.
+        return (int) $position->objectives()->with('infos')->get()
+            ->flatMap->infos
             ->sum(fn ($item) => $item->maxMark());
-
-        $hasBonus = $items->contains(fn ($item) => $item->objective_type === ObjectiveType::Extra);
-
-        return $standardMax + ($hasBonus ? 2 : 0);
     }
 
     /**

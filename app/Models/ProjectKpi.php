@@ -11,8 +11,6 @@ class ProjectKpi extends Model
 {
     use HasFactory;
 
-    public $timestamps = false;
-
     protected $table = 'project_kpi';
 
     protected $fillable = [

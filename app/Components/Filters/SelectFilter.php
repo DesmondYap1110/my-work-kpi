@@ -18,8 +18,11 @@ class SelectFilter extends Filter
 
     public function getHTML(): string
     {
+        $current = $this->currentValue();
+
         $options = collect($this->options)
-            ->map(fn ($label, $value) => '<option value="'.e($value).'">'.e($label).'</option>')
+            ->map(fn ($label, $value) => '<option value="'.e($value).'"'
+                .((string) $value === $current ? ' selected' : '').'>'.e($label).'</option>')
             ->implode('');
 
         return '<div class="input-group mb-0"><label>'.e($this->title).'</label>'

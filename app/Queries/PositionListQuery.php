@@ -9,6 +9,8 @@ class PositionListQuery
 {
     public function build(): Builder
     {
-        return StaffPosition::query()->latest('id');
+        // withCount so StaffPosition::hasKpi() answers from the loaded count
+        // instead of querying once per row.
+        return StaffPosition::query()->withCount('objectives')->latest('id');
     }
 }

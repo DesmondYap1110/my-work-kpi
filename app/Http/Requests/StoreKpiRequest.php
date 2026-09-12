@@ -18,13 +18,15 @@ class StoreKpiRequest extends FormRequest
         return [
             'position_id' => [
                 'required',
-                // Must be a position that has no KPI yet, and never the
-                // Administrator - that one is the access gate, not a job.
+                // Any real position except the Administrator - that one is the
+                // access gate, not a job. Whether it already has objectives is
+                // not checked here: "assign" just opens the objectives page,
+                // so landing on one that is already started is harmless.
+                //
                 // whereNot, not where(...,'!=',...): the Exists rule's where()
                 // only takes a column and a value, so an operator argument is
                 // silently dropped.
                 Rule::exists('staff_position', 'id')
-                    ->where('has_kpi', false)
                     ->whereNot('id', StaffPosition::ADMIN_ID)
                     ->whereNull('deleted_at'),
             ],
@@ -34,7 +36,7 @@ class StoreKpiRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'position_id.exists' => 'That position cannot be given a KPI - it either already has one, or is the Administrator.',
+            'position_id.exists' => 'That position cannot be given a KPI - the Administrator position is not assessed.',
         ];
     }
 }

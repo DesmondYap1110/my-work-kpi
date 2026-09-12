@@ -146,7 +146,10 @@ class ConfirmationAssessmentSeeder extends Seeder
         }
 
         foreach (self::structure() as $categoryName => $objectives) {
-            $category = KpiCategory::firstOrCreate(['name' => $categoryName]);
+            $category = KpiCategory::firstOrCreate([
+                'position_id' => $position->id,
+                'name' => $categoryName,
+            ]);
 
             foreach ($objectives as $objectiveTitle => $items) {
                 $objective = KpiObjective::firstOrCreate([
@@ -158,12 +161,11 @@ class ConfirmationAssessmentSeeder extends Seeder
                 foreach ($items as $title) {
                     KpiObjectiveInfo::firstOrCreate(
                         ['objective_id' => $objective->id, 'title' => $title],
-                        ['allowed_marks' => self::MARKS, 'objective_type' => 0]
+                        ['allowed_marks' => self::MARKS]
                     );
                 }
             }
         }
 
-        $position->update(['has_kpi' => true]);
     }
 }

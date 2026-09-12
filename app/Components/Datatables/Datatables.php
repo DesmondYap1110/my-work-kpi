@@ -265,6 +265,19 @@ abstract class Datatables
             .'<button type="submit" class="tb-ac-btn" id="'.$colorId.'" title="'.e($tooltip).'"><i class="'.$icon.'"></i></button></form>';
     }
 
+    /**
+     * An action that is not available on this row.
+     *
+     * Shown rather than omitted so the row keeps the same shape as its
+     * neighbours, and the tooltip says why the action is off. Colour id 5 is
+     * the theme's disabled grey.
+     */
+    protected function tbDisabledButton(string $icon, string $reason): string
+    {
+        return '<button type="button" class="tb-ac-btn" id="tb-ac-btn-5" disabled title="'.e($reason).'">'
+            .'<i class="'.$icon.'"></i></button>';
+    }
+
     protected function tbDeleteForm(string $url): string
     {
         return $this->tbForm($url, 'DELETE', 'ri-delete-bin-6-line', 'tb-ac-btn-2', 'Delete', 'js-confirm-delete');

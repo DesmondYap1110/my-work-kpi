@@ -72,7 +72,7 @@ Route::middleware(['auth', 'admin.position'])->group(function () {
         ->parameters(['kpi' => 'position'])
         ->only(['index', 'store', 'update', 'destroy']);
 
-    // Categories are shared across positions.
+    // Categories belong to a position; the position is posted with the form.
     Route::resource('kpi-categories', KpiCategoryController::class)
         ->parameters(['kpi-categories' => 'category'])
         ->only(['store', 'update', 'destroy']);

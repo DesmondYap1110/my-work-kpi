@@ -8,6 +8,7 @@ use App\Interfaces\BreadcrumbInterfaces;
 use App\Models\StaffPosition;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PositionController extends Controller implements BreadcrumbInterfaces
@@ -38,6 +39,10 @@ class PositionController extends Controller implements BreadcrumbInterfaces
 
     public function update(UpdatePositionRequest $request, StaffPosition $position): RedirectResponse|JsonResponse
     {
+        if ($position->isAdministrator()) {
+            return $this->refuseAdministrator($request);
+        }
+
         $position->update($request->validated());
 
 
@@ -48,14 +53,34 @@ class PositionController extends Controller implements BreadcrumbInterfaces
         return back()->with('status', 'Position updated successfully.');
     }
 
-    public function destroy(StaffPosition $position): RedirectResponse
+    public function destroy(Request $request, StaffPosition $position): RedirectResponse|JsonResponse
     {
-        if ($position->has_kpi) {
+        if ($position->isAdministrator()) {
+            return $this->refuseAdministrator($request);
+        }
+
+        if ($position->hasKpi()) {
             return back()->withErrors(['position' => 'This position has a KPI template assigned. Remove the KPI first before deleting the position.']);
         }
 
         $position->delete();
 
         return back()->with('status', 'Position deleted successfully.');
+    }
+
+    /**
+     * The Administrator position is the portal's access gate: renaming or
+     * deleting it would lock people out. The list offers neither action, so
+     * reaching here means a hand-made request.
+     */
+    private function refuseAdministrator(Request $request): RedirectResponse|JsonResponse
+    {
+        $message = 'The Administrator position is built in and cannot be changed.';
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $message], 422);
+        }
+
+        return back()->withErrors(['position' => $message]);
     }
 }

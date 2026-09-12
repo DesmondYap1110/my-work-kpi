@@ -14,7 +14,7 @@ class PositionList extends Datatables
         return [
             'position_name' => 'Position Name',
             'job_scope' => 'Job Scope',
-            'has_kpi' => 'KPI Assigned',
+            'kpi_assigned' => 'KPI Assigned',
             'action' => 'Actions',
         ];
     }
@@ -37,12 +37,18 @@ class PositionList extends Datatables
 
     public function centeredColumns(): array
     {
-        return ['has_kpi'];
+        return ['kpi_assigned'];
     }
 
     public function filter(Request $request): LengthAwarePaginator
     {
-        return $this->paginateFromRequest(app(PositionListQuery::class)->build(), $request);
+        // The cell is rendered HTML, so sort it by the underlying count -
+        // positions with no objectives group together.
+        return $this->paginateFromRequest(
+            app(PositionListQuery::class)->build(),
+            $request,
+            ['kpi_assigned' => 'objectives_count']
+        );
     }
 
     public function listing(Request $request, LengthAwarePaginator $result): array
@@ -51,7 +57,7 @@ class PositionList extends Datatables
             return [
                 'position_name' => $this->nameLink($position),
                 'job_scope' => e(\Illuminate\Support\Str::limit($position->job_scope, 80)),
-                'has_kpi' => $this->kpiStatusAction($position),
+                'kpi_assigned' => $this->kpiStatusAction($position),
                 'action' => $this->actionButtons($position),
                 '_inline' => [
                     'position_name' => $position->position_name,
@@ -83,21 +89,22 @@ class PositionList extends Datatables
     /**
      * The KPI Assigned cell is the way in to a position's objectives:
      *
-     *   assigned     -> link straight to the objectives page
-     *   not assigned -> one click assigns the KPI and lands on that same page
+     *   has objectives -> link straight to them
+     *   none yet       -> one click opens the page to add them
      *
-     * Posting rather than linking for the unassigned case, because it creates
-     * a record. KpiController::store redirects on to the objectives page.
+     * "Yes" means the position actually has objectives, not that someone once
+     * pressed a button - see StaffPosition::hasKpi().
      */
     private function kpiStatusAction($position): string
     {
         // Administrator is the portal's access gate, not a reviewed job -
         // there is nothing to assign, so the cell offers no action.
         if ($position->isAdministrator()) {
-            return '<span class="kpi-empty">n/a</span>';
+            return '<button type="button" class="tb-status tb-status-disabled" disabled'
+                .' title="The Administrator position is not assessed.">Not applicable</button>';
         }
 
-        if ($position->has_kpi) {
+        if ($position->hasKpi()) {
             return '<a href="'.route('kpi.objectives.index', $position->id).'"'
                 .' class="tb-status" id="tb-status-1" title="Manage objectives">Yes</a>';
         }
@@ -112,6 +119,16 @@ class PositionList extends Datatables
 
     private function actionButtons($position): string
     {
+        // Administrator is the portal's access gate. Renaming or deleting it
+        // would lock people out, so the row is read-only - the controller
+        // refuses the same two actions, this only stops them being offered.
+        if ($position->isAdministrator()) {
+            $reason = 'The Administrator position is built in and cannot be changed.';
+
+            return $this->tbDisabledButton('ri-edit-2-line', $reason).' '
+                .$this->tbDisabledButton('ri-delete-bin-6-line', $reason);
+        }
+
         $editButton = $this->tbButton('ri-edit-2-line', 'tb-ac-btn-1', 'Edit', [
             'id' => $position->id,
             'name' => $position->position_name,

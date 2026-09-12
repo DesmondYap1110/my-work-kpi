@@ -29,6 +29,12 @@ App.module('inline-form', function () {
     }
 
     function open($form) {
+        // The form may sit inside a section that is folded shut; revealing it
+        // there would show nothing.
+        if (App.collapse) {
+            App.collapse.reveal($form[0]);
+        }
+
         $form.prop('hidden', false);
         $form.find('input:not([type=hidden]), textarea, select').first().trigger('focus');
     }

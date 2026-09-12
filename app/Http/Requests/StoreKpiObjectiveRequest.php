@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ScopesCategoryToPosition;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreKpiObjectiveRequest extends FormRequest
 {
+    use ScopesCategoryToPosition;
+
     /**
      * Sentinel posted by the "+ Add new" option on a select - see
      * public/js/modules/select-or-new.js.
@@ -24,12 +27,14 @@ class StoreKpiObjectiveRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
 
-            // Either an existing category, nothing, or the sentinel + a name.
+            // One of this position's categories, or the sentinel + a name.
+            // Required: the tree is built category-first, so an objective
+            // with nowhere to sit would simply not be displayed.
             'category_id' => [
-                'nullable',
+                'required',
                 Rule::when(
                     filled($this->input('category_id')) && $this->input('category_id') !== self::NEW,
-                    ['exists:kpi_category,id']
+                    [$this->categoryBelongsToPosition()]
                 ),
             ],
             'category_name' => [
