@@ -19,7 +19,7 @@
             </a>
         </div>
         <div class="col-lg-4">
-            <a id="ft-box" href="{{ route('kpi.index') }}">
+            <a id="ft-box" href="{{ route('positions.index') }}">
                 <div id="ft-icon-div">
                     <div id="ft-icon">
                         <i class="bx ri-user-settings-line"></i>

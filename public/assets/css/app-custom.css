@@ -185,3 +185,155 @@
         visibility: visible;
     }
 }
+
+/*
+ * Clickable status pills (the KPI Assigned column) - a zoom on hover to show
+ * they act, unlike the read-only pills elsewhere in the tables.
+ */
+a.tb-status,
+button.tb-status,
+form.d-inline .tb-status {
+    cursor: pointer;
+    display: inline-block;
+    transition: transform 0.2s linear;
+}
+a.tb-status:hover,
+button.tb-status:hover {
+    color: #fff;
+    transform: scale(1.15);
+}
+
+/* Editable allowed-marks list - see public/js/modules/mark-list.js */
+.mark-row {
+    gap: 6px;
+    display: flex;
+    margin-bottom: 6px;
+    align-items: center;
+}
+.mark-row .js-mark-value {
+    height: 36px;
+    font-size: 12px;
+    padding: 0 10px;
+    border-radius: 3px;
+    border: 1px solid var(--brand-border, #e9e9e9);
+}
+.js-mark-add {
+    margin-top: 4px;
+}
+
+/*
+ * KPI structure tree: category > objective > item, all on one page.
+ * Indentation and a left rule carry the nesting rather than extra chrome.
+ */
+.kpi-group-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    border-bottom: 1px dashed #00000026;
+}
+.kpi-group-head i {
+    margin-right: 6px;
+}
+.kpi-count {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    margin-left: 6px;
+    border-radius: 10px;
+    color: var(--brand-text-muted, #6e6e6e);
+    background: var(--brand-background, #eaedf7);
+}
+.kpi-objective {
+    padding-left: 14px;
+    margin-bottom: 14px;
+    border-left: 2px solid var(--brand-border, #e9e9e9);
+}
+.kpi-objective:last-child {
+    margin-bottom: 0;
+}
+.kpi-objective-head {
+    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 8px;
+    justify-content: space-between;
+}
+.kpi-objective-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--brand-text, #282828);
+}
+.kpi-objective-desc {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.kpi-item {
+    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 12px;
+    padding: 7px 10px;
+    margin-bottom: 5px;
+    border-radius: 3px;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--brand-background, #eaedf7);
+}
+.kpi-item-title {
+    font-weight: 500;
+    color: var(--brand-text, #282828);
+}
+.kpi-item-desc {
+    font-size: 11px;
+    margin-left: 8px;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.kpi-item-meta {
+    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.kpi-marks {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--brand-primary, #1896bd);
+}
+.kpi-empty {
+    font-size: 12px;
+    padding: 6px 0;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+@media (max-width: 991px) {
+    .kpi-item,
+    .kpi-objective-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+/* Inline add/edit forms in the KPI tree - see public/js/modules/inline-form.js */
+.kpi-inline-form {
+    margin: 8px 0 14px;
+    padding: 12px 14px;
+    border-radius: 4px;
+    background: var(--brand-background, #eaedf7);
+    border-left: 3px solid var(--brand-primary, #1896bd);
+}
+.kpi-inline-form .input-group {
+    margin-bottom: 8px;
+}
+.kpi-inline-form label {
+    font-size: 11px;
+}
+.kpi-inline-actions {
+    gap: 6px;
+    display: flex;
+    flex-wrap: wrap;
+}

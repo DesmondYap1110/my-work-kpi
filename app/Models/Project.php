@@ -16,51 +16,49 @@ class Project extends Model
 
     protected $table = 'project';
 
-    protected $primaryKey = 'project_id';
-
     protected $fillable = [
-        'p_Title',
-        'p_addDate',
-        'p_SDate',
-        'p_EDate',
+        'title',
+        'added_date',
+        'start_date',
+        'end_date',
         'team_id',
-        'date_assign',
-        'p_status',
+        'assigned_date',
+        'status',
         'complete_date',
     ];
 
     protected $casts = [
-        'p_addDate' => 'date',
-        'p_SDate' => 'date',
-        'p_EDate' => 'date',
-        'date_assign' => 'date',
+        'added_date' => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'assigned_date' => 'date',
         'complete_date' => 'datetime',
-        'p_status' => ProjectStatus::class,
+        'status' => ProjectStatus::class,
     ];
 
     public function team(): BelongsTo
     {
-        return $this->belongsTo(Team::class, 'team_id', 'team_id');
+        return $this->belongsTo(Team::class, 'team_id', 'id');
     }
 
     public function phases(): HasMany
     {
-        return $this->hasMany(ProjectPhase::class, 'p_ID', 'project_id');
+        return $this->hasMany(ProjectPhase::class, 'project_id', 'id');
     }
 
     public function projectKpis(): HasMany
     {
-        return $this->hasMany(ProjectKpi::class, 'project_id', 'project_id');
+        return $this->hasMany(ProjectKpi::class, 'project_id', 'id');
     }
 
     public function scopeStatus($query, ProjectStatus $status)
     {
-        return $query->where('p_status', $status);
+        return $query->where('status', $status);
     }
 
     public function scopeSpanningRange($query, $from, $to)
     {
-        return $query->where('p_SDate', '<=', $from)->where('p_EDate', '>=', $to);
+        return $query->where('start_date', '<=', $from)->where('end_date', '>=', $to);
     }
 
     /**
@@ -75,22 +73,24 @@ class Project extends Model
     public function seedKpiEntriesForCompletion(): void
     {
         DB::transaction(function () {
-            $activeStaff = $this->team->staff()->active()->with('position.kpi.objectives')->get();
+            $activeStaff = $this->team->staff()->active()->with('position.objectives.infos')->get();
 
             foreach ($activeStaff as $staff) {
-                $kpi = $staff->position?->kpi;
+                $position = $staff->position;
 
-                if (! $kpi) {
+                if (! $position || ! $position->has_kpi) {
                     continue;
                 }
 
-                foreach ($kpi->objectives as $objective) {
-                    ProjectKpi::firstOrCreate([
-                        'staff_id' => $staff->staff_id,
-                        'project_id' => $this->project_id,
-                        'kpi_id' => $kpi->kpi_id,
-                        'kojbInfo_id' => $objective->kojbInfo_id,
-                    ]);
+                foreach ($position->objectives as $objective) {
+                    foreach ($objective->infos as $item) {
+                        ProjectKpi::firstOrCreate([
+                            'staff_id' => $staff->id,
+                            'project_id' => $this->id,
+                            'position_id' => $position->id,
+                            'objective_info_id' => $item->id,
+                        ]);
+                    }
                 }
             }
         });

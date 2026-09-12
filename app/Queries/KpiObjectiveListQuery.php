@@ -11,8 +11,9 @@ class KpiObjectiveListQuery
     public function forRequest(Request $request): Builder
     {
         return KpiObjective::query()
-            ->with(['info', 'mark'])
-            ->where('kpi_ID', $request->integer('kid'))
-            ->latest('obj_id');
+            ->with('category')
+            ->withCount('infos')
+            ->where('position_id', $request->integer('kid'))
+            ->latest('id');
     }
 }

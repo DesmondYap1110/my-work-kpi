@@ -31,7 +31,7 @@ class AuthController extends Controller
 
         $staff = Auth::user();
 
-        if (! $staff->isAdmin() || ! $staff->staffstatus) {
+        if (! $staff->isAdmin() || ! $staff->is_active) {
             Auth::logout();
 
             return back()->withErrors(['email' => 'Invalid login credentials. Please try to login again.'])->onlyInput('email');
@@ -40,10 +40,10 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         UserLog::create([
-            'user_IP' => $request->ip(),
+            'ip_address' => $request->ip(),
             'access_date' => now(),
             'access_type' => AccessType::Login,
-            'staff_id' => $staff->staff_id,
+            'staff_id' => $staff->id,
         ]);
 
         return redirect()->intended(route('dashboard'));
@@ -55,10 +55,10 @@ class AuthController extends Controller
 
         if ($staff) {
             UserLog::create([
-                'user_IP' => $request->ip(),
+                'ip_address' => $request->ip(),
                 'access_date' => now(),
                 'access_type' => AccessType::Logout,
-                'staff_id' => $staff->staff_id,
+                'staff_id' => $staff->id,
             ]);
         }
 

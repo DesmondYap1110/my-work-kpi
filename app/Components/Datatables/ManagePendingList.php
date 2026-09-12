@@ -15,14 +15,14 @@ class ManagePendingList extends Datatables
             'project_title' => 'Project',
             'objective_title' => 'Objective',
             'mark' => 'Mark',
-            'createddate' => 'Date',
+            'submitted_at' => 'Date',
             'action' => 'Actions',
         ];
     }
 
     public function centeredColumns(): array
     {
-        return ['mark', 'createddate'];
+        return ['mark', 'submitted_at'];
     }
 
     public function filter(Request $request): LengthAwarePaginator
@@ -39,10 +39,10 @@ class ManagePendingList extends Datatables
         $rows = $result->getCollection()->map(function ($entry) {
             return [
                 'staff_name' => e($entry->staff->staff_name ?? '-'),
-                'project_title' => e($entry->project->p_Title ?? '-'),
-                'objective_title' => e($entry->objectiveInfo->kojbInfo_title ?? '-'),
+                'project_title' => e($entry->project->title ?? '-'),
+                'objective_title' => e($entry->objectiveInfo->title ?? '-'),
                 'mark' => $entry->mark,
-                'createddate' => $entry->createddate?->format('d M Y H:i'),
+                'submitted_at' => $entry->submitted_at?->format('d M Y H:i'),
                 'action' => $this->actionButtons($entry),
             ];
         })->all();
@@ -52,10 +52,10 @@ class ManagePendingList extends Datatables
 
     private function actionButtons($entry): string
     {
-        $approve = $this->tbForm(route('manage-pending.approve', $entry->kpiproject_id), 'POST', 'ri-check-line', 'tb-ac-btn-6', 'Approve');
+        $approve = $this->tbForm(route('manage-pending.approve', $entry->id), 'POST', 'ri-check-line', 'tb-ac-btn-6', 'Approve');
 
         $reject = $this->tbButton('ri-close-line', 'tb-ac-btn-2', 'Reject', [
-            'id' => $entry->kpiproject_id,
+            'id' => $entry->id,
             'marks' => json_encode($entry->allowedMarksExcludingCurrent()),
         ], 'js-reject-pending');
 

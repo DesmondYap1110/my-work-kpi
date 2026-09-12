@@ -27,18 +27,28 @@ App.module('inline-edit', function () {
         }
     }
 
-    function fieldControl(key, field, value) {
+    /**
+     * The array key says which COLUMN the control occupies; field.name says
+     * what it posts as. They differ whenever the column displays one thing
+     * and the form submits another - e.g. a "Position" column showing
+     * position_name while the form posts position_id.
+     */
+    function postNameFor(key, field) {
+        return field.name || key;
+    }
+
+    function fieldControl(key, field) {
+        var name = postNameFor(key, field);
         var required = field.required ? ' required' : '';
         var placeholder = field.placeholder ? ' placeholder="' + field.placeholder + '"' : '';
-        var safe = value === null || value === undefined ? '' : String(value);
 
         if (field.type === 'textarea') {
-            return '<textarea class="form-control js-inline-input" data-field="' + key + '"'
+            return '<textarea class="form-control js-inline-input" data-field="' + name + '"'
                 + placeholder + required + ' rows="2"></textarea>';
         }
 
         if (field.type === 'select') {
-            var html = '<select class="form-control js-inline-input" data-field="' + key + '"' + required + '>';
+            var html = '<select class="form-control js-inline-input" data-field="' + name + '"' + required + '>';
             html += '<option value="">' + (field.placeholder || 'Select') + '</option>';
             $.each(field.options || {}, function (optValue, label) {
                 html += '<option value="' + optValue + '">' + label + '</option>';
@@ -47,7 +57,7 @@ App.module('inline-edit', function () {
         }
 
         return '<input type="' + (field.type || 'text') + '" class="form-control js-inline-input"'
-            + ' data-field="' + key + '"' + placeholder + required + '>';
+            + ' data-field="' + name + '"' + placeholder + required + '>';
     }
 
     /**
@@ -77,7 +87,7 @@ App.module('inline-edit', function () {
     function buildRow(columns, fields, mode, values) {
         var cells = columns.map(function (key) {
             if (fields[key]) {
-                return '<td>' + fieldControl(key, fields[key], values ? values[key] : '') + '</td>';
+                return '<td>' + fieldControl(key, fields[key]) + '</td>';
             }
 
             if (key === 'action') {
@@ -90,15 +100,30 @@ App.module('inline-edit', function () {
         return $('<tr class="js-inline-row"></tr>').html(cells.join(''));
     }
 
+    /**
+     * Field definitions re-keyed by what they post as, since that is what the
+     * rendered inputs carry in data-field.
+     */
+    function byPostName(fields) {
+        var map = {};
+
+        $.each(fields, function (key, field) {
+            map[postNameFor(key, field)] = field;
+        });
+
+        return map;
+    }
+
     function collect($row, fields) {
         var data = {};
         var valid = true;
+        var defs = byPostName(fields);
 
         $row.find('.js-inline-input').each(function () {
             var key = $(this).data('field');
             var value = $(this).val();
 
-            if (fields[key] && fields[key].required && !String(value).trim()) {
+            if (defs[key] && defs[key].required && !String(value).trim()) {
                 $(this).addClass('is-invalid');
                 valid = false;
             } else {
@@ -201,7 +226,18 @@ App.module('inline-edit', function () {
             $(this).prop('disabled', true);
 
             send(url, isCreate ? 'POST' : 'PUT', data,
-                function () { table.ajax.reload(null, false); },
+                function () {
+                    // Lists whose field options depend on existing rows (e.g.
+                    // a dropdown of positions that don't have a KPI yet) set
+                    // routes.reload, because redrawing the table alone would
+                    // leave the inline row offering stale options.
+                    if (routes.reload) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    table.ajax.reload(null, false);
+                },
                 function (message) {
                     showError($row, message);
                     $row.find('.js-inline-save').prop('disabled', false);

@@ -19,7 +19,7 @@ class UpdateTeamRequest extends FormRequest
                 'required', 'string', 'max:255',
                 Rule::unique('team', 'team_name')
                     ->whereNull('deleted_at')
-                    ->ignore($this->route('team')->team_id, 'team_id'),
+                    ->ignore($this->route('team')->id, 'id'),
             ],
         ];
     }

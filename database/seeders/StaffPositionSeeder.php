@@ -9,7 +9,7 @@ class StaffPositionSeeder extends Seeder
 {
     public function run(): void
     {
-        // position_ID=1 is load-bearing: the whole admin portal gates
+        // position_id=1 is load-bearing: the whole admin portal gates
         // login on position_id === 1, matching the legacy app's behaviour.
         StaffPosition::firstOrCreate(
             ['position_name' => 'Administrator'],

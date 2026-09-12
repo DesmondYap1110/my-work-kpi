@@ -15,24 +15,22 @@ class Staff extends Authenticatable
 
     protected $table = 'staff';
 
-    protected $primaryKey = 'staff_id';
-
     protected $fillable = [
         'staff_name',
-        'staffimg',
+        'photo',
         'gender',
         'ic',
         'dob',
         'contact',
         'email',
-        'staff_address',
+        'address',
         'postcode',
         'city',
         'states',
-        'datejointeam',
-        'datejoincompany',
+        'team_joined_date',
+        'company_joined_date',
         'password',
-        'staffstatus',
+        'is_active',
         'position_id',
         'team_id',
     ];
@@ -44,35 +42,35 @@ class Staff extends Authenticatable
 
     protected $casts = [
         'password' => 'hashed',
-        'staffstatus' => 'boolean',
+        'is_active' => 'boolean',
         'dob' => 'date',
-        'datejointeam' => 'date',
-        'datejoincompany' => 'date',
+        'team_joined_date' => 'date',
+        'company_joined_date' => 'date',
     ];
 
     public function position(): BelongsTo
     {
-        return $this->belongsTo(StaffPosition::class, 'position_id', 'position_ID');
+        return $this->belongsTo(StaffPosition::class, 'position_id', 'id');
     }
 
     public function team(): BelongsTo
     {
-        return $this->belongsTo(Team::class, 'team_id', 'team_id');
+        return $this->belongsTo(Team::class, 'team_id', 'id');
     }
 
     public function projectKpis(): HasMany
     {
-        return $this->hasMany(ProjectKpi::class, 'staff_id', 'staff_id');
+        return $this->hasMany(ProjectKpi::class, 'staff_id', 'id');
     }
 
     public function userLogs(): HasMany
     {
-        return $this->hasMany(UserLog::class, 'staff_id', 'staff_id');
+        return $this->hasMany(UserLog::class, 'staff_id', 'id');
     }
 
     public function scopeActive($query)
     {
-        return $query->where('staffstatus', true);
+        return $query->where('is_active', true);
     }
 
     public function scopeExcludingAdmin($query)

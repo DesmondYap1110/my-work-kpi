@@ -22,12 +22,12 @@
 
                 <x-sidebar.ui.dropdown id="sb-kpi" icon="ri-bar-chart-2-line" label="KPI"
                                        :active="['kpi.*', 'manage-pending.*']">
-                    <x-sidebar.ui.dropdown-list route="kpi.index" label="Manage KPI" active="kpi.*" />
                     <x-sidebar.ui.dropdown-list route="manage-pending.index" label="Manage Pending" active="manage-pending.*" />
                 </x-sidebar.ui.dropdown>
 
                 <x-sidebar.ui.dropdown id="sb-settings" icon="ri-settings-3-line" label="Settings"
-                                       :active="['password.change']">
+                                       :active="['password.change', 'project-tags.*']">
+                    <x-sidebar.ui.dropdown-list route="project-tags.index" label="Project Tags" active="project-tags.*" />
                     <x-sidebar.ui.dropdown-list route="password.change" label="Change Password" />
                     <x-sidebar.ui.dropdown-list>
                         <form method="POST" action="{{ route('logout') }}">

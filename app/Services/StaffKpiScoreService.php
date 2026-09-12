@@ -21,19 +21,21 @@ class StaffKpiScoreService
      */
     public function maxMarkPerProject(Staff $staff): int
     {
-        $kpi = $staff->position?->kpi;
+        $position = $staff->position;
 
-        if (! $kpi) {
+        if (! $position || ! $position->has_kpi) {
             return 0;
         }
 
-        $objectives = $kpi->objectives()->with('mark')->get();
+        // The scored items hang off each objective and carry both the mark
+        // range and the Standard/Extra flag.
+        $items = $position->objectives()->with('infos')->get()->flatMap->infos;
 
-        $standardMax = $objectives
-            ->filter(fn ($objective) => $objective->obj_type === ObjectiveType::Standard)
-            ->sum(fn ($objective) => $objective->maxMark());
+        $standardMax = $items
+            ->filter(fn ($item) => $item->objective_type === ObjectiveType::Standard)
+            ->sum(fn ($item) => $item->maxMark());
 
-        $hasBonus = $objectives->contains(fn ($objective) => $objective->obj_type === ObjectiveType::Extra);
+        $hasBonus = $items->contains(fn ($item) => $item->objective_type === ObjectiveType::Extra);
 
         return $standardMax + ($hasBonus ? 2 : 0);
     }

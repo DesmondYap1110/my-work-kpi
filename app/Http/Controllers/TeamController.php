@@ -26,7 +26,7 @@ class TeamController extends Controller implements BreadcrumbInterfaces
 
     public function store(StoreTeamRequest $request): RedirectResponse|JsonResponse
     {
-        Team::create($request->validated() + ['team_status' => true]);
+        Team::create($request->validated() + ['is_active' => true]);
 
 
         if ($request->expectsJson()) {
@@ -50,7 +50,7 @@ class TeamController extends Controller implements BreadcrumbInterfaces
 
     public function toggleStatus(Team $team): RedirectResponse
     {
-        $team->update(['team_status' => ! $team->team_status]);
+        $team->update(['is_active' => ! $team->is_active]);
 
         return back()->with('status', 'Team status updated successfully.');
     }

@@ -16,11 +16,11 @@ class StoreProjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'p_Title' => ['required', 'string', 'max:255'],
-            'p_addDate' => ['required', 'date'],
-            'p_SDate' => ['required', 'date', 'after_or_equal:p_addDate'],
-            'p_EDate' => ['required', 'date', 'after_or_equal:p_SDate'],
-            'team_id' => ['required', 'exists:team,team_id'],
+            'title' => ['required', 'string', 'max:255'],
+            'added_date' => ['required', 'date'],
+            'start_date' => ['required', 'date', 'after_or_equal:added_date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'team_id' => ['required', 'exists:team,id'],
         ];
     }
 

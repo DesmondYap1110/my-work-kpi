@@ -2,60 +2,53 @@
 
 namespace App\Models;
 
-use App\Enums\ObjectiveType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * A named group of scored items under a position, optionally filed under a
+ * category. The items themselves - with their own marks and Standard/Extra
+ * type - are KpiObjectiveInfo rows hanging off this one.
+ */
 class KpiObjective extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $table = 'kpi_objective';
 
-    protected $primaryKey = 'obj_id';
-
     protected $fillable = [
-        'kpi_ID',
-        'kojbInfo_id',
-        'obj_type',
+        'position_id',
+        'category_id',
+        'title',
+        'description',
     ];
 
-    protected $casts = [
-        'obj_type' => ObjectiveType::class,
-    ];
-
-    public function kpi(): BelongsTo
+    public function category(): BelongsTo
     {
-        return $this->belongsTo(Kpi::class, 'kpi_ID', 'kpi_id');
+        return $this->belongsTo(KpiCategory::class, 'category_id', 'id');
     }
 
-    public function info(): BelongsTo
+    public function position(): BelongsTo
     {
-        return $this->belongsTo(KpiObjectiveInfo::class, 'kojbInfo_id', 'kojbInfo_id');
-    }
-
-    public function mark(): HasOne
-    {
-        return $this->hasOne(KpiObjectiveMark::class, 'obj_id', 'obj_id');
+        return $this->belongsTo(StaffPosition::class, 'position_id', 'id');
     }
 
     /**
-     * Maximum achievable mark for this single objective, based on the
-     * highest allowed value flagged on its mark record (2 > 1 > 0).
+     * The scored items under this objective.
+     */
+    public function infos(): HasMany
+    {
+        return $this->hasMany(KpiObjectiveInfo::class, 'objective_id', 'id');
+    }
+
+    /**
+     * Best total achievable here: the sum of each item's highest allowed mark.
      */
     public function maxMark(): int
     {
-        if (! $this->mark) {
-            return 0;
-        }
-
-        return match (true) {
-            $this->mark->objmk_2 => 2,
-            $this->mark->objmk_1 => 1,
-            default => 0,
-        };
+        return (int) $this->infos->sum(fn (KpiObjectiveInfo $info) => $info->maxMark());
     }
 }

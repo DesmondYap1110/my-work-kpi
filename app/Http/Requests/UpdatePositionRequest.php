@@ -19,7 +19,7 @@ class UpdatePositionRequest extends FormRequest
                 'required', 'string', 'max:255',
                 Rule::unique('staff_position', 'position_name')
                     ->whereNull('deleted_at')
-                    ->ignore($this->route('position')->position_ID, 'position_ID'),
+                    ->ignore($this->route('position')->id, 'id'),
             ],
             'job_scope' => ['nullable', 'string'],
         ];

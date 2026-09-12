@@ -14,23 +14,23 @@ class ProjectPhaseFile extends Model
     protected $table = 'project_phase_files';
 
     protected $fillable = [
-        'p_pID',
-        'PPfilename',
-        'PPdatetime',
-        'staff_ID',
+        'phase_id',
+        'filename',
+        'uploaded_at',
+        'staff_id',
     ];
 
     protected $casts = [
-        'PPdatetime' => 'datetime',
+        'uploaded_at' => 'datetime',
     ];
 
     public function phase(): BelongsTo
     {
-        return $this->belongsTo(ProjectPhase::class, 'p_pID', 'p_PID');
+        return $this->belongsTo(ProjectPhase::class, 'phase_id', 'id');
     }
 
     public function staff(): BelongsTo
     {
-        return $this->belongsTo(Staff::class, 'staff_ID', 'staff_id');
+        return $this->belongsTo(Staff::class, 'staff_id', 'id');
     }
 }

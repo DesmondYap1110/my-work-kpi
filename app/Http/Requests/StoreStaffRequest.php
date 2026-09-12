@@ -30,14 +30,14 @@ class StoreStaffRequest extends FormRequest
     {
         return [
             'staff_name' => ['required', 'string', 'max:255'],
-            'gender' => ['nullable', 'in:Male,Female'],
+            'gender' => ['required', 'in:Male,Female'],
             'ic' => [
-                'nullable', 'string', 'max:50',
+                'required', 'string', 'max:50',
                 Rule::unique('staff', 'ic')->whereNull('deleted_at'),
             ],
-            'dob' => ['nullable', 'date'],
+            'dob' => ['required', 'date'],
             'contact' => [
-                'nullable', 'string', 'max:50',
+                'required', 'string', 'max:50',
                 Rule::unique('staff', 'contact')->whereNull('deleted_at'),
             ],
             // Soft-deleted staff free up their email for reuse, matching
@@ -46,14 +46,14 @@ class StoreStaffRequest extends FormRequest
                 'required', 'email', 'max:255',
                 Rule::unique('staff', 'email')->whereNull('deleted_at'),
             ],
-            'staff_address' => ['nullable', 'string'],
-            'postcode' => ['nullable', 'string', 'max:20'],
-            'city' => ['nullable', 'string', 'max:100'],
-            'states' => ['nullable', 'string', 'max:100'],
-            'datejointeam' => ['nullable', 'date'],
-            'datejoincompany' => ['nullable', 'date'],
-            'position_id' => ['required', 'exists:staff_position,position_ID'],
-            'team_id' => ['required', 'exists:team,team_id'],
+            'address' => ['required', 'string'],
+            'postcode' => ['required', 'string', 'max:20'],
+            'city' => ['required', 'string', 'max:100'],
+            'states' => ['required', 'string', 'max:100'],
+            'team_joined_date' => ['required', 'date'],
+            'company_joined_date' => ['required', 'date'],
+            'position_id' => ['required', 'exists:staff_position,id'],
+            'team_id' => ['required', 'exists:team,id'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:10240'],
         ];
     }

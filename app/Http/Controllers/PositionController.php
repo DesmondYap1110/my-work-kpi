@@ -50,7 +50,7 @@ class PositionController extends Controller implements BreadcrumbInterfaces
 
     public function destroy(StaffPosition $position): RedirectResponse
     {
-        if ($position->kpistatus) {
+        if ($position->has_kpi) {
             return back()->withErrors(['position' => 'This position has a KPI template assigned. Remove the KPI first before deleting the position.']);
         }
 

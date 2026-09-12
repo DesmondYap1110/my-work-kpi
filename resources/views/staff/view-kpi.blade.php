@@ -249,20 +249,20 @@
                 <div class="col-lg-5">
                     <div id="bg-left-div">
                         <div id="bg-img-div" class="profile-user position-relative">
-                            <img src="{{ $staff->staffimg ? asset('storage/staff-photos/'.$staff->staffimg) : asset('storage/staff-photos/default.jpg') }}" alt="Profile" title="Profile">
+                            <img src="{{ $staff->photo ? asset('storage/staff-photos/'.$staff->photo) : asset('storage/staff-photos/default.jpg') }}" alt="Profile" title="Profile">
                         </div>
                         <div id="bg-info-div">
                             <p id="bg-name">{{ $staff->staff_name }}</p>
                             <p id="bg-info-p">{{ $staff->position->position_name ?? '-' }}</p>
                             <p id="bg-info-p"><i class="ri-team-line"></i>{{ $staff->team->team_name ?? '-' }}</p>
-                            <p id="bg-info-p"><i class="ri-calendar-fill"></i>{{ optional($staff->datejoincompany)->format('d M Y') }}</p>
+                            <p id="bg-info-p"><i class="ri-calendar-fill"></i>{{ optional($staff->company_joined_date)->format('d M Y') }}</p>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-7">
                     <div id="bg-btn-div" class="dropdown">
                         <a href="{{ route('staff.index') }}" id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
-                        <a href="{{ route('staff.edit', $staff->staff_id) }}" id="general-btn" class="btn1"><i class="ri-edit-2-line"></i>Edit Member</a>
+                        <a href="{{ route('staff.edit', $staff->id) }}" id="general-btn" class="btn1"><i class="ri-edit-2-line"></i>Edit Member</a>
                     </div>
                     <div id="bg-ft-div">
                         <div id="bg-ft-box">
@@ -333,7 +333,7 @@
                                 <div class="col-lg-6">
                                     <div class="input-group">
                                         <label>Join Team Date</label>
-                                        <input type="date" class="form-control" value="{{ optional($staff->datejointeam)->format('Y-m-d') }}" readonly>
+                                        <input type="date" class="form-control" value="{{ optional($staff->team_joined_date)->format('Y-m-d') }}" readonly>
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
@@ -357,7 +357,7 @@
                                 <div class="col-lg-12">
                                     <div class="input-group">
                                         <label>Address Details</label>
-                                        <input type="text" class="form-control" value="{{ $staff->staff_address }}" readonly>
+                                        <input type="text" class="form-control" value="{{ $staff->address }}" readonly>
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
@@ -397,7 +397,7 @@
                                                 <select class="form-control" name="pid">
                                                     <option value="" disabled @selected(! $selectedProjectId)>Select Project</option>
                                                     @foreach ($completedProjects as $project)
-                                                        <option value="{{ $project->project_id }}" @selected($selectedProjectId == $project->project_id)>{{ $project->p_Title }}</option>
+                                                        <option value="{{ $project->id }}" @selected($selectedProjectId == $project->id)>{{ $project->title }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -426,10 +426,10 @@
                                             </tr>
                                             @foreach ($standardEntries as $entry)
                                                 <tr>
-                                                    <td>{{ $entry->objectiveInfo->kojbInfo_title ?? '-' }}</td>
+                                                    <td>{{ $entry->objectiveInfo->title ?? '-' }}</td>
                                                     <td class="text-center">{{ $entry->mark }}</td>
                                                     <td class="text-center">
-                                                        @if (is_null($entry->createddate) && is_null($entry->status))
+                                                        @if (is_null($entry->submitted_at) && is_null($entry->status))
                                                             -
                                                         @elseif (is_null($entry->status))
                                                             <span class="tb-status" id="tb-status-3">Pending</span>
@@ -446,10 +446,10 @@
                                             </tr>
                                             @foreach ($extraEntries as $entry)
                                                 <tr>
-                                                    <td>{{ $entry->objectiveInfo->kojbInfo_title ?? '-' }}</td>
+                                                    <td>{{ $entry->objectiveInfo->title ?? '-' }}</td>
                                                     <td class="text-center">{{ $entry->mark }}</td>
                                                     <td class="text-center">
-                                                        @if (is_null($entry->createddate) && is_null($entry->status))
+                                                        @if (is_null($entry->submitted_at) && is_null($entry->status))
                                                             -
                                                         @elseif (is_null($entry->status))
                                                             <span class="tb-status" id="tb-status-3">Pending</span>

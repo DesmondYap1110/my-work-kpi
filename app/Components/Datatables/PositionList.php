@@ -14,7 +14,7 @@ class PositionList extends Datatables
         return [
             'position_name' => 'Position Name',
             'job_scope' => 'Job Scope',
-            'kpistatus' => 'KPI Assigned',
+            'has_kpi' => 'KPI Assigned',
             'action' => 'Actions',
         ];
     }
@@ -37,7 +37,7 @@ class PositionList extends Datatables
 
     public function centeredColumns(): array
     {
-        return ['kpistatus'];
+        return ['has_kpi'];
     }
 
     public function filter(Request $request): LengthAwarePaginator
@@ -51,9 +51,7 @@ class PositionList extends Datatables
             return [
                 'position_name' => $this->nameLink($position),
                 'job_scope' => e(\Illuminate\Support\Str::limit($position->job_scope, 80)),
-                'kpistatus' => $position->kpistatus
-                    ? '<span class="tb-status" id="tb-status-1">Yes</span>'
-                    : '<span class="tb-status" id="tb-status-2">No</span>',
+                'has_kpi' => $this->kpiStatusAction($position),
                 'action' => $this->actionButtons($position),
                 '_inline' => [
                     'position_name' => $position->position_name,
@@ -76,20 +74,50 @@ class PositionList extends Datatables
         }
 
         return $this->tbTextLink(
-            route('staff.index', ['pid' => $position->position_ID]),
+            route('staff.index', ['pid' => $position->id]),
             $position->position_name,
             'View members'
         );
     }
 
+    /**
+     * The KPI Assigned cell is the way in to a position's objectives:
+     *
+     *   assigned     -> link straight to the objectives page
+     *   not assigned -> one click assigns the KPI and lands on that same page
+     *
+     * Posting rather than linking for the unassigned case, because it creates
+     * a record. KpiController::store redirects on to the objectives page.
+     */
+    private function kpiStatusAction($position): string
+    {
+        // Administrator is the portal's access gate, not a reviewed job -
+        // there is nothing to assign, so the cell offers no action.
+        if ($position->isAdministrator()) {
+            return '<span class="kpi-empty">n/a</span>';
+        }
+
+        if ($position->has_kpi) {
+            return '<a href="'.route('kpi.objectives.index', $position->id).'"'
+                .' class="tb-status" id="tb-status-1" title="Manage objectives">Yes</a>';
+        }
+
+        return '<form action="'.route('kpi.store').'" method="POST" class="d-inline">'
+            .csrf_field()
+            .'<input type="hidden" name="position_id" value="'.$position->id.'">'
+            .'<button type="submit" class="tb-status" id="tb-status-2" style="border:none;"'
+            .' title="Assign a KPI and add objectives">No</button>'
+            .'</form>';
+    }
+
     private function actionButtons($position): string
     {
         $editButton = $this->tbButton('ri-edit-2-line', 'tb-ac-btn-1', 'Edit', [
-            'id' => $position->position_ID,
+            'id' => $position->id,
             'name' => $position->position_name,
             'scope' => $position->job_scope,
         ], 'js-inline-editable');
 
-        return $editButton.' '.$this->tbDeleteForm(route('positions.destroy', $position->position_ID));
+        return $editButton.' '.$this->tbDeleteForm(route('positions.destroy', $position->id));
     }
 }

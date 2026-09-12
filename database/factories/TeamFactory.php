@@ -13,7 +13,7 @@ class TeamFactory extends Factory
     {
         return [
             'team_name' => fake()->unique()->company(),
-            'team_status' => true,
+            'is_active' => true,
         ];
     }
 }

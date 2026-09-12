@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreKpiRequest;
-use App\Http\Requests\UpdateKpiRequest;
 use App\Interfaces\BreadcrumbInterfaces;
-use App\Models\Kpi;
 use App\Models\StaffPosition;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
 
+/**
+ * A "KPI" is a position with objectives attached - there is no KPI record of
+ * its own. Assigning one flips the position's has_kpi; unassigning clears
+ * it and removes the objectives.
+ */
 class KpiController extends Controller implements BreadcrumbInterfaces
 {
     public function getBreadcrumbs(): array
@@ -20,34 +23,35 @@ class KpiController extends Controller implements BreadcrumbInterfaces
         ];
     }
 
-    public function index(): View
+
+    public function store(StoreKpiRequest $request): RedirectResponse|JsonResponse
     {
-        return view('kpi.index', [
-            // Only positions without a KPI template yet can receive a new one.
-            'availablePositions' => StaffPosition::withoutKpi()->orderBy('position_name')->get(),
-        ]);
+        $position = StaffPosition::findOrFail($request->integer('position_id'));
+
+        // Guarded here as well as in the UI: the Administrator position is
+        // the access gate, not a reviewed job.
+        if ($position->isAdministrator()) {
+            return back()->withErrors(['position_id' => 'The Administrator position is not assessed.']);
+        }
+
+        $position->update(['has_kpi' => true]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'ok']);
+        }
+
+        // A KPI with no objectives is useless, so assigning one drops the
+        // user straight into adding them.
+        return redirect()
+            ->route('kpi.objectives.index', $position->id)
+            ->with('status', 'KPI assigned. Add its objectives below.');
     }
 
-    public function store(StoreKpiRequest $request): RedirectResponse
+    public function destroy(StaffPosition $position): RedirectResponse
     {
-        $kpi = Kpi::create($request->validated());
-        $kpi->position()->update(['kpistatus' => true]);
+        $position->objectives()->delete();
+        $position->update(['has_kpi' => false]);
 
-        return back()->with('status', 'KPI template added successfully.');
-    }
-
-    public function update(UpdateKpiRequest $request, Kpi $kpi): RedirectResponse
-    {
-        $kpi->update($request->validated());
-
-        return back()->with('status', 'KPI template updated successfully.');
-    }
-
-    public function destroy(Kpi $kpi): RedirectResponse
-    {
-        $kpi->position()->update(['kpistatus' => false]);
-        $kpi->delete();
-
-        return back()->with('status', 'KPI template deleted successfully.');
+        return back()->with('status', 'KPI removed from this position.');
     }
 }

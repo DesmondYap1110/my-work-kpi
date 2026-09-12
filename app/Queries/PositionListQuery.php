@@ -9,6 +9,6 @@ class PositionListQuery
 {
     public function build(): Builder
     {
-        return StaffPosition::query()->latest('position_ID');
+        return StaffPosition::query()->latest('id');
     }
 }

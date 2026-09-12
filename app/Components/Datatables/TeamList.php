@@ -14,7 +14,7 @@ class TeamList extends Datatables
         return [
             'team_name' => 'Team Name',
             'staff_count' => 'Active Members',
-            'team_status' => 'Status',
+            'is_active' => 'Status',
             'action' => 'Actions',
         ];
     }
@@ -36,7 +36,7 @@ class TeamList extends Datatables
 
     public function centeredColumns(): array
     {
-        return ['staff_count', 'team_status'];
+        return ['staff_count', 'is_active'];
     }
 
     public function filter(Request $request): LengthAwarePaginator
@@ -50,7 +50,7 @@ class TeamList extends Datatables
             return [
                 'team_name' => $this->nameLink($team),
                 'staff_count' => $team->staff_count,
-                'team_status' => $this->tbStatusToggle(route('teams.toggle-status', $team->team_id), $team->team_status),
+                'is_active' => $this->tbStatusToggle(route('teams.toggle-status', $team->id), $team->is_active),
                 'action' => $this->actionButtons($team),
                 '_inline' => ['team_name' => $team->team_name],
             ];
@@ -70,7 +70,7 @@ class TeamList extends Datatables
         }
 
         return $this->tbTextLink(
-            route('staff.index', ['teamid' => $team->team_id]),
+            route('staff.index', ['teamid' => $team->id]),
             $team->team_name,
             'View members'
         );
@@ -79,10 +79,10 @@ class TeamList extends Datatables
     private function actionButtons($team): string
     {
         $editButton = $this->tbButton('ri-edit-2-line', 'tb-ac-btn-1', 'Edit', [
-            'id' => $team->team_id,
+            'id' => $team->id,
             'name' => $team->team_name,
         ], 'js-inline-editable');
 
-        return $editButton.' '.$this->tbDeleteForm(route('teams.destroy', $team->team_id));
+        return $editButton.' '.$this->tbDeleteForm(route('teams.destroy', $team->id));
     }
 }

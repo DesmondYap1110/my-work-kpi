@@ -15,70 +15,58 @@ class ProjectKpi extends Model
 
     protected $table = 'project_kpi';
 
-    protected $primaryKey = 'kpiproject_id';
-
     protected $fillable = [
         'staff_id',
         'project_id',
-        'kpi_id',
-        'kojbInfo_id',
+        'position_id',
+        'objective_info_id',
         'mark',
         'status',
-        'createddate',
+        'submitted_at',
     ];
 
     protected $casts = [
         'status' => ProjectKpiStatus::class,
-        'createddate' => 'datetime',
+        'submitted_at' => 'datetime',
     ];
 
     public function staff(): BelongsTo
     {
-        return $this->belongsTo(Staff::class, 'staff_id', 'staff_id');
+        return $this->belongsTo(Staff::class, 'staff_id', 'id');
     }
 
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class, 'project_id', 'project_id');
+        return $this->belongsTo(Project::class, 'project_id', 'id');
     }
 
-    public function kpi(): BelongsTo
+    public function position(): BelongsTo
     {
-        return $this->belongsTo(Kpi::class, 'kpi_id', 'kpi_id');
+        return $this->belongsTo(StaffPosition::class, 'position_id', 'id');
     }
 
     public function objectiveInfo(): BelongsTo
     {
-        return $this->belongsTo(KpiObjectiveInfo::class, 'kojbInfo_id', 'kojbInfo_id');
+        return $this->belongsTo(KpiObjectiveInfo::class, 'objective_info_id', 'id');
     }
 
     public function scopePending($query)
     {
-        return $query->whereNull('status')->whereNotNull('createddate');
+        return $query->whereNull('status')->whereNotNull('submitted_at');
     }
 
     /**
-     * The KPI objective (with its legal marks) that this entry's
-     * kojbInfo_id resolves to for this entry's KPI - project_kpi only
-     * stores the catalog id, not a direct FK to kpi_objective.
-     */
-    public function objective(): ?KpiObjective
-    {
-        return KpiObjective::where('kpi_ID', $this->kpi_id)
-            ->where('kojbInfo_id', $this->kojbInfo_id)
-            ->with('mark')
-            ->first();
-    }
-
-    /**
-     * Marks legally allowed for this entry's objective, excluding the mark
+     * Marks legally allowed for this entry's scored item, excluding the mark
      * currently submitted - used to populate the reject-with-override UI.
+     *
+     * The allowed values live on the item itself now, so this no longer has
+     * to walk back up to the objective to find them.
      *
      * @return array<int, int>
      */
     public function allowedMarksExcludingCurrent(): array
     {
-        $marks = $this->objective()?->mark?->allowedMarks() ?? [];
+        $marks = $this->objectiveInfo?->allowedMarks() ?? [];
 
         return array_values(array_diff($marks, [$this->mark]));
     }

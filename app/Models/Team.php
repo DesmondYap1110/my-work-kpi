@@ -13,30 +13,28 @@ class Team extends Model
 
     protected $table = 'team';
 
-    protected $primaryKey = 'team_id';
-
     protected $fillable = [
         'team_name',
-        'team_status',
+        'is_active',
     ];
 
     protected $casts = [
-        'team_status' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public function staff(): HasMany
     {
-        return $this->hasMany(Staff::class, 'team_id', 'team_id');
+        return $this->hasMany(Staff::class, 'team_id', 'id');
     }
 
     public function projects(): HasMany
     {
-        return $this->hasMany(Project::class, 'team_id', 'team_id');
+        return $this->hasMany(Project::class, 'team_id', 'id');
     }
 
     public function scopeActive($query)
     {
-        return $query->where('team_status', true);
+        return $query->where('is_active', true);
     }
 
     public function hasActiveStaff(): bool

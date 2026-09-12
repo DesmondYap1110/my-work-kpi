@@ -17,37 +17,41 @@ class ProjectPhase extends Model
 
     protected $table = 'project_phase';
 
-    protected $primaryKey = 'p_PID';
-
     protected $fillable = [
-        'p_ID',
-        'p_PTitle',
-        'p_Type',
-        'p_SDate',
-        'p_DDate',
-        'p_Remark',
-        'p_Invoice',
-        'p_Status',
-        'p_ppstatus',
-        'p_SubmitDate',
+        'project_id',
+        'title',
+        'type',
+        'tag_id',
+        'start_date',
+        'due_date',
+        'remark_file',
+        'invoice_file',
+        'approval_status',
+        'progress_status',
+        'submitted_date',
     ];
 
     protected $casts = [
-        'p_SDate' => 'date',
-        'p_DDate' => 'date',
-        'p_SubmitDate' => 'datetime',
-        'p_Type' => PhaseType::class,
-        'p_Status' => PhaseApprovalStatus::class,
-        'p_ppstatus' => PhaseProgressStatus::class,
+        'start_date' => 'date',
+        'due_date' => 'date',
+        'submitted_date' => 'datetime',
+        'type' => PhaseType::class,
+        'approval_status' => PhaseApprovalStatus::class,
+        'progress_status' => PhaseProgressStatus::class,
     ];
+
+    public function tag(): BelongsTo
+    {
+        return $this->belongsTo(ProjectTag::class, 'tag_id', 'id');
+    }
 
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class, 'p_ID', 'project_id');
+        return $this->belongsTo(Project::class, 'project_id', 'id');
     }
 
     public function files(): HasMany
     {
-        return $this->hasMany(ProjectPhaseFile::class, 'p_pID', 'p_PID');
+        return $this->hasMany(ProjectPhaseFile::class, 'phase_id', 'id');
     }
 }

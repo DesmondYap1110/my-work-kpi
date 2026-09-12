@@ -19,7 +19,7 @@ class EnsureIsAdminPosition
     {
         $staff = Auth::user();
 
-        if (! $staff || ! $staff->isAdmin() || ! $staff->staffstatus) {
+        if (! $staff || ! $staff->isAdmin() || ! $staff->is_active) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

@@ -48,8 +48,8 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
     public function store(StoreProjectRequest $request): RedirectResponse
     {
         Project::create($request->validated() + [
-            'date_assign' => now()->toDateString(),
-            'p_status' => ProjectStatus::Active,
+            'assigned_date' => now()->toDateString(),
+            'status' => ProjectStatus::Active,
         ]);
 
         return redirect()->route('projects.index')->with('status', 'Project added successfully.');
@@ -67,14 +67,14 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
         // The "mark complete" checkbox is only offered while the project
         // isn't already Completed, and only ever moves it forward to
         // Completed — never used to write any other status.
-        if ($request->boolean('mark_complete') && $project->p_status !== ProjectStatus::Completed) {
-            $data['p_status'] = ProjectStatus::Completed;
+        if ($request->boolean('mark_complete') && $project->status !== ProjectStatus::Completed) {
+            $data['status'] = ProjectStatus::Completed;
             $data['complete_date'] = now();
         }
 
         $project->update($data);
 
-        if ($project->p_status === ProjectStatus::Completed) {
+        if ($project->status === ProjectStatus::Completed) {
             $project->seedKpiEntriesForCompletion();
         }
 
@@ -83,18 +83,18 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
 
     public function cancel(Project $project): RedirectResponse
     {
-        if (! in_array($project->p_status, [ProjectStatus::Active, ProjectStatus::InProgress], true)) {
+        if (! in_array($project->status, [ProjectStatus::Active, ProjectStatus::InProgress], true)) {
             return back()->withErrors(['project' => 'Only active or in-progress projects can be cancelled.']);
         }
 
-        $project->update(['p_status' => ProjectStatus::Cancelled]);
+        $project->update(['status' => ProjectStatus::Cancelled]);
 
         return back()->with('status', 'Project cancelled.');
     }
 
     public function destroy(Project $project): RedirectResponse
     {
-        if ($project->p_status !== ProjectStatus::Active) {
+        if ($project->status !== ProjectStatus::Active) {
             return back()->withErrors(['project' => 'Only active projects can be deleted.']);
         }
 

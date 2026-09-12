@@ -18,6 +18,9 @@
 <script src="{{ asset('js/modules/image-preview.js') }}"></script>
 <script src="{{ asset('js/modules/unique-check.js') }}"></script>
 <script src="{{ asset('js/modules/inline-edit.js') }}"></script>
+<script src="{{ asset('js/modules/mark-list.js') }}"></script>
+<script src="{{ asset('js/modules/select-or-new.js') }}"></script>
+<script src="{{ asset('js/modules/inline-form.js') }}"></script>
 <script>window.datatablesEndpoint = @json(route('datatables.listing'));</script>
 <script src="{{ asset('js/modules/datatables.js') }}"></script>
 

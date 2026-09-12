@@ -16,6 +16,8 @@ return [
         'ProjectPhaseList',
         'KpiList',
         'KpiObjectiveList',
+        'KpiObjectiveItemList',
         'ManagePendingList',
+        'ProjectTagList',
     ],
 ];

@@ -26,9 +26,9 @@ class AdminStaffSeeder extends Seeder
             'staff_name' => 'System Administrator',
             'email' => $email,
             'password' => Hash::make($password),
-            'staffstatus' => true,
-            'position_id' => $adminPosition->position_ID,
-            'team_id' => $team->team_id,
+            'is_active' => true,
+            'position_id' => $adminPosition->id,
+            'team_id' => $team->id,
         ]);
 
         if (! env('ADMIN_PASSWORD')) {

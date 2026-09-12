@@ -66,8 +66,8 @@ class StaffController extends Controller implements BreadcrumbInterfaces
     public function store(StoreStaffRequest $request): RedirectResponse
     {
         $data = $request->safe()->except('photo');
-        $data['staffimg'] = $this->storePhoto($request) ?? self::DEFAULT_PHOTO;
-        $data['staffstatus'] = true;
+        $data['photo'] = $this->storePhoto($request) ?? self::DEFAULT_PHOTO;
+        $data['is_active'] = true;
         // Real password is set by the staff member via the emailed link
         // below; this placeholder is never shown or usable as-is.
         $data['password'] = Hash::make(Str::random(40));
@@ -91,15 +91,15 @@ class StaffController extends Controller implements BreadcrumbInterfaces
 
     public function update(UpdateStaffRequest $request, Staff $staff): RedirectResponse
     {
-        $data = $request->safe()->except(['photo', 'staffstatus']);
-        $data['staffstatus'] = $request->boolean('staffstatus');
+        $data = $request->safe()->except(['photo', 'is_active']);
+        $data['is_active'] = $request->boolean('is_active');
 
         if ($photo = $this->storePhoto($request)) {
-            $this->deletePhoto($staff->staffimg);
-            $data['staffimg'] = $photo;
+            $this->deletePhoto($staff->photo);
+            $data['photo'] = $photo;
         } elseif ($request->boolean('remove_photo')) {
-            $this->deletePhoto($staff->staffimg);
-            $data['staffimg'] = self::DEFAULT_PHOTO;
+            $this->deletePhoto($staff->photo);
+            $data['photo'] = self::DEFAULT_PHOTO;
         }
 
         $staff->update($data);
@@ -109,7 +109,7 @@ class StaffController extends Controller implements BreadcrumbInterfaces
 
     public function toggleStatus(Staff $staff): RedirectResponse
     {
-        $staff->update(['staffstatus' => ! $staff->staffstatus]);
+        $staff->update(['is_active' => ! $staff->is_active]);
 
         return back()->with('status', 'Member status updated successfully.');
     }
@@ -150,7 +150,7 @@ class StaffController extends Controller implements BreadcrumbInterfaces
 
         $taken = Staff::withoutTrashed()
             ->where($validated['field'], $validated['value'])
-            ->when($validated['ignore'] ?? null, fn ($query, $id) => $query->where('staff_id', '!=', $id))
+            ->when($validated['ignore'] ?? null, fn ($query, $id) => $query->where('id', '!=', $id))
             ->exists();
 
         return response()->json(['taken' => $taken]);
@@ -158,23 +158,14 @@ class StaffController extends Controller implements BreadcrumbInterfaces
 
     public function viewKpi(Request $request, Staff $staff, StaffKpiScoreService $scoreService): View
     {
-        $staff->load(['position.kpi.objectives.info', 'position.kpi.objectives.mark', 'team']);
-
-        // project_kpi only references the objective *catalog* row
-        // (kojbInfo_id), so recovering each entry's Standard/Extra type
-        // means looking it up via the staff's own KPI objectives.
-        $objectiveTypeByInfoId = $staff->position?->kpi
-            ?->objectives
-            ->keyBy('kojbInfo_id')
-            ->map(fn ($objective) => $objective->obj_type)
-            ?? collect();
+        $staff->load(['position.objectives.infos', 'team']);
 
         $completedProjects = $scoreService->completedTeamProjects($staff);
         $selectedProjectId = $request->integer('pid') ?: null;
 
         $entries = $staff->projectKpis()
             ->with(['project', 'objectiveInfo'])
-            ->whereIn('project_id', $completedProjects->pluck('project_id'))
+            ->whereIn('project_id', $completedProjects->pluck('id'))
             ->when($selectedProjectId, fn ($q) => $q->where('project_id', $selectedProjectId))
             ->get();
 
@@ -182,8 +173,10 @@ class StaffController extends Controller implements BreadcrumbInterfaces
             'staff' => $staff,
             'completedProjects' => $completedProjects,
             'selectedProjectId' => $selectedProjectId,
-            'standardEntries' => $entries->filter(fn ($entry) => $objectiveTypeByInfoId->get($entry->kojbInfo_id) === ObjectiveType::Standard),
-            'extraEntries' => $entries->filter(fn ($entry) => $objectiveTypeByInfoId->get($entry->kojbInfo_id) === ObjectiveType::Extra),
+            // The Standard/Extra flag lives on the scored item itself now, so
+            // each entry carries its own type through objectiveInfo.
+            'standardEntries' => $entries->filter(fn ($entry) => $entry->objectiveInfo?->objective_type === ObjectiveType::Standard),
+            'extraEntries' => $entries->filter(fn ($entry) => $entry->objectiveInfo?->objective_type === ObjectiveType::Extra),
             'overallScore' => $scoreService->totalScore($staff),
             'projectScore' => $selectedProjectId ? $scoreService->totalScore($staff, $selectedProjectId) : null,
         ]);

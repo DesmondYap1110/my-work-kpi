@@ -52,10 +52,10 @@ class ProjectPhaseController extends Controller implements BreadcrumbInterfaces
      */
     public function attachments(ProjectPhase $projectPhase): \Illuminate\Http\JsonResponse
     {
-        $files = $projectPhase->files()->latest('PPdatetime')->get()->map(fn ($file) => [
-            'name' => $file->PPfilename,
-            'url' => Storage::disk('public')->url('project-phase-files/'.$file->PPfilename),
-            'uploaded_at' => $file->PPdatetime->format('d M Y H:i'),
+        $files = $projectPhase->files()->latest('uploaded_at')->get()->map(fn ($file) => [
+            'name' => $file->filename,
+            'url' => Storage::disk('public')->url('project-phase-files/'.$file->filename),
+            'uploaded_at' => $file->uploaded_at->format('d M Y H:i'),
         ]);
 
         return response()->json(['files' => $files]);
@@ -70,27 +70,27 @@ class ProjectPhaseController extends Controller implements BreadcrumbInterfaces
 
     public function store(StoreProjectPhaseRequest $request): RedirectResponse
     {
-        $project = Project::findOrFail($request->integer('p_ID'));
+        $project = Project::findOrFail($request->integer('project_id'));
 
-        $data = $request->safe()->except(['p_Remark', 'p_Invoice']);
-        $data['p_Status'] = PhaseApprovalStatus::NoSubmission;
+        $data = $request->safe()->except(['remark_file', 'invoice_file']);
+        $data['approval_status'] = PhaseApprovalStatus::NoSubmission;
         // No invoice yet => On-Hold; an invoice at creation moves it straight to Progress.
-        $data['p_ppstatus'] = $request->hasFile('p_Invoice') ? PhaseProgressStatus::Progress : PhaseProgressStatus::OnHold;
+        $data['progress_status'] = $request->hasFile('invoice_file') ? PhaseProgressStatus::Progress : PhaseProgressStatus::OnHold;
 
-        if ($remark = $this->storeFile($request, 'p_Remark')) {
-            $data['p_Remark'] = $remark;
+        if ($remark = $this->storeFile($request, 'remark_file')) {
+            $data['remark_file'] = $remark;
         }
-        if ($invoice = $this->storeFile($request, 'p_Invoice')) {
-            $data['p_Invoice'] = $invoice;
+        if ($invoice = $this->storeFile($request, 'invoice_file')) {
+            $data['invoice_file'] = $invoice;
         }
 
         $phase = ProjectPhase::create($data);
 
         $this->logAttachments($phase, $request);
 
-        $project->update(['p_status' => ProjectStatus::InProgress]);
+        $project->update(['status' => ProjectStatus::InProgress]);
 
-        return redirect()->route('project-phases.index', ['project_id' => $project->project_id])
+        return redirect()->route('project-phases.index', ['project_id' => $project->id])
             ->with('status', 'Project phase added successfully.');
     }
 
@@ -101,37 +101,37 @@ class ProjectPhaseController extends Controller implements BreadcrumbInterfaces
 
     public function update(UpdateProjectPhaseRequest $request, ProjectPhase $projectPhase): RedirectResponse
     {
-        $data = $request->safe()->except(['p_Remark', 'p_Invoice']);
+        $data = $request->safe()->except(['remark_file', 'invoice_file']);
 
-        if ($invoice = $this->storeFile($request, 'p_Invoice')) {
-            $data['p_Invoice'] = $invoice;
-            $data['p_ppstatus'] = PhaseProgressStatus::Progress;
+        if ($invoice = $this->storeFile($request, 'invoice_file')) {
+            $data['invoice_file'] = $invoice;
+            $data['progress_status'] = PhaseProgressStatus::Progress;
             // Fixes the legacy bug where adding an invoice on edit silently
             // failed to push the parent project back to In-Progress.
-            $projectPhase->project->update(['p_status' => ProjectStatus::InProgress]);
+            $projectPhase->project->update(['status' => ProjectStatus::InProgress]);
         }
 
-        if ($remark = $this->storeFile($request, 'p_Remark')) {
-            $data['p_Remark'] = $remark;
+        if ($remark = $this->storeFile($request, 'remark_file')) {
+            $data['remark_file'] = $remark;
         }
 
         $projectPhase->update($data);
 
         $this->logAttachments($projectPhase, $request);
 
-        return redirect()->route('project-phases.index', ['project_id' => $projectPhase->p_ID])
+        return redirect()->route('project-phases.index', ['project_id' => $projectPhase->project_id])
             ->with('status', 'Project phase updated successfully.');
     }
 
     public function approve(ProjectPhase $projectPhase): RedirectResponse
     {
-        if ($projectPhase->p_Status === PhaseApprovalStatus::Approved) {
+        if ($projectPhase->approval_status === PhaseApprovalStatus::Approved) {
             return back()->withErrors(['phase' => 'This phase has already been approved.']);
         }
 
         $projectPhase->update([
-            'p_Status' => PhaseApprovalStatus::Approved,
-            'p_ppstatus' => PhaseProgressStatus::Complete,
+            'approval_status' => PhaseApprovalStatus::Approved,
+            'progress_status' => PhaseProgressStatus::Complete,
         ]);
 
         return back()->with('status', 'Project phase approved.');
@@ -139,13 +139,13 @@ class ProjectPhaseController extends Controller implements BreadcrumbInterfaces
 
     public function reject(ProjectPhase $projectPhase): RedirectResponse
     {
-        if ($projectPhase->p_Status === PhaseApprovalStatus::Rejected) {
+        if ($projectPhase->approval_status === PhaseApprovalStatus::Rejected) {
             return back()->withErrors(['phase' => 'This phase has already been rejected.']);
         }
 
         $projectPhase->update([
-            'p_Status' => PhaseApprovalStatus::Rejected,
-            'p_ppstatus' => PhaseProgressStatus::Complete,
+            'approval_status' => PhaseApprovalStatus::Rejected,
+            'progress_status' => PhaseProgressStatus::Complete,
         ]);
 
         return back()->with('status', 'Project phase rejected.');
@@ -157,7 +157,7 @@ class ProjectPhaseController extends Controller implements BreadcrumbInterfaces
         $projectPhase->delete();
 
         if (! $project->phases()->exists()) {
-            $project->update(['p_status' => ProjectStatus::Active]);
+            $project->update(['status' => ProjectStatus::Active]);
         }
 
         return back()->with('status', 'Project phase deleted successfully.');
@@ -179,16 +179,16 @@ class ProjectPhaseController extends Controller implements BreadcrumbInterfaces
 
     private function logAttachments(ProjectPhase $phase, Request $request): void
     {
-        foreach (['p_Remark', 'p_Invoice'] as $field) {
+        foreach (['remark_file', 'invoice_file'] as $field) {
             if (! $request->hasFile($field)) {
                 continue;
             }
 
             ProjectPhaseFile::create([
-                'p_pID' => $phase->p_PID,
-                'PPfilename' => $phase->{$field},
-                'PPdatetime' => now(),
-                'staff_ID' => Auth::id(),
+                'phase_id' => $phase->id,
+                'filename' => $phase->{$field},
+                'uploaded_at' => now(),
+                'staff_id' => Auth::id(),
             ]);
         }
     }

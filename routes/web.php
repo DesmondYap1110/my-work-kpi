@@ -7,11 +7,14 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DatatablesController;
 use App\Http\Controllers\KpiController;
+use App\Http\Controllers\KpiCategoryController;
 use App\Http\Controllers\KpiObjectiveController;
+use App\Http\Controllers\KpiObjectiveItemController;
 use App\Http\Controllers\ManagePendingController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectPhaseController;
+use App\Http\Controllers\ProjectTagController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\TeamController;
 use Illuminate\Support\Facades\Route;
@@ -63,8 +66,24 @@ Route::middleware(['auth', 'admin.position'])->group(function () {
     Route::post('/project-phases/{project_phase}/reject', [ProjectPhaseController::class, 'reject'])->name('project-phases.reject');
     Route::get('/project-phases/{project_phase}/attachments', [ProjectPhaseController::class, 'attachments'])->name('project-phases.attachments');
 
-    Route::resource('kpi', KpiController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::resource('kpi', KpiController::class)->parameters(['kpi' => 'position'])->only(['store', 'destroy']);
+    // Keyed by position: a KPI is just a position's objectives.
     Route::resource('kpi.objectives', KpiObjectiveController::class)
+        ->parameters(['kpi' => 'position'])
+        ->only(['index', 'store', 'update', 'destroy']);
+
+    // Categories are shared across positions.
+    Route::resource('kpi-categories', KpiCategoryController::class)
+        ->parameters(['kpi-categories' => 'category'])
+        ->only(['store', 'update', 'destroy']);
+
+    // The scored items under one objective.
+    Route::resource('kpi.objectives.items', KpiObjectiveItemController::class)
+        ->parameters(['kpi' => 'position', 'items' => 'item'])
+        ->only(['index', 'store', 'update', 'destroy']);
+
+    // Settings: how project work is weighted when scoring.
+    Route::resource('project-tags', ProjectTagController::class)
         ->only(['index', 'store', 'update', 'destroy']);
 
     Route::get('/manage-pending', [ManagePendingController::class, 'index'])->name('manage-pending.index');

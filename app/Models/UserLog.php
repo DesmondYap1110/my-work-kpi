@@ -13,7 +13,7 @@ class UserLog extends Model
     protected $table = 'user_logs';
 
     protected $fillable = [
-        'user_IP',
+        'ip_address',
         'access_date',
         'access_type',
         'staff_id',
@@ -26,6 +26,6 @@ class UserLog extends Model
 
     public function staff(): BelongsTo
     {
-        return $this->belongsTo(Staff::class, 'staff_id', 'staff_id');
+        return $this->belongsTo(Staff::class, 'staff_id', 'id');
     }
 }

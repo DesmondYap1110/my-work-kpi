@@ -12,6 +12,6 @@ class ManagePendingListQuery
         return ProjectKpi::query()
             ->with(['staff', 'project', 'objectiveInfo'])
             ->pending()
-            ->latest('createddate');
+            ->latest('submitted_at');
     }
 }
