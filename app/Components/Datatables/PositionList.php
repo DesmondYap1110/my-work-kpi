@@ -119,14 +119,23 @@ class PositionList extends Datatables
 
     private function actionButtons($position): string
     {
-        // Administrator is the portal's access gate. Renaming or deleting it
-        // would lock people out, so the row is read-only - the controller
-        // refuses the same two actions, this only stops them being offered.
-        if ($position->isAdministrator()) {
-            $reason = 'The Administrator position is built in and cannot be changed.';
+        // Opens the member form with this position already chosen, so adding
+        // to a position never means picking it again from the dropdown.
+        $addMember = Route::has('staff.create')
+            ? $this->tbLink(
+                route('staff.create', ['pid' => $position->id]),
+                'ri-user-add-line',
+                'tb-ac-btn-6',
+                'Add a member to this position'
+            ).' '
+            : '';
 
-            return $this->tbDisabledButton('ri-edit-2-line', $reason).' '
-                .$this->tbDisabledButton('ri-delete-bin-6-line', $reason);
+        // Administrator is the portal's access gate. Renaming or deleting it
+        // would lock people out, so it is not offered at all - the controller
+        // refuses both as well. Adding an administrator is still allowed: that
+        // creates a member, it does not change the position.
+        if ($position->isAdministrator()) {
+            return $addMember;
         }
 
         $editButton = $this->tbButton('ri-edit-2-line', 'tb-ac-btn-1', 'Edit', [
@@ -135,6 +144,6 @@ class PositionList extends Datatables
             'scope' => $position->job_scope,
         ], 'js-inline-editable');
 
-        return $editButton.' '.$this->tbDeleteForm(route('positions.destroy', $position->id));
+        return $addMember.$editButton.' '.$this->tbDeleteForm(route('positions.destroy', $position->id));
     }
 }

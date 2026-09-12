@@ -39,11 +39,13 @@ class StaffController extends Controller implements BreadcrumbInterfaces
 
         if ($current === null) {
             return [
+                ['name' => 'Human Resource', 'route' => '', 'active' => false],
                 ['name' => 'Member', 'route' => '', 'active' => true],
             ];
         }
 
         return [
+            ['name' => 'Human Resource', 'route' => '', 'active' => false],
             ['name' => 'Member', 'route' => 'staff.index', 'active' => false],
             ['name' => $current, 'route' => '', 'active' => true],
         ];

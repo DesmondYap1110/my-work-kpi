@@ -5,14 +5,14 @@
 <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet">
 <link href="{{ asset('assets/css/custom.min.css') }}" rel="stylesheet">
 
-<link href="{{ asset('assets/css/theme-dashboard.css') }}" rel="stylesheet">
-<link href="{{ asset('assets/css/theme-colors.css') }}" rel="stylesheet">
+<link href="{{ \App\Support\Asset::url('assets/css/theme-dashboard.css') }}" rel="stylesheet">
+<link href="{{ \App\Support\Asset::url('assets/css/theme-colors.css') }}" rel="stylesheet">
 
 <link href="{{ asset('assets/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
 <link href="{{ asset('assets/css/responsive.bootstrap.min.css') }}" rel="stylesheet">
 <link href="{{ asset('assets/css/buttons.dataTables.min.css') }}" rel="stylesheet">
 
-<link href="{{ asset('assets/css/app-custom.css') }}" rel="stylesheet">
+<link href="{{ \App\Support\Asset::url('assets/css/app-custom.css') }}" rel="stylesheet">
 
 {{-- Branding tokens (config/branding.php) - last, so they win. --}}
 <x-branding-styles />

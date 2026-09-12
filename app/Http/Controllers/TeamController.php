@@ -15,6 +15,7 @@ class TeamController extends Controller implements BreadcrumbInterfaces
     public function getBreadcrumbs(): array
     {
         return [
+            ['name' => 'Human Resource', 'route' => '', 'active' => false],
             ['name' => 'Team', 'route' => '', 'active' => true],
         ];
     }
@@ -26,11 +27,17 @@ class TeamController extends Controller implements BreadcrumbInterfaces
 
     public function store(StoreTeamRequest $request): RedirectResponse|JsonResponse
     {
-        Team::create($request->validated() + ['is_active' => true]);
-
+        $team = Team::create($request->validated() + ['is_active' => true]);
 
         if ($request->expectsJson()) {
-            return response()->json(['status' => 'ok']);
+            // The new row travels back so a caller can add it to a dropdown
+            // without reloading - see public/js/modules/quick-create.js, which
+            // is how a team gets created from the member form.
+            return response()->json([
+                'status' => 'ok',
+                'id' => $team->id,
+                'label' => $team->team_name,
+            ]);
         }
 
         return back()->with('status', 'Team added successfully.');

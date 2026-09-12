@@ -252,6 +252,22 @@ button.tb-status:hover {
     cursor: not-allowed;
 }
 
+/* "New Team" beside a dropdown's label - see public/js/modules/quick-create.js.
+   Sits in the label row, so it never competes with the field itself. */
+.quick-create-link {
+    font-size: 11px;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--brand-primary, #1896bd);
+}
+.quick-create-link:hover {
+    text-decoration: underline;
+}
+.quick-create-link i {
+    margin-right: 2px;
+    vertical-align: -1px;
+}
+
 /* The confirmation dialog's question - see public/js/modules/confirm.js */
 .confirm-modal-message {
     font-size: 13px;
@@ -381,4 +397,54 @@ button.tb-status:hover {
     gap: 6px;
     display: flex;
     flex-wrap: wrap;
+}
+
+/* ---------------------------------------------------------------------------
+   Collapsed sidebar (data-sidebar-size="sm-hover")
+
+   The rail is 70px, but the links keep the padding and label gap they use when
+   expanded, so each icon sat 14px left of centre and the small logo 16px right
+   of it. Centre them - but only while the rail is idle: hovering expands it
+   back to 250px, where the icons belong on the left beside their labels.
+--------------------------------------------------------------------------- */
+[data-sidebar-size="sm-hover"] .navbar-menu:not(:hover) .navbar-brand-box {
+    display: flex;
+    padding-left: 0;
+    padding-right: 0;
+    justify-content: center;
+}
+[data-sidebar-size="sm-hover"] .navbar-menu:not(:hover) #navbar-nav > .nav-item > .nav-link {
+    display: flex;
+    padding-left: 0;
+    padding-right: 0;
+    align-items: center;
+    justify-content: center;
+}
+[data-sidebar-size="sm-hover"] .navbar-menu:not(:hover) #navbar-nav > .nav-item > .nav-link i {
+    /* The gap before the label; there is no label to sit beside here. */
+    margin-right: 0;
+}
+
+/*
+ * Keep the toggle reachable when the sidebar is collapsed.
+ *
+ * The theme hides the topbar hamburger under sm-hover, because Velzon's own
+ * design puts a pin button inside the sidebar instead (.btn-vertical-sm-hover)
+ * - markup this app doesn't render. Without this rule, collapsing the sidebar
+ * removes the only control that expands it again.
+ */
+[data-sidebar-size="sm-hover"] #topnav-hamburger-icon {
+    display: flex !important;
+}
+
+/*
+ * Centre the wordmark while the collapsed rail is hovered open.
+ *
+ * The theme left-aligns the brand box in that state only
+ * ([data-sidebar-size=sm-hover] .navbar-menu:hover .navbar-brand-box), so the
+ * logo jumped 29px left of where it sits in the normal expanded sidebar.
+ * [data-layout] is included to match that rule's specificity.
+ */
+[data-layout="vertical"][data-sidebar-size="sm-hover"] .navbar-menu:hover .navbar-brand-box {
+    text-align: center;
 }

@@ -13,20 +13,66 @@
 App.module('layout', function () {
     'use strict';
 
+    /**
+     * Collapsed size. "sm-hover" rather than "sm": both are a 70px icon rail,
+     * but sm-hover expands back to 250px with its labels while the pointer is
+     * over it (pure CSS in the theme), so a collapsed sidebar is still
+     * readable. Plain "sm" leaves you guessing at six unlabelled icons.
+     */
+    var COLLAPSED = 'sm-hover';
+
+    var html = document.documentElement;
+
+    // What the sidebar should be when there is room for it. Kept separately
+    // because the mobile layout overrides the attribute, and the desktop
+    // choice has to survive that round trip.
+    var desktopSize = html.getAttribute('data-sidebar-size') || 'lg';
+
+    /**
+     * Width below which the sidebar leaves the layout and becomes a slide-in
+     * overlay.
+     *
+     * 768, matching the theme CSS - not 992. They disagreed, and between the
+     * two the sidebar was still laid out inline while this file treated the
+     * page as mobile: the hamburger toggled an overlay class that changed
+     * nothing on screen, so the sidebar could not be closed at all. iPad
+     * portrait is 768 wide, right in the middle of that gap.
+     */
+    var OVERLAY_BELOW = 768;
+
     function isMobile() {
-        return window.innerWidth < 992;
+        return window.innerWidth < OVERLAY_BELOW;
     }
 
     function toggleSidebar() {
         if (isMobile()) {
+            // Below the breakpoint the sidebar is an overlay that slides in at
+            // full width - the size attribute plays no part.
             document.body.classList.toggle('vertical-sidebar-enable');
             return;
         }
 
-        var html = document.documentElement;
-        var current = html.getAttribute('data-sidebar-size') || 'lg';
+        desktopSize = desktopSize === COLLAPSED ? 'lg' : COLLAPSED;
+        html.setAttribute('data-sidebar-size', desktopSize);
+    }
 
-        html.setAttribute('data-sidebar-size', current === 'sm' ? 'lg' : 'sm');
+    /**
+     * Keeps the two layouts from bleeding into each other.
+     *
+     * Collapsing on a wide window and then narrowing it used to leave the
+     * collapsed size in place, so the mobile overlay opened as a 70px strip of
+     * unlabelled icons sitting on top of the page instead of the full-width
+     * menu. The theme's own app.js resyncs on resize; this is the part of it
+     * worth keeping.
+     */
+    function syncLayoutToWidth() {
+        if (isMobile()) {
+            html.setAttribute('data-sidebar-size', 'lg');
+            return;
+        }
+
+        html.setAttribute('data-sidebar-size', desktopSize);
+        document.body.classList.remove('vertical-sidebar-enable');
     }
 
     function isFullscreen() {
@@ -52,6 +98,23 @@ App.module('layout', function () {
             document.body.classList.remove('fullscreen-enable');
         }
     }
+
+    syncLayoutToWidth();
+
+    var wasMobile = isMobile();
+    var resizeTimer;
+
+    window.addEventListener('resize', function () {
+        window.clearTimeout(resizeTimer);
+
+        resizeTimer = window.setTimeout(function () {
+            // Only the crossing matters; resizing within one layout is a no-op.
+            if (isMobile() !== wasMobile) {
+                wasMobile = isMobile();
+                syncLayoutToWidth();
+            }
+        }, 150);
+    });
 
     var hamburger = document.getElementById('topnav-hamburger-icon');
     if (hamburger) {

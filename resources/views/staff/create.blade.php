@@ -15,4 +15,6 @@
             </div>
         </form>
     </div>
+
+    @include('staff._quick-create-team')
 @endsection

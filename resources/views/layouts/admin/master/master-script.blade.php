@@ -10,24 +10,25 @@
 <script src="{{ asset('assets/libs/feather-icons/feather.min.js') }}"></script>
 
 {{-- App core must come before any module that registers with it. --}}
-<script src="{{ asset('js/core.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/core.js') }}"></script>
 
 {{-- Template modules - reusable in any project built from this template. --}}
-<script src="{{ asset('js/modules/layout.js') }}"></script>
-<script src="{{ asset('js/modules/loader.js') }}"></script>
-<script src="{{ asset('js/modules/image-preview.js') }}"></script>
-<script src="{{ asset('js/modules/unique-check.js') }}"></script>
-<script src="{{ asset('js/modules/inline-edit.js') }}"></script>
-<script src="{{ asset('js/modules/mark-list.js') }}"></script>
-<script src="{{ asset('js/modules/select-or-new.js') }}"></script>
-<script src="{{ asset('js/modules/inline-form.js') }}"></script>
-<script src="{{ asset('js/modules/collapse.js') }}"></script>
-<script src="{{ asset('js/modules/confirm.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/layout.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/loader.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/image-preview.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/unique-check.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/inline-edit.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/mark-list.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/select-or-new.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/inline-form.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/collapse.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/confirm.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/quick-create.js') }}"></script>
 <script>window.datatablesEndpoint = @json(route('datatables.listing'));</script>
-<script src="{{ asset('js/modules/datatables.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/datatables.js') }}"></script>
 
 {{-- Project modules - replace these when starting a new project. --}}
-<script src="{{ asset('js/project/modals.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/project/modals.js') }}"></script>
 
 @yield('js')
 @stack('scripts')

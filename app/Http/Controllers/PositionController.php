@@ -16,6 +16,7 @@ class PositionController extends Controller implements BreadcrumbInterfaces
     public function getBreadcrumbs(): array
     {
         return [
+            ['name' => 'Human Resource', 'route' => '', 'active' => false],
             ['name' => 'Position', 'route' => '', 'active' => true],
         ];
     }

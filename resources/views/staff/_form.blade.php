@@ -75,10 +75,16 @@
     <div class="col-lg-6">
         <div class="input-group">
             <label>Position<span>*</span></label>
+            @php
+                // On create, ?pid= preselects the position - that is how the
+                // "Add member" button on the position list arrives here. On
+                // edit the member's own position always wins.
+                $selectedPosition = (int) old('position_id', $staff->position_id ?? request('pid'));
+            @endphp
             <select class="form-control" name="position_id" required>
-                <option value="" disabled @selected(! old('position_id', $staff->position_id ?? null))>Select Position</option>
+                <option value="" disabled @selected(! $selectedPosition)>Select Position</option>
                 @foreach ($positions as $position)
-                    <option value="{{ $position->id }}" @selected((int) old('position_id', $staff->position_id ?? null) === $position->id)>
+                    <option value="{{ $position->id }}" @selected($selectedPosition === $position->id)>
                         {{ $position->position_name }}
                     </option>
                 @endforeach
@@ -93,7 +99,15 @@
     </div>
     <div class="col-lg-6">
         <div class="input-group">
-            <label>Team<span>*</span></label>
+            <label class="d-flex justify-content-between align-items-center">
+                <span>Team<span>*</span></span>
+                {{-- On a fresh install there are no teams yet, and leaving
+                     this form to make one loses everything typed so far. --}}
+                <a href="javascript:void(0);" class="quick-create-link"
+                   data-quick-create-open="#quickCreateTeam">
+                    <i class="ri-add-line"></i>New Team
+                </a>
+            </label>
             <select class="form-control" name="team_id" required>
                 <option value="" disabled @selected(! old('team_id', $staff->team_id ?? null))>Select Team</option>
                 @foreach ($teams as $team)

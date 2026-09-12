@@ -24,7 +24,8 @@
 ])
 
 <div class="modal fade" id="{{ $id }}" tabindex="-1"
-     @if ($urlTemplate) data-url-template="{{ $urlTemplate }}" @endif>
+     @if ($urlTemplate) data-url-template="{{ $urlTemplate }}" @endif
+     {{ $attributes }}>
     <div class="modal-dialog" id="md-dialog">
         <div class="modal-content general-box" id="md-content">
             <form @if ($action) action="{{ $action }}" @endif method="POST">

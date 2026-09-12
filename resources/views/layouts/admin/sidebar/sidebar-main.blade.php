@@ -10,9 +10,17 @@
         <div class="container-fluid">
             <ul class="navbar-nav" id="navbar-nav">
                 <x-sidebar.ui.list route="dashboard" icon="ri-dashboard-2-line" label="Dashboard" />
-                <x-sidebar.ui.list route="positions.index" icon="ri-user-settings-line" label="Position" active="positions.*" />
-                <x-sidebar.ui.list route="teams.index" icon="ri-team-line" label="Team" active="teams.*" />
+
+                {{-- Member is the most-visited page, so it keeps a shortcut of
+                     its own as well as its place in the group below. --}}
                 <x-sidebar.ui.list route="staff.index" icon="ri-user-3-line" label="Member" active="staff.*" />
+
+                <x-sidebar.ui.dropdown id="sb-hr" icon="ri-group-line" label="Human Resource"
+                                       :active="['positions.*', 'teams.*', 'staff.*']">
+                    <x-sidebar.ui.dropdown-list route="teams.index" label="Team" active="teams.*" />
+                    <x-sidebar.ui.dropdown-list route="positions.index" label="Position" active="positions.*" />
+                    <x-sidebar.ui.dropdown-list route="staff.index" label="Member" active="staff.*" />
+                </x-sidebar.ui.dropdown>
 
                 <x-sidebar.ui.dropdown id="sb-project" icon="ri-clipboard-line" label="Project"
                                        :active="['projects.*', 'project-phases.*']">
