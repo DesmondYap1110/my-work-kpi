@@ -6,6 +6,7 @@ use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Http\Requests\Concerns\OnlyAdminAssignsTags;
 use App\Models\Project;
+use App\Models\ProjectTaskFile;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -25,14 +26,16 @@ class UpdateProjectTaskRequest extends FormRequest
             'project_id' => ['required', 'exists:project,id'],
             'assignee_id' => ['nullable', 'exists:staff,id'],
             'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
             'is_milestone' => ['nullable', 'boolean'],
             'status' => ['required', Rule::in(array_column(TaskStatus::cases(), 'value'))],
             'priority' => ['nullable', Rule::in(array_column(TaskPriority::cases(), 'value'))],
             'tag_id' => ['nullable', 'exists:project_tag,id'],
             'start_date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'remark_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:10240'],
-            'invoice_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:10240'],
+            // Uploads add to what is already attached; nothing is replaced.
+            'attachments' => ['nullable', 'array', 'max:10'],
+            'attachments.*' => ['file', 'mimes:'.implode(',', ProjectTaskFile::ALLOWED_EXTENSIONS), 'max:10240'],
         ];
     }
 

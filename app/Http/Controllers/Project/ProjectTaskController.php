@@ -68,42 +68,30 @@ class ProjectTaskController extends Controller implements BreadcrumbInterfaces
     {
         $project = Project::findOrFail($request->integer('project_id'));
 
-        $data = $request->safe()->except(['remark_file', 'invoice_file']);
+        $data = $request->safe()->except('attachments');
         $data['is_milestone'] = $request->boolean('is_milestone');
         $data['approval_status'] = PhaseApprovalStatus::NoSubmission;
         $data['sort_order'] = ((int) $project->tasks()->max('sort_order')) + 1;
 
-        foreach (['remark_file', 'invoice_file'] as $field) {
-            if ($stored = $this->storeFile($request, $field)) {
-                $data[$field] = $stored;
-            }
-        }
-
         $task = ProjectTask::create($data);
 
-        $this->logAttachments($task, $request);
+        $attached = $this->storeAttachments($task, $request);
         $this->syncProjectStatus($project);
 
-        return back()->with('status', 'Task added successfully.');
+        return back()->with('status', 'Task added successfully.'.$this->attachmentNote($attached));
     }
 
     public function update(UpdateProjectTaskRequest $request, ProjectTask $projectTask): RedirectResponse
     {
-        $data = $request->safe()->except(['remark_file', 'invoice_file']);
+        $data = $request->safe()->except('attachments');
         $data['is_milestone'] = $request->boolean('is_milestone');
-
-        foreach (['remark_file', 'invoice_file'] as $field) {
-            if ($stored = $this->storeFile($request, $field)) {
-                $data[$field] = $stored;
-            }
-        }
 
         $projectTask->update($data);
 
-        $this->logAttachments($projectTask, $request);
+        $attached = $this->storeAttachments($projectTask, $request);
         $this->syncProjectStatus($projectTask->project);
 
-        return back()->with('status', 'Task updated successfully.');
+        return back()->with('status', 'Task updated successfully.'.$this->attachmentNote($attached));
     }
 
     /**
@@ -170,10 +158,11 @@ class ProjectTaskController extends Controller implements BreadcrumbInterfaces
     {
         $this->authorizeTask($projectTask);
 
-        $files = $projectTask->files()->latest('uploaded_at')->get()->map(fn ($file) => [
-            'name' => $file->filename,
-            'url' => Storage::disk('public')->url('project-task-files/'.$file->filename),
-            'uploaded_at' => $file->uploaded_at->format('d M Y H:i'),
+        $files = $projectTask->files()->with('staff')->get()->map(fn ($file) => [
+            'name' => $file->displayName(),
+            'url' => $file->url(),
+            'uploaded_at' => $file->uploaded_at->format('d M Y H:i')
+                .($file->staff ? ' · '.$file->staff->staff_name : ''),
         ]);
 
         return response()->json(['files' => $files]);
@@ -213,33 +202,86 @@ class ProjectTaskController extends Controller implements BreadcrumbInterfaces
         ]);
     }
 
-    private function storeFile(Request $request, string $field): ?string
+    /**
+     * Saves whatever was uploaded with the form and records each file against
+     * the task.
+     *
+     * Stored under a unique name rather than the one it arrived with: two
+     * people attaching "screenshot.png" to different tasks must not overwrite
+     * each other, and a filename from a browser is user input. The original
+     * name is kept in the row so the attachment list still reads like the file
+     * the person chose.
+     *
+     * @return int  how many were attached
+     */
+    private function storeAttachments(ProjectTask $task, Request $request): int
     {
-        if (! $request->hasFile($field)) {
-            return null;
-        }
+        $files = array_filter($request->file('attachments') ?? []);
 
-        $file = $request->file($field);
-        $filename = now()->format('dmYHis').'-'.$field.'.'.$file->extension();
+        foreach ($files as $file) {
+            $stored = Str::uuid().'.'.$this->safeExtension($file);
 
-        Storage::disk('public')->putFileAs('project-task-files', $file, $filename);
-
-        return $filename;
-    }
-
-    private function logAttachments(ProjectTask $task, Request $request): void
-    {
-        foreach (['remark_file', 'invoice_file'] as $field) {
-            if (! $request->hasFile($field)) {
-                continue;
-            }
+            Storage::disk('public')->putFileAs('project-task-files', $file, $stored);
 
             ProjectTaskFile::create([
                 'task_id' => $task->id,
-                'filename' => $task->{$field},
+                'filename' => $stored,
+                'original_name' => $file->getClientOriginalName(),
                 'uploaded_at' => now(),
                 'staff_id' => Auth::id(),
             ]);
         }
+
+        return count($files);
+    }
+
+    /**
+     * The extension to store the file under.
+     *
+     * extension() alone guesses from the MIME type, which turns a .csv into a
+     * .txt - the content survives but the browser then opens a spreadsheet as
+     * plain text. The uploader's own extension is better, but only when it is
+     * one we allow: it is user input, and these files are served from a public
+     * directory. Anything unrecognised falls back to the guess.
+     */
+    private function safeExtension($file): string
+    {
+        foreach ([$file->getClientOriginalExtension(), $file->extension()] as $candidate) {
+            $candidate = strtolower((string) $candidate);
+
+            if (in_array($candidate, ProjectTaskFile::ALLOWED_EXTENSIONS, true)) {
+                return $candidate;
+            }
+        }
+
+        // Neither the uploader's extension nor the guessed one is on the list.
+        // Validation should already have refused the file, so this is the
+        // belt to that braces: store it as something inert rather than
+        // trusting whichever name got this far.
+        return 'dat';
+    }
+
+    private function attachmentNote(int $attached): string
+    {
+        return $attached > 0
+            ? ' '.$attached.' '.Str::plural('file', $attached).' attached.'
+            : '';
+    }
+
+    /**
+     * Removes one attachment, from the task and from disk.
+     *
+     * The file is checked against the task in the URL rather than trusted:
+     * the id comes from a form, and nothing here should reach another task's
+     * attachments.
+     */
+    public function destroyAttachment(ProjectTask $projectTask, ProjectTaskFile $file): RedirectResponse
+    {
+        abort_unless($file->task_id === $projectTask->id, 404);
+
+        Storage::disk('public')->delete('project-task-files/'.$file->filename);
+        $file->forceDelete();
+
+        return back()->with('status', 'Attachment removed.');
     }
 }

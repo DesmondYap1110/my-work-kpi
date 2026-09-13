@@ -62,6 +62,8 @@ class AdminOnlyAccessTest extends TestCase
         'project-tasks.store',
         'project-tasks.update',
         'project-tasks.destroy',
+        // A member who can attach a file to a task can take it off again.
+        'project-tasks.attachments.destroy',
         'projects.index',
         'projects.store',
         'projects.show',

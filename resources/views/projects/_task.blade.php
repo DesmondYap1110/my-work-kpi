@@ -18,8 +18,16 @@
                     @endif
                     {{ $task->title }}
                 </span>
+                @if ($task->description)
+                    <span class="task-description">{{ $task->description }}</span>
+                @endif
                 <span class="task-meta">
                     <i class="ri-user-3-line"></i>{{ $task->assignee->staff_name ?? 'Unassigned' }}
+                    @if ($task->files->isNotEmpty())
+                        <span class="task-files" title="{{ $task->files->count() }} attached">
+                            <i class="ri-attachment-2"></i>{{ $task->files->count() }}
+                        </span>
+                    @endif
                     @if ($task->due_date)
                         <span class="task-due @if ($task->isOverdue()) is-overdue @endif">
                             <i class="ri-calendar-line"></i>{{ $task->due_date->format('d M Y') }}
@@ -84,3 +92,15 @@
            data-inline-restore="#{{ $rowId }}"><i class="ri-close-fill"></i>Cancel</a>
     </div>
 </form>
+
+{{-- One per attachment, outside the edit form above: their buttons sit inside
+     it, and a form cannot contain another. --}}
+@foreach ($task->files as $file)
+    <form id="del-file-{{ $file->id }}" method="POST" class="js-confirm-delete"
+          action="{{ route('project-tasks.attachments.destroy', [$task->id, $file->id]) }}"
+          data-confirm-title="Remove attachment"
+          data-confirm="Remove &quot;{{ $file->displayName() }}&quot; from this task? The file is deleted."
+          data-confirm-label="Remove">
+        @csrf @method('DELETE')
+    </form>
+@endforeach

@@ -92,6 +92,8 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     // Tasks are created and edited inside a project, so they travel with it.
     Route::resource('project-tasks', ProjectTaskController::class)->only(['store', 'update', 'destroy']);
+    Route::delete('/project-tasks/{project_task}/attachments/{file}', [ProjectTaskController::class, 'destroyAttachment'])
+        ->name('project-tasks.attachments.destroy');
 
     /*
     |----------------------------------------------------------------------

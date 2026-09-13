@@ -754,3 +754,114 @@ select.appraisal-mark {
     align-items: center;
     justify-content: space-between;
 }
+
+/* A task's own words, under its title. Pre-wrap so a member's line breaks
+   survive; clamped so a long brief does not push every other task off screen
+   (the whole thing is in the edit form). */
+.task-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 2px 0 4px;
+    white-space: pre-wrap;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.task-files {
+    gap: 3px;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Files already on a task, listed inside its edit form. */
+.task-file-list {
+    margin: 0 0 8px;
+    padding: 0;
+    list-style: none;
+}
+.task-file-list li {
+    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 12px;
+    border-bottom: 1px dashed #00000014;
+}
+.task-file-list li:last-child {
+    border-bottom: none;
+}
+.task-file-list a {
+    gap: 5px;
+    display: inline-flex;
+    align-items: center;
+    color: var(--brand-primary, #1896bd);
+}
+.task-file-list .kpi-item-desc {
+    display: inline;
+    margin-right: auto;
+}
+
+/*
+ * Textareas and file inputs escaping the theme's fixed-height form controls.
+ *
+ * The theme declares `.form-control { height: 40px !important; padding: 0 10px }`
+ * with no exception for textarea, so every multi-line field in the app rendered
+ * one line tall whatever its `rows` said - a task description, appraisal
+ * comments, check-in feedback, the rating scale's meanings. `rows` is the
+ * intended height; this lets it through. !important is needed only because the
+ * rule it undoes has one.
+ */
+textarea.form-control {
+    height: auto !important;
+    min-height: 80px;
+    padding: 8px 10px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+/*
+ * The same 40px box with no vertical padding left the native "Choose Files"
+ * button jammed against the edges. Styled through ::file-selector-button so it
+ * reads as a quiet secondary control inside the field, not a second, louder
+ * button beside the Save one.
+ */
+input[type="file"].form-control {
+    padding: 0 !important;
+    line-height: 38px;
+    cursor: pointer;
+    overflow: hidden;
+    color: var(--brand-text-muted, #6e6e6e);
+    font-size: 12px;
+}
+input[type="file"].form-control::file-selector-button {
+    height: 38px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 0 12px 0 0;
+    padding: 0 14px;
+    color: #fff;
+    background: var(--brand-primary, #6366f1);
+    transition: filter 0.2s linear;
+}
+/* The theme has a hover rule for this button that paints it green and outranks
+   an ordinary selector, so the brand colour is pinned here. Darkened with a
+   filter rather than a second hard-coded blue, so it follows whatever
+   --brand-primary a company sets. */
+input[type="file"].form-control:hover::file-selector-button,
+input[type="file"].form-control:hover:not(:disabled):not([readonly])::file-selector-button {
+    color: #fff !important;
+    background: var(--brand-primary, #6366f1) !important;
+    filter: brightness(0.9);
+}
+
+/* The upload limits are worth reading before choosing files, so this note is
+   darker than the theme's faint #note-p. Scoped to the task form: #note-p is
+   shared with other screens. */
+#note-p.task-file-note {
+    color: var(--brand-text, #3b3b3b);
+}

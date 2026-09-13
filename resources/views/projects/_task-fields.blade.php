@@ -103,6 +103,57 @@
                    value="{{ $task?->due_date?->format('Y-m-d') }}">
         </div>
     </div>
+    {{-- The title is a label; this is the brief. It is also what an appraiser
+         reads when Part 2 of a review lists this work months later, so it is
+         worth writing properly. --}}
+    <div class="col-lg-12">
+        <div class="input-group">
+            <label>Description</label>
+            <textarea class="form-control" name="description" rows="6" maxlength="5000"
+                      placeholder="What needs doing, and anything the next person needs to know.">{{ $task?->description }}</textarea>
+        </div>
+    </div>
+
+    {{-- Half width: a file picker is one short control, and stretched across
+         the page it read as a long empty bar. What is already attached sits in
+         the other half, on an edit. --}}
+    <div class="col-lg-6">
+        <div class="input-group">
+            <label>Attachments</label>
+            <input type="file" class="form-control" name="attachments[]" multiple
+                   accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip">
+            <span id="note-p" class="d-block task-file-note">
+                Up to 10 files, 10&nbsp;MB each. Adds to what is already attached.
+            </span>
+        </div>
+    </div>
+
+    @if ($task?->files->isNotEmpty())
+        <div class="col-lg-6">
+            <label>Attached</label>
+            <ul class="task-file-list">
+                @foreach ($task->files as $file)
+                    <li>
+                        <a href="{{ $file->url() }}" target="_blank" rel="noopener">
+                            <i class="ri-attachment-2"></i>{{ $file->displayName() }}
+                        </a>
+                        <span class="kpi-item-desc">
+                            {{ $file->uploaded_at->format('d M Y H:i') }}
+                            @if ($file->staff) &middot; {{ $file->staff->staff_name }} @endif
+                        </span>
+                        {{-- Its own form, so it cannot be nested in the task
+                             form around it - reached by the `form` attribute,
+                             the same way the appraisal setup rows are. --}}
+                        <button type="submit" form="del-file-{{ $file->id }}"
+                                class="tb-ac-btn" id="tb-ac-btn-2" title="Remove attachment">
+                            <i class="ri-delete-bin-6-line"></i>
+                        </button>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="col-lg-12">
         <div class="form-check form-switch form-switch-success mt-1">
             <input class="form-check-input" type="checkbox" role="switch" value="1"

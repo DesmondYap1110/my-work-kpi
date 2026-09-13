@@ -52,7 +52,7 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
     public function show(Project $project): View
     {
         $tasks = $project->tasks()
-            ->with(['assignee', 'tag'])
+            ->with(['assignee', 'tag', 'files.staff'])
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();

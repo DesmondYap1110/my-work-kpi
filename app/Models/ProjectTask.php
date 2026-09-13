@@ -33,6 +33,7 @@ class ProjectTask extends Model
         'project_id',
         'assignee_id',
         'title',
+        'description',
         'is_milestone',
         'status',
         'priority',
@@ -41,8 +42,6 @@ class ProjectTask extends Model
         'tag_id',
         'start_date',
         'due_date',
-        'remark_file',
-        'invoice_file',
         'approval_status',
         'submitted_date',
         'completed_at',
@@ -98,9 +97,14 @@ class ProjectTask extends Model
         return $this->belongsTo(ProjectTag::class, 'tag_id', 'id');
     }
 
+    /**
+     * Whatever has been attached to this task - a brief, a screenshot, a
+     * signed-off document. Newest first, which is the order anybody looking
+     * for "the latest one" wants.
+     */
     public function files(): HasMany
     {
-        return $this->hasMany(ProjectTaskFile::class, 'task_id', 'id');
+        return $this->hasMany(ProjectTaskFile::class, 'task_id', 'id')->latest('uploaded_at');
     }
 
     public function scopeDone(Builder $query): Builder
