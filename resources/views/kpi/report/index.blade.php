@@ -411,7 +411,7 @@
 
             var css = getComputedStyle(document.documentElement);
             var primary = (css.getPropertyValue('--brand-primary') || '').trim() || '#6366f1';
-            var palette = [primary, '#0ab39c', '#f7b84b', '#f06548', '#299cdb', '#405189', '#6559cc', '#02a8b5'];
+            var palette = [primary, '#0ea5e9', '#f7b84b', '#f06548', '#299cdb', '#405189', '#6559cc', '#02a8b5'];
             var base = { fontFamily: 'inherit', toolbar: { show: false }, zoom: { enabled: false } };
             var fmt = function (v) { return v === null || v === undefined ? '-' : Math.round(v * 100) / 100; };
 
@@ -427,7 +427,7 @@
                 yaxis: { min: 0, max: 100, tickAmount: 5, labels: { formatter: fmt } },
                 stroke: { width: [3, 2, 2], curve: 'smooth', dashArray: [0, 5, 5] },
                 markers: { size: 4 },
-                colors: [primary, '#0ab39c', '#f7b84b'],
+                colors: [primary, '#0ea5e9', '#f7b84b'],
                 tooltip: { y: { formatter: fmt } },
                 legend: { position: 'top' },
                 noData: { text: 'Nothing scored in this period' },
@@ -461,7 +461,7 @@
                     ],
                     xaxis: { categories: teams.map(function (r) { return r.name; }), max: 100, labels: { formatter: fmt } },
                     plotOptions: { bar: { horizontal: true, barHeight: '60%', borderRadius: 3 } },
-                    colors: [primary, '#0ab39c'],
+                    colors: [primary, '#0ea5e9'],
                     dataLabels: { enabled: false },
                     tooltip: { y: { formatter: function (v) { return fmt(v) + ' pts'; } } },
                     legend: { position: 'top' },

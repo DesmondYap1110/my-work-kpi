@@ -103,7 +103,7 @@ class ReviewScheduleList extends Datatables
                 'team' => e($staff->team->team_name ?? '-'),
                 'cycle' => $this->cycleSelect($staff, $row['cycle'], $cycles),
                 'last' => $row['last']
-                    ? '<a href="'.route('appraisals.show', $row['last']->id).'">'.e($row['last']->periodLabel()).'</a>'
+                    ? '<a href="'.route('appraisals.show', $row['last']->id).'" class="tb-date-link" title="Open this appraisal">'.e($row['last']->periodLabel()).'</a>'
                     : '<span class="kpi-muted">Never</span>',
                 'due' => $this->dueCell($row),
                 'action' => $this->actionCell($row),

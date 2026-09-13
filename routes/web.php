@@ -19,6 +19,7 @@ use App\Http\Controllers\Kpi\KpiObjectiveItemController;
 use App\Http\Controllers\Kpi\KpiSettingController;
 use App\Http\Controllers\Kpi\PositionTagController;
 use App\Http\Controllers\Kpi\KpiReportController;
+use App\Http\Controllers\Settings\ThemeSettingController;
 use App\Http\Controllers\Kpi\ManagePendingController;
 use App\Http\Controllers\Project\ProjectController;
 use App\Http\Controllers\Project\ProjectTagController;
@@ -184,6 +185,11 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/appraisal-form/bands', [AppraisalFormController::class, 'storeBand'])->name('appraisal-form.bands.store');
         Route::put('/appraisal-form/bands/{band}', [AppraisalFormController::class, 'updateBand'])->name('appraisal-form.bands.update');
         Route::delete('/appraisal-form/bands/{band}', [AppraisalFormController::class, 'destroyBand'])->name('appraisal-form.bands.destroy');
+
+        // Settings > Theme Setting: the app's colours.
+        Route::get('/theme-setting', [ThemeSettingController::class, 'edit'])->name('theme-setting.edit');
+        Route::put('/theme-setting', [ThemeSettingController::class, 'update'])->name('theme-setting.update');
+        Route::delete('/theme-setting', [ThemeSettingController::class, 'reset'])->name('theme-setting.reset');
 
         // Company, team, position or member performance over a period.
         Route::get('/kpi-report', [KpiReportController::class, 'index'])->name('kpi-report.index');

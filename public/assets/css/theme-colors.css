@@ -163,7 +163,7 @@
 		color: var(--brand-text, #282828) !important;
 	}
 	.form-control:disabled, .form-control[readonly], .select2-container--default.select2-container--disabled .select2-selection--single {
-		background: #01216140 !important;
+		background: color-mix(in srgb, var(--brand-secondary, #012161) 25%, transparent) !important;
     	color: #000 !important;
 	}
 	.select2-container--disabled .select2-selection--single .select2-selection__rendered {
@@ -252,8 +252,8 @@
     	border: 1px solid #ced4da;
 	}
 	.form-check-input:checked {
-    	border: 1px solid #1896BD;
-    	background-color: #1896BD;
+    	border: 1px solid var(--brand-primary, #1896BD);
+    	background-color: var(--brand-primary, #1896BD);
 	}
 	#add-box {
         border: 1px solid #00000026;
@@ -621,7 +621,7 @@
 			color: #f9f9f9;
 		}
 		#mm-indicator {
-			background: linear-gradient(58deg, #1896BD 50%, var(--brand-accent, #24EBC5)) !important;
+			background: linear-gradient(58deg, var(--brand-primary, #1896BD) 50%, var(--brand-accent, #24EBC5)) !important;
 		}
     }
 

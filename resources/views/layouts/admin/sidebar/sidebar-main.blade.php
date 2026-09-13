@@ -56,12 +56,13 @@
                 @endif
 
                 <x-sidebar.ui.dropdown id="sb-settings" icon="ri-settings-3-line" label="Settings"
-                                       :active="['password.change', 'project-tags.*', 'appraisal-form.*']">
+                                       :active="['password.change', 'project-tags.*', 'appraisal-form.*', 'theme-setting.*']">
                     {{-- Tags price project work and bands name a score, so only
                          the administrator sets them. --}}
                     @if (auth()->user()->isAdmin())
                         <x-sidebar.ui.dropdown-list route="project-tags.index" label="Project Tag Setting" active="project-tags.*" />
                         <x-sidebar.ui.dropdown-list route="appraisal-form.edit" label="Project Form Setup" active="appraisal-form.*" />
+                        <x-sidebar.ui.dropdown-list route="theme-setting.edit" label="Theme Setting" active="theme-setting.*" />
                     @endif
                     <x-sidebar.ui.dropdown-list route="password.change" label="Change Password" />
                     <x-sidebar.ui.dropdown-list>

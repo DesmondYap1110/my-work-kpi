@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\ThemeSetting;
 use Illuminate\Support\Str;
 
 /**
@@ -153,27 +154,101 @@ class Branding
     }
 
     /**
-     * The resolved colour map: explicit config values win, then the active
-     * preset, then the default preset. Keys with no value anywhere are
-     * dropped so the stylesheet fallback applies instead.
+     * The resolved colour map, each layer winning over the one before:
+     *
+     *   default preset < active preset < APP_*_COLOR in .env < Settings > Theme Setting
+     *
+     * The active preset is the one chosen in Theme Setting, else APP_THEME.
+     * Keys with no value anywhere are dropped so the stylesheet fallback
+     * applies instead.
      *
      * @return array<string, string>
      */
     public static function colors(): array
     {
-        $presets = (array) static::get('presets', []);
-        $active = (array) ($presets[static::get('theme', 'default')] ?? []);
-        $default = (array) ($presets['default'] ?? []);
+        $saved = ThemeSetting::cached();
 
-        $resolved = array_merge($default, $active);
+        return static::resolveColors(
+            (array) static::get('presets', []),
+            $saved['preset'] ?: (string) static::get('theme', 'default'),
+            (array) static::get('colors', []),
+            static::expandCustomColors($saved['colors']),
+        );
+    }
 
-        foreach ((array) static::get('colors', []) as $token => $value) {
-            if (filled($value)) {
-                $resolved[$token] = $value;
+    /**
+     * The layering itself, pure so it can be tested without config or a
+     * database.
+     *
+     * @param  array<string, array<string, string>>  $presets
+     * @param  array<string, string|null>  $env
+     * @param  array<string, string>  $custom
+     * @return array<string, string>
+     */
+    public static function resolveColors(array $presets, string $theme, array $env, array $custom): array
+    {
+        $resolved = array_merge((array) ($presets['default'] ?? []), (array) ($presets[$theme] ?? []));
+
+        foreach ([$env, $custom] as $layer) {
+            foreach ($layer as $token => $value) {
+                if (filled($value)) {
+                    $resolved[$token] = $value;
+                }
             }
         }
 
         return array_filter($resolved, fn ($value) => filled($value));
+    }
+
+    /**
+     * An admin picks a handful of colours; the tokens that should move with
+     * them follow, so a new primary also recolours buttons, links, focus
+     * rings and the darker hover shades. Only valid #RRGGBB values pass.
+     *
+     * @param  array<string, mixed>  $custom
+     * @return array<string, string>
+     */
+    public static function expandCustomColors(array $custom): array
+    {
+        $custom = array_filter($custom, fn ($value) => is_string($value) && static::isHex($value));
+        $out = $custom;
+
+        if (isset($custom['primary'])) {
+            $out += [
+                'primary-hover' => static::darken($custom['primary'], 15),
+                'button' => $custom['primary'],
+                'button-hover' => static::darken($custom['primary'], 15),
+                'input-focus' => $custom['primary'],
+                'link' => $custom['primary'],
+            ];
+        }
+
+        if (isset($custom['secondary'])) {
+            $out += ['secondary-hover' => static::darken($custom['secondary'], 15)];
+        }
+
+        if (isset($custom['text'])) {
+            $out += ['input-text' => $custom['text']];
+        }
+
+        return $out;
+    }
+
+    public static function isHex(string $value): bool
+    {
+        return (bool) preg_match('/^#[0-9A-Fa-f]{6}$/', $value);
+    }
+
+    /**
+     * #RRGGBB moved $percent of the way towards black.
+     */
+    public static function darken(string $hex, int $percent): string
+    {
+        $factor = 1 - max(0, min(100, $percent)) / 100;
+
+        return '#'.collect(str_split(ltrim($hex, '#'), 2))
+            ->map(fn ($pair) => str_pad(dechex((int) round(hexdec($pair) * $factor)), 2, '0', STR_PAD_LEFT))
+            ->implode('');
     }
 
     /**

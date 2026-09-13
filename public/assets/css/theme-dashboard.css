@@ -548,7 +548,7 @@
         position: relative;
     }
     .tb-in-ac-btn{
-        color: #1896BD;
+        color: var(--brand-primary, #1896BD);
         position: absolute;
         right: 8px;
         font-size: 20px;
