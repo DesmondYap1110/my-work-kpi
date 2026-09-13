@@ -14,18 +14,50 @@
                 <p id="tb-title" class="mb-1">{{ $project->title }}</p>
                 <p id="footer-p" class="mb-0">
                     {{ $project->start_date->format('d M Y') }} &ndash; {{ $project->end_date->format('d M Y') }}
-                    &middot; <span class="tb-status" id="tb-status-{{ $project->status === \App\Enums\ProjectStatus::Completed ? 1 : 4 }}">{{ $project->status->label() }}</span>
+                    &middot; <span class="tb-status" id="tb-status-{{ $project->statusColourId() }}">{{ $project->status->label() }}</span>
                 </p>
             </div>
             <div>
                 <a href="{{ route('projects.index') }}" id="general-btn" class="btn2">
                     <i class="ri-arrow-left-line"></i>Back to Project
                 </a>
-                <a href="javascript:void(0);" id="general-btn" class="btn1" data-inline-form="#add-task">
-                    <i class="ri-add-fill"></i>Add Task
-                </a>
+                {{-- Same rule as the Edit button on the project list - see
+                     Project::isEditable(). --}}
+                @if ($project->isEditable())
+                    <button type="button" id="general-btn" class="btn2"
+                            data-bs-toggle="modal" data-bs-target="#editProjectModal">
+                        <i class="ri-edit-2-line"></i>Edit Project
+                    </button>
+                @endif
+                {{-- A cancelled project takes no new work - see
+                     Project::acceptsNewTasks(). --}}
+                @if ($project->acceptsNewTasks())
+                    <a href="javascript:void(0);" id="general-btn" class="btn1" data-inline-form="#add-task">
+                        <i class="ri-add-fill"></i>Add Task
+                    </a>
+                @endif
             </div>
         </div>
+
+        @unless ($project->acceptsNewTasks())
+            <div id="table-padding" class="pt-0">
+                <div class="project-cancelled">
+                    <p class="project-cancelled-head mb-1">
+                        <i class="ri-close-circle-line"></i>
+                        Cancelled
+                        @if ($project->cancelled_at)
+                            on {{ $project->cancelled_at->format('d M Y') }}
+                        @endif
+                        @if ($project->canceller)
+                            by {{ $project->canceller->staff_name }}
+                        @endif
+                    </p>
+                    {{-- Projects cancelled before a reason was required have none. --}}
+                    <p class="project-cancelled-reason mb-1">{{ $project->cancel_reason ?: 'No reason was recorded.' }}</p>
+                    <p id="footer-p" class="mb-0">No new tasks can be added. Existing tasks are kept for the record.</p>
+                </div>
+            </div>
+        @endunless
 
         @if ($taskCount > 0)
             <div id="table-padding" class="project-progress">
@@ -38,16 +70,18 @@
 
         {{-- Inline rather than a dialog, so the board stays visible while you
              type into it. --}}
-        <form class="js-inline-form kpi-inline-form" id="add-task" method="POST"
-              action="{{ route('project-tasks.store') }}" enctype="multipart/form-data" hidden>
-            @csrf
-            <input type="hidden" name="project_id" value="{{ $project->id }}">
-            @include('projects._task-fields', ['task' => null])
-            <div class="kpi-inline-actions">
-                <button type="submit" id="general-btn" class="btn1"><i class="ri-check-fill"></i>Add Task</button>
-                <a href="javascript:void(0);" id="general-btn" class="btn2 js-inline-form-cancel"><i class="ri-close-fill"></i>Cancel</a>
-            </div>
-        </form>
+        @if ($project->acceptsNewTasks())
+            <form class="js-inline-form kpi-inline-form" id="add-task" method="POST"
+                  action="{{ route('project-tasks.store') }}" enctype="multipart/form-data" hidden>
+                @csrf
+                <input type="hidden" name="project_id" value="{{ $project->id }}">
+                @include('projects._task-fields', ['task' => null])
+                <div class="kpi-inline-actions">
+                    <button type="submit" id="general-btn" class="btn1"><i class="ri-check-fill"></i>Add Task</button>
+                    <a href="javascript:void(0);" id="general-btn" class="btn2 js-inline-form-cancel"><i class="ri-close-fill"></i>Cancel</a>
+                </div>
+            </form>
+        @endif
     </div>
 
     @forelse ($statuses as $status)
@@ -101,5 +135,17 @@
     {{-- Only the administrator assigns tags, so only they can need a new one. --}}
     @if (auth()->user()->isAdmin())
         @include('projects._quick-create-tag')
+    @endif
+
+    {{-- Editing the project's own details without leaving its page. Reopens
+         only when the failed save was this form's (the _form marker in
+         projects/_form) - never for a task form's errors on the same page. --}}
+    @if ($project->isEditable())
+        <x-modal id="editProjectModal" title="Edit Project"
+                 :action="route('projects.update', $project)" method="PUT"
+                 confirm="Save Changes"
+                 :open-on-error="old('_form') === 'edit_project'">
+            @include('projects._form', ['project' => $project])
+        </x-modal>
     @endif
 @endsection

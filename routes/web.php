@@ -88,7 +88,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     | and take its tasks, and with them the record a KPI was scored from.
     |
     */
-    Route::resource('projects', ProjectController::class)->only(['index', 'store', 'show', 'edit', 'update']);
+    Route::resource('projects', ProjectController::class)->only(['index', 'store', 'show', 'update']);
 
     // Tasks are created and edited inside a project, so they travel with it.
     Route::resource('project-tasks', ProjectTaskController::class)->only(['store', 'update', 'destroy']);
@@ -157,6 +157,9 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         Route::get('/kpi-weighting', [KpiSettingController::class, 'edit'])->name('kpi-settings.edit');
         Route::put('/kpi-weighting', [KpiSettingController::class, 'update'])->name('kpi-settings.update');
+        // A position's own figure, set on its KPI page rather than in a table
+        // of every position on the company screen.
+        Route::put('/kpi/{position}/weighting', [KpiSettingController::class, 'updatePosition'])->name('kpi.weighting.update');
 
         // Appraisal: the administrator reviewing a member's performance over a
         // period of their choosing. generate() is what hands it to the member,

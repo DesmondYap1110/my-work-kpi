@@ -7,7 +7,7 @@
         /*BACKGROUND SECTION*/
         #bg-section {
             padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
+            padding-bottom: 0;
         }
         #bg-box {
             border-radius: 5px;
@@ -242,6 +242,11 @@
 @endpush
 
 @section('content')
+    @php
+        $fmtTop = fn ($n) => $n === null ? '-' : rtrim(rtrim(number_format((float) $n, 2), '0'), '.');
+        $topProjectShare = round($finalScore['weight'] * 100);
+    @endphp
+
     <section id="bg-section">
         <div class="container-fluid">
         <div id="bg-box" class="general-box">
@@ -269,66 +274,33 @@
                             <a href="{{ route('staff.edit', $staff->id) }}" id="general-btn" class="btn1"><i class="ri-edit-2-line"></i>Edit Member</a>
                         @endunless
                     </div>
+                    {{-- The three numbers of the calculation below, at a glance. --}}
                     <div id="bg-ft-div">
                         <div id="bg-ft-box">
                             <div id="bg-ft-icon-div">
-                                <div id="bg-ft-icon" class="bg-ft-icon-1">
-                                    <i class="ri-percent-line"></i>
-                                </div>
+                                <div id="bg-ft-icon" class="bg-ft-icon-1"><i class="ri-bar-chart-line"></i></div>
                             </div>
                             <div>
-                                {{-- The blended figure when the company counts
-                                     delivery, otherwise the objective score on
-                                     its own. --}}
-                                <p id="bg-ft-title">Total Score</p>
-                                <p id="bg-ft-p">{{ $finalScore['percentage'] ?? $overallScore['percentage'] }} %</p>
-                            </div>
-                        </div>
-                        @if ($finalScore['weight'] > 0)
-                            <div id="bg-ft-box">
-                                <div id="bg-ft-icon-div">
-                                    <div id="bg-ft-icon" class="bg-ft-icon-1">
-                                        <i class="ri-truck-line"></i>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p id="bg-ft-title">
-                                        Delivery ({{ round($finalScore['weight'] * 100) }}%)
-                                    </p>
-                                    <p id="bg-ft-p">
-                                        @if ($finalScore['delivery'] === null)
-                                            &ndash;
-                                        @else
-                                            {{ $finalScore['delivery'] }} %
-                                        @endif
-                                    </p>
-                                    <p id="footer-p" class="mb-0">
-                                        {{ $finalScore['delivery_detail']['done'] }}/{{ $finalScore['delivery_detail']['total'] }} tasks
-                                        &middot; {{ $finalScore['delivery_detail']['earned'] }}/{{ $finalScore['delivery_detail']['assigned'] }} pts
-                                    </p>
-                                </div>
-                            </div>
-                        @endif
-                        <div id="bg-ft-box">
-                            <div id="bg-ft-icon-div">
-                                <div id="bg-ft-icon" class="bg-ft-icon-3">
-                                    <i class="ri-bar-chart-line"></i>
-                                </div>
-                            </div>
-                            <div>
-                                <p id="bg-ft-title">Total KPI Point</p>
-                                <p id="bg-ft-p">{{ $overallScore['total_mark'] }}/{{ $overallScore['max_possible'] }}</p>
+                                <p id="bg-ft-title">KPI Score</p>
+                                <p id="bg-ft-p">{{ $fmtTop($finalScore['percentage']) }} <small>/ 100</small></p>
                             </div>
                         </div>
                         <div id="bg-ft-box">
                             <div id="bg-ft-icon-div">
-                                <div id="bg-ft-icon" class="bg-ft-icon-3">
-                                    <i class="ri-clipboard-line"></i>
-                                </div>
+                                <div id="bg-ft-icon" class="bg-ft-icon-1"><i class="ri-clipboard-line"></i></div>
                             </div>
                             <div>
-                                <p id="bg-ft-title">Total Project</p>
-                                <p id="bg-ft-p">{{ $completedProjects->count() }}</p>
+                                <p id="bg-ft-title">Project Marks</p>
+                                <p id="bg-ft-p">{{ $fmtTop($finalScore['project_points']) }} <small>/ {{ $topProjectShare }}</small></p>
+                            </div>
+                        </div>
+                        <div id="bg-ft-box">
+                            <div id="bg-ft-icon-div">
+                                <div id="bg-ft-icon" class="bg-ft-icon-3"><i class="ri-list-check-2"></i></div>
+                            </div>
+                            <div>
+                                <p id="bg-ft-title">KPI Objectives</p>
+                                <p id="bg-ft-p">{{ $fmtTop($finalScore['objective_points']) }} <small>/ {{ 100 - $topProjectShare }}</small></p>
                             </div>
                         </div>
                     </div>
@@ -338,179 +310,88 @@
         </div>
     </section>
 
-    <div class="row">
-        <div class="col-lg-6">
-            <div id="form-box" class="general-box">
-                <form name="profile_form" method="POST" action="">
-                        <div id="form-div">
-                            <p id="form-sub-title">Personal Information</p>
-                            <div class="row">
-                                <div class="col-lg-6">
-                                    <div class="input-group">
-                                        <label>IC No</label>
-                                        <input type="text" class="form-control" value="{{ $staff->ic }}" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="input-group">
-                                        <label>Gender</label>
-                                        <input type="text" class="form-control" value="{{ $staff->gender }}" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="input-group">
-                                        <label>Birth Date</label>
-                                        <input type="date" class="form-control" value="{{ optional($staff->dob)->format('Y-m-d') }}" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="input-group">
-                                        <label>Join Team Date</label>
-                                        <input type="date" class="form-control" value="{{ optional($staff->team_joined_date)->format('Y-m-d') }}" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="input-group">
-                                        <label>Contact No.</label>
-                                        <input type="tel" class="form-control" value="{{ $staff->contact }}" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="input-group">
-                                        <label>Email Address</label>
-                                        <input type="email" class="form-control" value="{{ $staff->email }}" readonly>
-                                    </div>
-                                </div>
+    {{-- Personal details first, then the score. Inside the same
+         container-fluid as the profile card, so the edges line up. --}}
+    <div class="container-fluid">
+    <div id="form-box" class="general-box">
+        <div class="row">
+            <div class="col-lg-6">
+                <div id="form-div">
+                    <p id="form-sub-title">Personal Information</p>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="input-group">
+                                <label>IC No</label>
+                                <input type="text" class="form-control" value="{{ $staff->ic }}" readonly>
                             </div>
                         </div>
-
-                        <div id="form-div">
-                            <p id="form-sub-title">Address Information</p>
-                            <div class="row">
-                                <div class="col-lg-12">
-                                    <div class="input-group">
-                                        <label>Address Details</label>
-                                        <input type="text" class="form-control" value="{{ $staff->address }}" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="input-group">
-                                        <label>Postcode</label>
-                                        <input type="text" class="form-control" value="{{ $staff->postcode }}" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="input-group">
-                                        <label>City</label>
-                                        <input type="text" class="form-control" value="{{ $staff->city }}" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="input-group">
-                                        <label>State</label>
-                                        <input type="text" class="form-control" value="{{ $staff->states }}" readonly>
-                                    </div>
-                                </div>
+                        <div class="col-lg-6">
+                            <div class="input-group">
+                                <label>Gender</label>
+                                <input type="text" class="form-control" value="{{ $staff->gender }}" readonly>
                             </div>
                         </div>
-                    </form>
+                        <div class="col-lg-6">
+                            <div class="input-group">
+                                <label>Birth Date</label>
+                                <input type="date" class="form-control" value="{{ optional($staff->dob)->format('Y-m-d') }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="input-group">
+                                <label>Join Team Date</label>
+                                <input type="date" class="form-control" value="{{ optional($staff->team_joined_date)->format('Y-m-d') }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="input-group">
+                                <label>Contact No.</label>
+                                <input type="tel" class="form-control" value="{{ $staff->contact }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="input-group">
+                                <label>Email Address</label>
+                                <input type="email" class="form-control" value="{{ $staff->email }}" readonly>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="col-lg-6">
-                <div id="form-box" class="general-box">
-                    <p id="form-sub-title">KPI Record</p>
+                <div id="form-div">
+                    <p id="form-sub-title">Address Information</p>
                     <div class="row">
                         <div class="col-lg-12">
-                            <div style="margin-bottom: 15px;">
-                                <form name="filter_form" method="GET" action="">
-                                    <div class="row align-items-center">
-                                        <div class="col-lg-6">
-                                            <div class="input-group">
-                                                <label>Project</label>
-                                                <select class="form-control" name="pid">
-                                                    <option value="" disabled @selected(! $selectedProjectId)>Select Project</option>
-                                                    @foreach ($completedProjects as $project)
-                                                        <option value="{{ $project->id }}" @selected($selectedProjectId == $project->id)>{{ $project->title }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div id="filter-btn-div">
-                                                <button type="submit" id="general-btn" class="btn1"><i class="ri-filter-2-line"></i>Filter</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </form>
+                            <div class="input-group">
+                                <label>Address Details</label>
+                                <input type="text" class="form-control" value="{{ $staff->address }}" readonly>
                             </div>
-                            <div id="form-div">
-                                <div id="table-div">
-                                    <table class="table table-bordered dt-responsive nowrap align-middle">
-                                        <thead>
-                                            <tr>
-                                                <th>Objective</th>
-                                                <th class="text-center">Marks</th>
-                                                <th class="text-center">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td colspan="3" id="tb-sub-til">{{ $staff->position->job_scope ?? '-' }}</td>
-                                            </tr>
-                                            @forelse ($entries as $entry)
-                                                <tr>
-                                                    <td>{{ $entry->objectiveInfo->title ?? '-' }}</td>
-                                                    <td class="text-center">{{ $entry->mark }}</td>
-                                                    <td class="text-center">
-                                                        @if (is_null($entry->submitted_at) && is_null($entry->status))
-                                                            -
-                                                        @elseif (is_null($entry->status))
-                                                            <span class="tb-status" id="tb-status-3">Pending</span>
-                                                        @elseif ($entry->status === \App\Enums\ProjectKpiStatus::Approved)
-                                                            <span class="tb-status" id="tb-status-1">Approved</span>
-                                                        @else
-                                                            <span class="tb-status" id="tb-status-2">Reject</span>
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="3" class="text-center">No Record</td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="input-group">
+                                <label>Postcode</label>
+                                <input type="text" class="form-control" value="{{ $staff->postcode }}" readonly>
                             </div>
-                            <div id="form-div">
-                                <div id="table-div">
-                                    <table class="table table-bordered dt-responsive nowrap align-middle">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center">Total</th>
-                                                <th class="text-center">Self-Add</th>
-                                                <th class="text-center">KPI Score</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                @if ($projectScore)
-                                                    <td class="text-center">{{ $projectScore['total_mark'] }}/{{ $projectScore['max_possible'] }}</td>
-                                                    <td class="text-center">{{ $projectScore['total_mark'] }}</td>
-                                                    <td class="text-center">{{ $projectScore['percentage'] }} %</td>
-                                                @else
-                                                    <td class="text-center">-</td>
-                                                    <td class="text-center">-</td>
-                                                    <td class="text-center">-</td>
-                                                @endif
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="input-group">
+                                <label>City</label>
+                                <input type="text" class="form-control" value="{{ $staff->city }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="input-group">
+                                <label>State</label>
+                                <input type="text" class="form-control" value="{{ $staff->states }}" readonly>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    @include('staff._kpi-scorecard')
+    </div>
 @endsection

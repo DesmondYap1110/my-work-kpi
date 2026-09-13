@@ -13,6 +13,9 @@
     @param string|null $urlTemplate  data-url-template for JS-populated edit
                                      modals (see public/js/project/modals.js)
     @param string      $confirm  label for the confirm button
+    @param string      $dismiss  label for the close button - change it when
+                                 "Cancel" would read as the action itself, as
+                                 on the Cancel Project dialog
     @param bool        $openOnError  reopen after a failed submit, showing the
                                      messages inside - for a modal whose form
                                      posts normally rather than over AJAX.
@@ -25,6 +28,7 @@
     'method' => 'POST',
     'urlTemplate' => null,
     'confirm' => 'Confirm',
+    'dismiss' => 'Cancel',
     'openOnError' => false,
 ])
 
@@ -61,7 +65,7 @@
                 </div>
 
                 <div id="modal-btn-div">
-                    <x-button variant="secondary" icon="ri-close-fill" dismiss>Cancel</x-button>
+                    <x-button variant="secondary" icon="ri-close-fill" dismiss>{{ $dismiss }}</x-button>
                     <x-button variant="primary" icon="ri-check-fill">{{ $confirm }}</x-button>
                 </div>
             </form>

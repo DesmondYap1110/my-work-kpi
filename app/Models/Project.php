@@ -23,6 +23,9 @@ class Project extends Model
         'assigned_date',
         'status',
         'complete_date',
+        'cancel_reason',
+        'cancelled_at',
+        'cancelled_by',
     ];
 
     protected $casts = [
@@ -30,8 +33,18 @@ class Project extends Model
         'end_date' => 'date',
         'assigned_date' => 'date',
         'complete_date' => 'datetime',
+        'cancelled_at' => 'datetime',
         'status' => ProjectStatus::class,
     ];
+
+    /**
+     * Who cancelled the project - recorded with the reason, so a cancelled
+     * project can always answer "why, and says who".
+     */
+    public function canceller(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'cancelled_by', 'id');
+    }
 
     /**
      * The people on this project: whoever has a task on it.
@@ -44,6 +57,43 @@ class Project extends Model
     {
         return Staff::query()
             ->whereIn('id', $this->tasks()->whereNotNull('assignee_id')->select('assignee_id'));
+    }
+
+    /**
+     * Whether new work may be added to this project.
+     *
+     * A cancelled project has been stopped on purpose; a task added to it
+     * afterwards is work nobody will do, and - since delivery points come from
+     * tasks - work that could still be scored. Asked by the project page, which
+     * hides Add Task, and by ProjectTaskController::store(), which refuses it.
+     */
+    /**
+     * Whether the project's own details may still be edited. A completed or
+     * cancelled project is closed; its record stays as it was left. Asked by
+     * the project list's Edit button and the project page's Edit Project.
+     */
+    public function isEditable(): bool
+    {
+        return in_array($this->status, [ProjectStatus::Active, ProjectStatus::InProgress], true);
+    }
+
+    public function acceptsNewTasks(): bool
+    {
+        return $this->status !== ProjectStatus::Cancelled;
+    }
+
+    /**
+     * Status pill colour, matching the project list: 1 green, 2 red, 4 blue,
+     * 5 pink.
+     */
+    public function statusColourId(): int
+    {
+        return match ($this->status) {
+            ProjectStatus::Active => 5,
+            ProjectStatus::Cancelled => 2,
+            ProjectStatus::InProgress => 4,
+            ProjectStatus::Completed => 1,
+        };
     }
 
     public function tasks(): HasMany

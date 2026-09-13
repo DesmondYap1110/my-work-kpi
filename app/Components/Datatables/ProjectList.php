@@ -90,31 +90,30 @@ class ProjectList extends Datatables
     {
         $status = $project->status;
 
-        // Open is available whatever the state - even a cancelled project's
-        // tasks are worth being able to look at.
-        $buttons = [
-            $this->tbLink(route('projects.show', $project->id), 'ri-list-check-2', 'tb-ac-btn-6', 'Open tasks'),
-        ];
-
-        if (in_array($status, [ProjectStatus::Active, ProjectStatus::InProgress], true)) {
-            $buttons[] = $this->tbLink(route('projects.edit', $project->id), 'ri-edit-2-line', 'tb-ac-btn-1', 'Edit');
-        }
+        // No "open tasks" or "edit" button: the project title opens the
+        // project, and Edit Project lives on that page - see
+        // projects/show.blade.php.
+        $buttons = [];
 
         // Cancelling and deleting end a project and take its tasks with it -
         // and with them the record a KPI was scored from. Members add and
         // edit; ending one is the administrator's.
-        if (! static::viewerIsAdmin()) {
-            return implode(' ', $buttons);
+        if (static::viewerIsAdmin()) {
+            if (in_array($status, [ProjectStatus::Active, ProjectStatus::InProgress], true)) {
+                // Opens a dialog asking for the reason rather than a yes/no
+                // confirm - see projects/index.blade.php and project/modals.js.
+                $buttons[] = $this->tbButton('ri-close-circle-line', 'tb-ac-btn-3', 'Cancel', [
+                    'id' => $project->id,
+                    'title' => $project->title,
+                ], 'js-cancel-project');
+            }
+
+            if ($status === ProjectStatus::Active) {
+                $buttons[] = $this->tbDeleteForm(route('projects.destroy', $project->id));
+            }
         }
 
-        if (in_array($status, [ProjectStatus::Active, ProjectStatus::InProgress], true)) {
-            $buttons[] = $this->tbForm(route('projects.cancel', $project->id), 'POST', 'ri-close-circle-line', 'tb-ac-btn-3', 'Cancel', 'js-confirm-cancel');
-        }
-
-        if ($status === ProjectStatus::Active) {
-            $buttons[] = $this->tbDeleteForm(route('projects.destroy', $project->id));
-        }
-
-        return implode(' ', $buttons);
+        // A cancelled or completed project has nothing left to act on.
+        return $buttons === [] ? '-' : implode(' ', $buttons);
     }
 }

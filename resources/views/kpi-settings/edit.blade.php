@@ -13,69 +13,69 @@
 
             <p id="form-sub-title">KPI Weighting</p>
             <p id="footer-p" class="mb-3">
-                How much of a KPI score comes from delivering project work. The rest
-                comes from the objectives a member is rated on. A company that runs
-                no projects leaves this at 0 and scores on objectives alone.
+                The company figure for how a KPI score out of 100 is <strong>calculated</strong>:
+                how much comes from <strong>project work</strong>, and how much from the KPI
+                objectives a member is rated on. A company that runs no projects leaves this
+                at 0 and scores on objectives alone.
             </p>
 
             <div class="row">
                 <div class="col-lg-6">
                     <div class="input-group">
-                        <label>Project Weighting<span>*</span></label>
+                        <label>Project share of the KPI<span>*</span></label>
                         <div class="weighting-field">
                             <input type="number" class="form-control" name="project_weight"
                                    min="0" max="100" step="1" value="{{ $weight }}" required>
-                            <span class="weighting-suffix">% delivery</span>
+                            <span class="weighting-suffix">out of 100</span>
                         </div>
-                        <span id="note-p" class="d-block">
-                            Objectives take the remaining {{ 100 - (int) $weight }}%.
+                        <span id="note-p" class="d-block kpi-weighting-note">
+                            KPI objectives take the remaining {{ 100 - (int) $weight }}.
                         </span>
                     </div>
                 </div>
             </div>
 
-            <p id="form-sub-title" class="mt-4">Per-position override</p>
+            <p id="form-sub-title" class="mt-4">Per position</p>
+            {{-- Set on each position's KPI page, beside the objectives it
+                 weighs against - see kpi/objectives/_project-kpi. --}}
             <p id="footer-p" class="mb-3">
-                Leave blank to follow the company figure. Set a number where that
-                answer does not fit the role &mdash; an office admin who is never
-                assigned project work belongs at 0.
+                A position can have its own project share and its own project marks target.
+                Set them on the position's KPI page: <strong>Human Resource &rsaquo; Position</strong>,
+                then click <strong>Yes</strong> under KPI Assigned.
             </p>
 
-            <div id="table-div">
-                <table class="table table-bordered align-middle">
-                    <thead>
-                        <tr>
-                            <th>Position</th>
-                            <th class="text-center">Delivery %</th>
-                            <th class="text-center">Objectives %</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($positions as $position)
-                            @php
-                                $override = old('positions.'.$position->id, $position->project_weight);
-                            @endphp
+            @if ($overrides->isNotEmpty())
+                <div id="table-div" class="mb-3">
+                    <table class="table table-bordered align-middle">
+                        <thead>
                             <tr>
-                                <td>{{ $position->position_name }}</td>
-                                <td class="text-center">
-                                    <input type="number" class="form-control weighting-cell"
-                                           name="positions[{{ $position->id }}]"
-                                           min="0" max="100" step="1"
-                                           value="{{ $override }}"
-                                           placeholder="{{ $weight }}">
-                                </td>
-                                <td class="text-center">
-                                    {{ 100 - (int) ($override ?? $weight) }}%
-                                </td>
+                                <th>Position with its own figure</th>
+                                <th class="text-center">Project share</th>
+                                <th class="text-center">Project marks target</th>
+                                <th class="text-center">Actions</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="text-center">No Record</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            @foreach ($overrides as $position)
+                                <tr>
+                                    <td>{{ $position->position_name }}</td>
+                                    <td class="text-center">{{ $position->project_weight !== null ? $position->project_weight.' / 100' : 'Company figure' }}</td>
+                                    <td class="text-center">
+                                        {{ $position->project_target !== null ? rtrim(rtrim((string) $position->project_target, '0'), '.').' marks' : '-' }}
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{{ route('kpi.objectives.index', $position->id) }}" class="tb-ac-btn" id="tb-ac-btn-4" title="Open this position's KPI">
+                                            <i class="ri-external-link-line"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p id="footer-p" class="mb-3">Every position follows the company figure.</p>
+            @endif
 
             <div id="form-btn-div">
                 <a href="{{ route('projects.index') }}" id="general-btn" class="btn2"><i class="ri-close-fill"></i>Cancel</a>

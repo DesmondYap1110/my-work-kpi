@@ -146,6 +146,7 @@ class StaffKpiScoreService
         $delivery = $deliveryDetail['percentage'];
 
         $weight = $this->projectShare($staff);
+        $points = self::points($objective, $delivery, $weight);
 
         return [
             'objective' => $objective,
@@ -153,7 +154,102 @@ class StaffKpiScoreService
             'weight' => $weight,
             'percentage' => self::blend($objective, $delivery, $weight),
             'delivery_detail' => $deliveryDetail,
+            'objective_detail' => $objectiveScore,
+            // What each half is worth out of 100, and how much of the 100 it
+            // was allowed - see points().
+            'project_points' => $points['project'],
+            'project_share' => $points['project_share'],
+            'objective_points' => $points['objectives'],
+            'objective_share' => $points['objectives_share'],
+            'from' => $from,
+            'to' => $to,
         ];
+    }
+
+    /**
+     * Each half's contribution to the score out of 100, worked out exactly as
+     * blend() works out the total, so the two parts on a scorecard always add
+     * up to the total printed beside them.
+     *
+     * Normally the project half is worth its share and the objectives the
+     * rest: 80% on projects at a 50 share is 40 points. When one half has
+     * nothing to score, blend() lets the other stand alone, so that half's
+     * share becomes the whole 100 here too.
+     *
+     * @return array{project: float|null, project_share: float, objectives: float|null, objectives_share: float}
+     */
+    public static function points(?float $objective, ?float $delivery, float $weight): array
+    {
+        [$objective, $delivery] = self::excludeUncounted($objective, $delivery, $weight);
+
+        $projectShare = match (true) {
+            $delivery === null => 0.0,
+            $objective === null => 100.0,
+            default => round($weight * 100, 2),
+        };
+
+        $objectivesShare = $objective === null ? 0.0 : round(100 - $projectShare, 2);
+
+        return [
+            'project' => $delivery === null ? null : round($delivery * $projectShare / 100, 2),
+            'project_share' => $projectShare,
+            'objectives' => $objective === null ? null : round($objective * $objectivesShare / 100, 2),
+            'objectives_share' => $objectivesShare,
+        ];
+    }
+
+    /**
+     * The KPI objectives behind the objectives half, item by item: approved
+     * marks against the most that could have been earned, across the member's
+     * completed projects - or one of them.
+     *
+     * Only approved marks count towards the score; pending and rejected ones
+     * are counted separately so the scorecard can say what is still waiting.
+     *
+     * @return \Illuminate\Support\Collection<int, array{category: string, objectives: \Illuminate\Support\Collection}>
+     */
+    public function objectiveBreakdown(Staff $staff, ?int $projectId = null): Collection
+    {
+        $position = $staff->position;
+
+        if (! $position) {
+            return collect();
+        }
+
+        $projectIds = $this->completedProjectsFor($staff)->pluck('id');
+
+        if ($projectId) {
+            $projectIds = $projectIds->filter(fn ($id) => $id === $projectId)->values();
+        }
+
+        $entries = $staff->projectKpis()
+            ->whereIn('project_id', $projectIds)
+            ->get()
+            ->groupBy('objective_info_id');
+
+        return $position->objectives()
+            ->with(['category', 'infos'])
+            ->orderBy('id')
+            ->get()
+            ->groupBy(fn ($objective) => $objective->category->name ?? 'Uncategorised')
+            ->map(fn ($objectives, $category) => [
+                'category' => $category,
+                'objectives' => $objectives->map(fn ($objective) => [
+                    'title' => $objective->title,
+                    'items' => $objective->infos->map(function ($item) use ($entries, $projectIds) {
+                        $rows = $entries->get($item->id, collect());
+
+                        return [
+                            'title' => $item->title,
+                            'approved' => (int) $rows->where('status', ProjectKpiStatus::Approved)->sum('mark'),
+                            'max' => $item->maxMark() * $projectIds->count(),
+                            'pending' => $rows->filter(fn ($r) => $r->status === null && $r->submitted_at !== null)->count(),
+                            'rejected' => $rows->where('status', ProjectKpiStatus::Rejected)->count(),
+                        ];
+                    }),
+                ]),
+            ])
+            ->values();
     }
 
     /**
@@ -165,6 +261,8 @@ class StaffKpiScoreService
      */
     public static function blend(?float $objective, ?float $delivery, float $weight): ?float
     {
+        [$objective, $delivery] = self::excludeUncounted($objective, $delivery, $weight);
+
         if ($delivery === null && $objective === null) {
             return null;
         }
@@ -178,5 +276,29 @@ class StaffKpiScoreService
         }
 
         return round($delivery * $weight + $objective * (1 - $weight), 2);
+    }
+
+    /**
+     * Drops a half whose share of the score is zero, before anything else
+     * looks at it.
+     *
+     * Without this, the "one half stands alone" rule let an uncounted half
+     * become the whole score: a position with a project share of 0 and no
+     * approved objective marks yet scored 100 out of 100 purely on project
+     * work the company had said should count for nothing.
+     *
+     * @return array{0: float|null, 1: float|null}  [objective, delivery]
+     */
+    private static function excludeUncounted(?float $objective, ?float $delivery, float $weight): array
+    {
+        if ($weight <= 0) {
+            $delivery = null;
+        }
+
+        if ($weight >= 1) {
+            $objective = null;
+        }
+
+        return [$objective, $delivery];
     }
 }

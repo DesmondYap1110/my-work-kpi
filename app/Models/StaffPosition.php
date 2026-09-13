@@ -24,6 +24,11 @@ class StaffPosition extends Model
         'position_name',
         'job_scope',
         'project_weight',
+        'project_target',
+    ];
+
+    protected $casts = [
+        'project_target' => 'decimal:2',
     ];
 
     public function staff(): HasMany

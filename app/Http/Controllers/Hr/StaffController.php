@@ -107,7 +107,9 @@ class StaffController extends Controller implements BreadcrumbInterfaces
             // removed: otherwise the dropdown silently shows nothing selected,
             // and saving an unrelated change would appear to demand a move.
             'positions' => StaffPosition::query()
-                ->where(fn ($q) => $q->acceptingMembers()->orWhereKey($staff->position_id))
+                // orWhere on the key column: Laravel 10's builder has
+                // whereKey() but no orWhereKey().
+                ->where(fn ($q) => $q->acceptingMembers()->orWhere('staff_position.id', $staff->position_id))
                 ->orderBy('position_name')
                 ->get(),
             'teams' => Team::orderBy('team_name')->get(),
@@ -222,22 +224,22 @@ class StaffController extends Controller implements BreadcrumbInterfaces
         $completedProjects = $scoreService->completedProjectsFor($staff);
         $selectedProjectId = $request->integer('pid') ?: null;
 
-        $entries = $staff->projectKpis()
-            ->with(['project', 'objectiveInfo'])
-            ->whereIn('project_id', $completedProjects->pluck('id'))
-            ->when($selectedProjectId, fn ($q) => $q->where('project_id', $selectedProjectId))
-            ->get();
+        // Only a project this member actually completed may be picked; any
+        // other id in the query string just shows all of them.
+        if ($selectedProjectId && ! $completedProjects->contains('id', $selectedProjectId)) {
+            $selectedProjectId = null;
+        }
 
         return [
             'staff' => $staff,
             'completedProjects' => $completedProjects,
             'selectedProjectId' => $selectedProjectId,
-            'entries' => $entries,
-            'overallScore' => $scoreService->totalScore($staff),
-            'projectScore' => $selectedProjectId ? $scoreService->totalScore($staff, $selectedProjectId) : null,
-            // The other half of the score: project work actually delivered,
-            // priced by each task's tag. See ProjectDeliveryScoreService.
+            // The score out of 100 and both halves of it - project marks and
+            // KPI objectives - worked out by the same rule.
             'finalScore' => $scoreService->finalScore($staff),
+            // The objectives half item by item, optionally for one project.
+            'objectiveBreakdown' => $scoreService->objectiveBreakdown($staff, $selectedProjectId),
+            'projectScore' => $selectedProjectId ? $scoreService->totalScore($staff, $selectedProjectId) : null,
             'self' => false,
         ];
     }

@@ -13,6 +13,16 @@
     padding-top: 12px;
 }
 
+/*
+ * Cards always keep a gap below them. The theme gives #form-box no bottom
+ * margin on desktop, so stacked cards touched and read as one - including
+ * cards in separate wrappers (a <form>, a <section>), which is why this is a
+ * bottom margin on every card rather than a sibling rule.
+ */
+.general-box {
+    margin-bottom: 20px;
+}
+
 /* Loading overlay - see resources/views/components/loader.blade.php */
 .loading-panel {
     top: 0;
@@ -897,4 +907,221 @@ input[type="file"].form-control:hover:not(:disabled):not([readonly])::file-selec
 .text-peek-popover .popover-arrow::before {
     border-top-color: var(--brand-border, #e9e9ef) !important;
     border-bottom-color: var(--brand-border, #e9e9ef) !important;
+}
+
+/* Why a project was cancelled, on its own page. */
+/* Its wrapper has no top padding, so the gap from the title row is set here;
+   without it the box touched the header and the Back button's edge. */
+.project-cancelled {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 5px;
+    border-left: 3px solid var(--brand-danger, #ef4444);
+    background: rgb(239 68 68 / 6%);
+}
+.project-cancelled-head {
+    gap: 6px;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brand-danger, #ef4444);
+}
+.project-cancelled-reason {
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: var(--brand-text, #3b3b3b);
+}
+
+/* A position's project KPI weighting, on its KPI page. */
+.kpi-weighting-row {
+    gap: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+.kpi-weighting-input {
+    margin-bottom: 0 !important;
+}
+.kpi-weighting-split {
+    gap: 8px;
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    font-size: 13px;
+}
+.kpi-weighting-part {
+    padding: 8px 12px;
+    border-radius: 5px;
+    color: var(--brand-text, #3b3b3b);
+}
+.kpi-weighting-part strong {
+    font-size: 15px;
+    margin-right: 4px;
+}
+.kpi-weighting-part.is-project {
+    background: rgb(99 102 241 / 10%);
+}
+.kpi-weighting-part.is-project strong {
+    color: var(--brand-primary, #6366f1);
+}
+.kpi-weighting-part.is-objectives {
+    background: var(--brand-background, #eaedf7);
+}
+.kpi-weighting-plus {
+    color: var(--brand-text-muted, #6e6e6e);
+}
+#note-p.kpi-weighting-note {
+    margin-top: 10px;
+    color: var(--brand-text, #3b3b3b);
+}
+
+/* ---------------------------------------------------------------------------
+   Member KPI scorecard - see staff/_kpi-scorecard.blade.php. Laid out as the
+   calculation itself: project marks + KPI objectives = KPI score out of 100.
+--------------------------------------------------------------------------- */
+.kpi-card-head {
+    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.kpi-card-total {
+    line-height: 1;
+    text-align: right;
+}
+.kpi-card-total-value {
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--brand-primary, #6366f1);
+}
+.kpi-card-total-of {
+    font-size: 14px;
+    margin-left: 4px;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.kpi-sum {
+    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    margin-bottom: 22px;
+}
+.kpi-sum-part {
+    flex: 1 1 200px;
+    padding: 14px 16px;
+    border-radius: 6px;
+    background: var(--brand-background, #eef0f7);
+}
+.kpi-sum-part.is-project {
+    background: rgb(99 102 241 / 9%);
+}
+.kpi-sum-part.is-total {
+    background: rgb(99 102 241 / 16%);
+}
+.kpi-sum-label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: 0.3px;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.kpi-sum-points {
+    line-height: 1.1;
+    margin-bottom: 6px;
+}
+.kpi-sum-points strong {
+    font-size: 26px;
+    color: var(--brand-text, #1e293b);
+}
+.kpi-sum-part.is-project .kpi-sum-points strong,
+.kpi-sum-part.is-total .kpi-sum-points strong {
+    color: var(--brand-primary, #6366f1);
+}
+.kpi-sum-points span {
+    font-size: 13px;
+    margin-left: 4px;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.kpi-sum-detail {
+    font-size: 12px;
+    margin-bottom: 0;
+    color: var(--brand-text, #3b3b3b);
+}
+.kpi-sum-op {
+    display: flex;
+    font-size: 20px;
+    font-weight: 600;
+    align-items: center;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.kpi-panel-head {
+    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.kpi-panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--brand-text, #1e293b);
+}
+.kpi-panel-title .kpi-item-desc {
+    display: inline;
+    margin-left: 6px;
+    font-weight: 400;
+}
+.kpi-panel-filter select.form-control {
+    min-width: 220px;
+}
+.kpi-panel-tools {
+    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+/* The theme forces .form-control to full width; a search box beside a title
+   should not push the title onto its own line. */
+.kpi-panel-head input.kpi-panel-search.form-control {
+    flex: 0 0 280px;
+    width: 280px !important;
+    max-width: 100%;
+    margin-left: auto;
+}
+@media (max-width: 575px) {
+    .kpi-panel-tools,
+    .kpi-panel-filter,
+    .kpi-panel-filter select.form-control {
+        width: 100%;
+        min-width: 0;
+    }
+    .kpi-panel-head input.kpi-panel-search.form-control {
+        flex: 1 1 100%;
+        width: 100% !important;
+    }
+}
+.kpi-objective-row {
+    font-size: 12px;
+    font-weight: 600;
+    background: rgb(0 0 0 / 3%);
+}
+.kpi-item-cell {
+    padding-left: 22px !important;
+}
+.kpi-muted {
+    color: var(--brand-text-muted, #6e6e6e);
+}
+@media (max-width: 767px) {
+    .kpi-sum-op {
+        display: none;
+    }
+    .kpi-card-total {
+        text-align: left;
+    }
 }

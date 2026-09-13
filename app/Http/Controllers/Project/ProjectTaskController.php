@@ -68,6 +68,12 @@ class ProjectTaskController extends Controller implements BreadcrumbInterfaces
     {
         $project = Project::findOrFail($request->integer('project_id'));
 
+        // The page hides Add Task on a cancelled project; this is the rule
+        // behind it, since project_id arrives from a form.
+        if (! $project->acceptsNewTasks()) {
+            return back()->withErrors(['project' => 'This project has been cancelled, so no new tasks can be added to it.']);
+        }
+
         $data = $request->safe()->except('attachments');
         $data['is_milestone'] = $request->boolean('is_milestone');
         $data['approval_status'] = PhaseApprovalStatus::NoSubmission;

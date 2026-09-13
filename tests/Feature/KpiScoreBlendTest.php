@@ -48,6 +48,19 @@ class KpiScoreBlendTest extends TestCase
         $this->assertSame(90.0, StaffKpiScoreService::blend(90.0, 10.0, 0.0));
     }
 
+    /**
+     * The bug the scorecard revamp exposed: with the project share at 0 and no
+     * approved objective marks yet, project work "stood alone" and became a
+     * 100/100 score for work that was meant to count for nothing.
+     */
+    public function test_an_uncounted_half_never_stands_in_for_the_other(): void
+    {
+        $this->assertNull(StaffKpiScoreService::blend(null, 100.0, 0.0),
+            'Project work at a 0 share must not become the whole score.');
+        $this->assertNull(StaffKpiScoreService::blend(100.0, null, 1.0),
+            'Objectives at a 0 share must not become the whole score.');
+    }
+
     public function test_a_full_weight_ignores_objectives_entirely(): void
     {
         $this->assertSame(10.0, StaffKpiScoreService::blend(90.0, 10.0, 1.0));

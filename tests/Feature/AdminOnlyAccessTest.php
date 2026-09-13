@@ -67,7 +67,6 @@ class AdminOnlyAccessTest extends TestCase
         'projects.index',
         'projects.store',
         'projects.show',
-        'projects.edit',
         'projects.update',
     ];
 

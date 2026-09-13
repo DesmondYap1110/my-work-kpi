@@ -12,6 +12,7 @@ use App\Models\ProjectTag;
 use App\Models\ProjectTask;
 use App\Models\Staff;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ProjectController extends Controller implements BreadcrumbInterfaces
@@ -19,7 +20,6 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
     public function getBreadcrumbs(): array
     {
         $current = match (request()->route()->getName()) {
-            'projects.edit' => 'Edit Project',
             'projects.show' => request()->route('project')?->title,
             default => null,
         };
@@ -81,14 +81,19 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
         return redirect()->route('projects.index')->with('status', 'Project added successfully.');
     }
 
-    public function edit(Project $project): View
-    {
-        return view('projects.edit', ['project' => $project]);
-    }
-
+    /**
+     * Saves the Edit Project dialog on the project's own page - there is no
+     * separate edit screen - and returns to that page.
+     */
     public function update(UpdateProjectRequest $request, Project $project): RedirectResponse
     {
-        $data = $request->safe()->except('mark_complete');
+        // The page only offers editing while the project is open; this is the
+        // rule behind it, for a request made without the page.
+        if (! $project->isEditable()) {
+            return back()->withErrors(['project' => 'A '.strtolower($project->status->label()).' project can no longer be edited.']);
+        }
+
+        $data = $request->safe()->except(['mark_complete', '_form']);
 
         // The "mark complete" checkbox is only offered while the project
         // isn't already Completed, and only ever moves it forward to
@@ -104,18 +109,38 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
             $project->seedKpiEntriesForCompletion();
         }
 
-        return redirect()->route('projects.index')->with('status', 'Project updated successfully.');
+        return redirect()->route('projects.show', $project)->with('status', $project->status === ProjectStatus::Completed
+            ? 'Project updated and marked as completed.'
+            : 'Project updated successfully.');
     }
 
-    public function cancel(Project $project): RedirectResponse
+    /**
+     * Cancels a project, which requires saying why.
+     *
+     * The reason is kept with who cancelled it and when: a cancelled project
+     * stops taking new work, and the question anyone asks of it later is why.
+     */
+    public function cancel(Request $request, Project $project): RedirectResponse
     {
         if (! in_array($project->status, [ProjectStatus::Active, ProjectStatus::InProgress], true)) {
             return back()->withErrors(['project' => 'Only active or in-progress projects can be cancelled.']);
         }
 
-        $project->update(['status' => ProjectStatus::Cancelled]);
+        $request->validate([
+            'cancel_reason' => ['required', 'string', 'min:5', 'max:1000'],
+        ], [
+            'cancel_reason.required' => 'Please give a reason for cancelling this project.',
+            'cancel_reason.min' => 'Please give a little more detail on why the project is being cancelled.',
+        ]);
 
-        return back()->with('status', 'Project cancelled.');
+        $project->update([
+            'status' => ProjectStatus::Cancelled,
+            'cancel_reason' => trim($request->input('cancel_reason')),
+            'cancelled_at' => now(),
+            'cancelled_by' => $request->user()->id,
+        ]);
+
+        return back()->with('status', 'Project "'.$project->title.'" cancelled.');
     }
 
     public function destroy(Project $project): RedirectResponse

@@ -58,6 +58,8 @@
         </form>
     </div>
 
+    @include('kpi.objectives._project-kpi')
+
     @forelse ($categories as $category)
         @php
             $objectives = $objectivesByCategory->get($category->id, collect());
