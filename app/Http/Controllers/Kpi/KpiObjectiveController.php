@@ -28,7 +28,7 @@ class KpiObjectiveController extends Controller implements BreadcrumbInterfaces
     {
         return [
             ['name' => 'Position', 'route' => 'positions.index', 'active' => false],
-            ['name' => 'KPI Objectives', 'route' => '', 'active' => true],
+            ['name' => 'KPI Setting', 'route' => '', 'active' => true],
         ];
     }
 
@@ -63,6 +63,15 @@ class KpiObjectiveController extends Controller implements BreadcrumbInterfaces
             // For the weighting box: the company figure the position follows
             // when it has no figure of its own.
             'companyProjectWeight' => (int) \App\Models\KpiSetting::current()->project_weight,
+            // The project tags this position can use (its own and the ones open
+            // to everyone), and the other positions' tags it could be added to.
+            'positionTags' => \App\Models\ProjectTag::active()->withCount('tasks')
+                ->orderBy('sort_order')->orderBy('name')->get()
+                ->filter(fn ($tag) => $tag->allowsPosition($position->id))->values(),
+            'otherTags' => \App\Models\ProjectTag::active()
+                ->orderBy('name')->get()
+                ->reject(fn ($tag) => $tag->allowsPosition($position->id))->values(),
+            'positionNames' => StaffPosition::pluck('position_name', 'id'),
             'sections' => \App\Models\AssessmentSection::query()
                 ->where('template_id', \App\Models\AssessmentTemplate::current()->id)
                 ->where('type', \App\Models\AssessmentSection::TYPE_RATING)

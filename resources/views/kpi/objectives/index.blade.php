@@ -1,24 +1,39 @@
 @extends('layouts.app')
 
-@section('title', 'KPI Objectives - '.$position->position_name)
+@section('title', 'KPI Setting - '.$position->position_name)
 
 @section('content')
     <div id="tb-box" class="general-box mb-3">
         <div id="table-padding" class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
-                <p id="tb-title" class="mb-1">{{ $position->position_name }}</p>
-                <p id="footer-p" class="mb-0">
-                    A category holds objectives, and each objective holds the items that get scored.
-                </p>
+                <p id="tb-title" class="mb-0">{{ $position->position_name }}</p>
             </div>
             <div>
                 <a href="{{ route('positions.index') }}" id="general-btn" class="btn2">
                     <i class="ri-arrow-left-line"></i>Back to Position
                 </a>
-                <a href="javascript:void(0);" id="general-btn" class="btn1" data-inline-form="#add-category">
-                    <i class="ri-add-fill"></i>Add Category
-                </a>
             </div>
+        </div>
+    </div>
+
+    {{-- Three parts: how the score splits (Project KPI), what project work
+         earns (Project Tags), and what the objectives half is rated on (KPI
+         Objectives). --}}
+    @include('kpi.objectives._project-kpi')
+    @include('kpi.objectives._position-tags')
+
+    <div id="form-box" class="general-box mb-3 kpi-objectives-section">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <p id="form-sub-title" class="mb-0 d-flex align-items-center gap-2">
+                KPI Objectives
+                <button type="button" class="kpi-help-btn" aria-label="How are KPI objectives organised?"
+                        data-help-hover="A category holds objectives, and each objective holds the items that get scored.">
+                    <i class="ri-question-line"></i>
+                </button>
+            </p>
+            <a href="javascript:void(0);" id="general-btn" class="btn1" data-inline-form="#add-category">
+                <i class="ri-add-fill"></i>Add Category
+            </a>
         </div>
 
         {{-- Inline rather than a dialog, so the structure stays visible while
@@ -56,9 +71,6 @@
                 <a href="javascript:void(0);" id="general-btn" class="btn2 js-inline-form-cancel"><i class="ri-close-fill"></i>Cancel</a>
             </div>
         </form>
-    </div>
-
-    @include('kpi.objectives._project-kpi')
 
     @forelse ($categories as $category)
         @php
@@ -192,5 +204,6 @@
             </div>
         </div>
     @endforelse
+    </div>
 
 @endsection

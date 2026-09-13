@@ -20,8 +20,8 @@ class ProjectTagController extends Controller implements BreadcrumbInterfaces
     public function getBreadcrumbs(): array
     {
         return [
-            ['name' => 'Project Setup', 'route' => '', 'active' => false],
-            ['name' => 'Tag', 'route' => '', 'active' => true],
+            ['name' => 'Settings', 'route' => '', 'active' => false],
+            ['name' => 'Project Tag Setting', 'route' => '', 'active' => true],
         ];
     }
 
@@ -32,7 +32,7 @@ class ProjectTagController extends Controller implements BreadcrumbInterfaces
 
     public function store(StoreProjectTagRequest $request): RedirectResponse|JsonResponse
     {
-        $tag = ProjectTag::create($request->validated());
+        $tag = ProjectTag::create($this->withCleanPositions($request->validated()));
 
         if ($request->expectsJson()) {
             // The new row travels back so a task form can add it to its tag
@@ -49,13 +49,28 @@ class ProjectTagController extends Controller implements BreadcrumbInterfaces
 
     public function update(UpdateProjectTagRequest $request, ProjectTag $projectTag): RedirectResponse|JsonResponse
     {
-        $projectTag->update($request->validated());
+        $projectTag->update($this->withCleanPositions($request->validated()));
 
         if ($request->expectsJson()) {
             return response()->json(['status' => 'ok']);
         }
 
         return back()->with('status', 'Tag updated successfully.');
+    }
+
+    /**
+     * Positions as a sorted list of integers, and null rather than [] for
+     * "every position" so the column reads plainly in the database.
+     */
+    private function withCleanPositions(array $data): array
+    {
+        if (array_key_exists('position_ids', $data)) {
+            $ids = array_values(array_unique(array_map('intval', $data['position_ids'] ?? [])));
+            sort($ids);
+            $data['position_ids'] = $ids === [] ? null : $ids;
+        }
+
+        return $data;
     }
 
     public function destroy(ProjectTag $projectTag): RedirectResponse

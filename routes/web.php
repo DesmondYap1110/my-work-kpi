@@ -18,6 +18,7 @@ use App\Http\Controllers\Kpi\KpiController;
 use App\Http\Controllers\Kpi\KpiObjectiveController;
 use App\Http\Controllers\Kpi\KpiObjectiveItemController;
 use App\Http\Controllers\Kpi\KpiSettingController;
+use App\Http\Controllers\Kpi\PositionTagController;
 use App\Http\Controllers\Kpi\ManagePendingController;
 use App\Http\Controllers\Project\ProjectController;
 use App\Http\Controllers\Project\ProjectTagController;
@@ -156,6 +157,9 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         // A position's Project KPI split and target, set on its KPI page.
         Route::put('/kpi/{position}/weighting', [KpiSettingController::class, 'updatePosition'])->name('kpi.weighting.update');
+        // The project tags a position uses, from the same page.
+        Route::post('/kpi/{position}/tags', [PositionTagController::class, 'store'])->name('kpi.tags.store');
+        Route::delete('/kpi/{position}/tags/{tag}', [PositionTagController::class, 'destroy'])->name('kpi.tags.destroy');
 
         // Appraisal: the administrator reviewing a member's performance over a
         // period of their choosing. generate() is what hands it to the member,

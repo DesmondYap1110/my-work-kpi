@@ -30,12 +30,17 @@
           class="kpi-split" data-kpi-split data-company-share="{{ (int) $companyProjectWeight }}">
         @csrf @method('PUT')
 
-        <p id="form-sub-title" class="mb-1">Project KPI</p>
-        <p id="footer-p" class="mb-3">
-            Every member's <strong>KPI score is out of 100 points</strong>. Drag the bar to decide
-            how many come from <strong>projects</strong> and how many from the
-            <strong>KPI objectives</strong> - the two always add up to 100.
-        </p>
+        <div class="kpi-split-head mb-3">
+            <p id="form-sub-title" class="mb-0">Project KPI</p>
+            {{-- Hover explains the split; a click shows the worked example
+                 below, hidden until asked for. See help-toggle.js. --}}
+            <button type="button" class="kpi-help-btn"
+                    aria-label="Show or hide the example" aria-expanded="false" aria-controls="kpi-split-example-{{ $position->id }}"
+                    data-help-toggle
+                    data-help-hover="Every member's KPI score is out of 100 points. Drag the bar to decide how many come from projects and how many from the KPI objectives - the two always add up to 100. Click for a worked example.">
+                <i class="ri-question-line"></i>
+            </button>
+        </div>
 
         {{-- The split: both numbers, and the bar itself is the control - drag
              it (or use the arrow keys) to move points between the two. --}}
@@ -57,7 +62,7 @@
              never been saved starts at the company figure. --}}
         <input type="hidden" name="project_weight" value="{{ $share }}" data-split-weight>
 
-        <div class="row mt-3">
+        <div class="row mt-3 mb-3">
             <div class="col-lg-6 mb-3 mb-lg-0">
                 <div class="kpi-split-card is-project h-100">
                     <p class="kpi-split-card-title">
@@ -97,7 +102,7 @@
         </div>
 
         {{-- A worked example, recalculated as the figures change. --}}
-        <div class="kpi-split-example">
+        <div class="kpi-split-example" id="kpi-split-example-{{ $position->id }}" hidden>
             <p class="kpi-split-example-title">Example: a member who achieves 80% of both</p>
             <div class="kpi-split-example-row">
                 <span data-split-example-project-text>

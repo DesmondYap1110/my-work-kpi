@@ -900,13 +900,41 @@ input[type="file"].form-control:hover:not(:disabled):not([readonly])::file-selec
     white-space: pre-wrap;
     color: var(--brand-text, #3b3b3b) !important;
 }
-.text-peek-popover .popover-arrow::after {
+/* The pointer, on whichever side the popover opens - the ? buttons open to
+   the right or left, the table cells above or below. */
+/* Only the border on the side facing the popover is coloured; colouring the
+   others too turns the triangle into a block. */
+.text-peek-popover.bs-popover-top .popover-arrow::after,
+.text-peek-popover.bs-popover-auto[data-popper-placement^="top"] .popover-arrow::after {
     border-top-color: #fff !important;
+}
+.text-peek-popover.bs-popover-bottom .popover-arrow::after,
+.text-peek-popover.bs-popover-auto[data-popper-placement^="bottom"] .popover-arrow::after {
     border-bottom-color: #fff !important;
 }
-.text-peek-popover .popover-arrow::before {
+.text-peek-popover.bs-popover-end .popover-arrow::after,
+.text-peek-popover.bs-popover-auto[data-popper-placement^="right"] .popover-arrow::after {
+    border-right-color: #fff !important;
+}
+.text-peek-popover.bs-popover-start .popover-arrow::after,
+.text-peek-popover.bs-popover-auto[data-popper-placement^="left"] .popover-arrow::after {
+    border-left-color: #fff !important;
+}
+.text-peek-popover.bs-popover-top .popover-arrow::before,
+.text-peek-popover.bs-popover-auto[data-popper-placement^="top"] .popover-arrow::before {
     border-top-color: var(--brand-border, #e9e9ef) !important;
+}
+.text-peek-popover.bs-popover-bottom .popover-arrow::before,
+.text-peek-popover.bs-popover-auto[data-popper-placement^="bottom"] .popover-arrow::before {
     border-bottom-color: var(--brand-border, #e9e9ef) !important;
+}
+.text-peek-popover.bs-popover-end .popover-arrow::before,
+.text-peek-popover.bs-popover-auto[data-popper-placement^="right"] .popover-arrow::before {
+    border-right-color: var(--brand-border, #e9e9ef) !important;
+}
+.text-peek-popover.bs-popover-start .popover-arrow::before,
+.text-peek-popover.bs-popover-auto[data-popper-placement^="left"] .popover-arrow::before {
+    border-left-color: var(--brand-border, #e9e9ef) !important;
 }
 
 /* Why a project was cancelled, on its own page. */
@@ -948,6 +976,43 @@ input[type="file"].form-control:hover:not(:disabled):not([readonly])::file-selec
 .kpi-split {
     --split-project: var(--brand-primary, #6366f1);
     --split-objectives: #129bd2;
+}
+/* Title row with the ? button that shows the worked example. */
+.kpi-split-head {
+    gap: 8px;
+    display: flex;
+    align-items: center;
+}
+.kpi-help-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    flex-shrink: 0;
+    font-size: 17px;
+    cursor: pointer;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    color: var(--brand-primary, #6366f1);
+    background: rgb(99 102 241 / 10%);
+    border: 1px solid rgb(99 102 241 / 25%);
+    transition: background 0.2s linear, color 0.2s linear;
+}
+.kpi-help-btn:hover,
+.kpi-help-btn.is-open {
+    color: #fff !important;
+    opacity: 1 !important;
+    background: var(--brand-primary, #6366f1) !important;
+    border-color: var(--brand-primary, #6366f1);
+}
+.kpi-help-btn i {
+    color: inherit;
+    line-height: 1;
+}
+.kpi-help-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(99 102 241 / 30%);
 }
 .kpi-split-slider {
     gap: 16px;
@@ -1073,7 +1138,7 @@ input.kpi-split-bar:focus-visible::-webkit-slider-thumb {
 }
 .kpi-split-example {
     max-width: 460px;
-    margin: 16px auto;
+    margin: 0 auto 16px;
     padding: 12px 16px;
     border-radius: 5px;
     border: 1px dashed #00000026;
@@ -1276,4 +1341,62 @@ input.kpi-split-bar:focus-visible::-webkit-slider-thumb {
     .kpi-card-total {
         text-align: left;
     }
+}
+
+/*
+ * The positions a project tag is for - see ProjectTagList and the
+ * checkboxes field type in public/js/modules/inline-edit.js.
+ */
+.tag-position-pill {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    margin: 2px 0;
+    border-radius: 20px;
+    color: var(--brand-primary, #6366f1);
+    background: rgb(99 102 241 / 10%);
+}
+.inline-checkboxes {
+    gap: 4px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    text-align: left;
+}
+.inline-checkbox {
+    gap: 5px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.inline-checkboxes-hint {
+    width: 100%;
+    font-size: 11px;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+
+/* Show all / Show less under a short table - see public/js/modules/show-more.js. */
+.show-more-wrap {
+    display: flex;
+    margin-top: 12px;
+    justify-content: center;
+}
+.show-more-wrap #general-btn {
+    margin: 0;
+}
+
+/*
+ * KPI Objectives, the third part of a position's KPI Setting page: its
+ * categories sit inside the section as outlined panels rather than as more
+ * floating cards, so the page reads as three parts.
+ */
+.kpi-objectives-section .kpi-group {
+    box-shadow: none;
+    border: 1px solid var(--brand-border, #e9e9ef);
+}
+.kpi-objectives-section .kpi-group:last-child,
+.kpi-objectives-section > .general-box:last-child {
+    margin-bottom: 0 !important;
 }

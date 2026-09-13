@@ -47,6 +47,21 @@ App.module('inline-edit', function () {
                 + placeholder + required + ' rows="2"></textarea>';
         }
 
+        // Several ticks posting as an array - e.g. the positions a tag is for.
+        // The request is told the field was on the form, because an array
+        // with nothing ticked is not sent at all.
+        if (field.type === 'checkboxes') {
+            var boxes = '<div class="inline-checkboxes js-inline-input" data-field="' + name + '" data-multiple="1">';
+            $.each(field.options || {}, function (optValue, label) {
+                boxes += '<label class="inline-checkbox"><input type="checkbox" value="' + optValue + '"> '
+                    + $('<span>').text(label).html() + '</label>';
+            });
+            if (field.hint) {
+                boxes += '<span class="inline-checkboxes-hint">' + $('<span>').text(field.hint).html() + '</span>';
+            }
+            return boxes + '</div>';
+        }
+
         if (field.type === 'select') {
             var html = '<select class="form-control js-inline-input" data-field="' + name + '"' + required + '>';
             html += '<option value="">' + (field.placeholder || 'Select') + '</option>';
@@ -80,6 +95,15 @@ App.module('inline-edit', function () {
     function setValues($row, values) {
         $row.find('.js-inline-input').each(function () {
             var key = $(this).data('field');
+
+            if ($(this).data('multiple')) {
+                var picked = (values && values[key] ? values[key] : []).map(String);
+                $(this).find('input[type=checkbox]').each(function () {
+                    this.checked = picked.indexOf(this.value) !== -1;
+                });
+                return;
+            }
+
             $(this).val(values && values[key] !== undefined ? values[key] : '');
         });
     }
@@ -121,6 +145,12 @@ App.module('inline-edit', function () {
 
         $row.find('.js-inline-input').each(function () {
             var key = $(this).data('field');
+
+            if ($(this).data('multiple')) {
+                data[key] = $(this).find('input[type=checkbox]:checked').map(function () { return this.value; }).get();
+                return;
+            }
+
             var value = $(this).val();
 
             if (defs[key] && defs[key].required && !String(value).trim()) {
@@ -141,6 +171,12 @@ App.module('inline-edit', function () {
         var token = document.querySelector('meta[name="csrf-token"]');
 
         $.each(data, function (key, value) {
+            if (Array.isArray(value)) {
+                body.append(key + '_present', '1');
+                value.forEach(function (item) { body.append(key + '[]', item); });
+                return;
+            }
+
             body.append(key, value === null ? '' : value);
         });
 

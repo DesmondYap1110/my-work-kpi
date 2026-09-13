@@ -77,6 +77,25 @@ class Project extends Model
         return in_array($this->status, [ProjectStatus::Active, ProjectStatus::InProgress], true);
     }
 
+    /**
+     * Whether the project may be cancelled: still open, and no task has been
+     * added to it. Work already planned or done on a project is a record
+     * someone is measured on, so it has to be removed first.
+     *
+     * Uses tasks_count when the list query loaded it, to avoid a query per row.
+     */
+    public function isCancellable(): bool
+    {
+        return $this->isEditable() && ! $this->hasTasks();
+    }
+
+    public function hasTasks(): bool
+    {
+        return array_key_exists('tasks_count', $this->attributes)
+            ? (int) $this->tasks_count > 0
+            : $this->tasks()->exists();
+    }
+
     public function acceptsNewTasks(): bool
     {
         return $this->status !== ProjectStatus::Cancelled;

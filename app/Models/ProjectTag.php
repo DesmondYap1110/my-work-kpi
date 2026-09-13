@@ -23,6 +23,8 @@ class ProjectTag extends Model
     protected $fillable = [
         'name',
         'points',
+        // The positions the tag is for; empty is every position.
+        'position_ids',
         'colour',
         'is_active',
         'sort_order',
@@ -31,11 +33,42 @@ class ProjectTag extends Model
     protected $casts = [
         'points' => 'decimal:2',
         'is_active' => 'boolean',
+        'position_ids' => 'array',
     ];
 
     public function tasks(): HasMany
     {
         return $this->hasMany(ProjectTask::class, 'tag_id', 'id');
+    }
+
+    /**
+     * The ids of the positions this tag is for, as integers. Empty means every
+     * position.
+     *
+     * @return array<int, int>
+     */
+    public function positionIds(): array
+    {
+        return array_values(array_unique(array_map('intval', $this->position_ids ?? [])));
+    }
+
+    /**
+     * The positions this tag is for, by name - for showing, not for rules.
+     */
+    public function positions(): \Illuminate\Support\Collection
+    {
+        return $this->positionIds() === []
+            ? collect()
+            : StaffPosition::whereIn('id', $this->positionIds())->orderBy('position_name')->get();
+    }
+
+    /**
+     * Whether a member of this position may be given a task with this tag.
+     * An unassigned task (no position) can take any tag.
+     */
+    public function allowsPosition(?int $positionId): bool
+    {
+        return $positionId === null || $this->positionIds() === [] || in_array($positionId, $this->positionIds(), true);
     }
 
     public function scopeActive($query)

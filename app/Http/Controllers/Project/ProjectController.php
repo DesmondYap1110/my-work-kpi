@@ -67,6 +67,8 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
             // Anyone active can be given a task - work is assigned to a
             // person, not to whichever team the project belonged to.
             'assignees' => Staff::active()->excludingAdmin()->orderBy('staff_name')->get(),
+            // Each carries the position it is for, so the form can offer only
+            // the tags that fit the assignee - see public/js/modules/tag-position.js.
             'tags' => ProjectTag::active()->orderBy('sort_order')->orderBy('name')->get(),
         ]);
     }
@@ -124,6 +126,11 @@ class ProjectController extends Controller implements BreadcrumbInterfaces
     {
         if (! in_array($project->status, [ProjectStatus::Active, ProjectStatus::InProgress], true)) {
             return back()->withErrors(['project' => 'Only active or in-progress projects can be cancelled.']);
+        }
+
+        // The list greys the button out for this; this is the rule behind it.
+        if ($project->hasTasks()) {
+            return back()->withErrors(['project' => 'Project "'.$project->title.'" has tasks, so it cannot be cancelled. Remove its tasks first.']);
         }
 
         $request->validate([

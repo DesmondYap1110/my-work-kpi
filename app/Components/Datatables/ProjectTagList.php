@@ -2,6 +2,7 @@
 
 namespace App\Components\Datatables;
 
+use App\Models\StaffPosition;
 use App\Queries\ProjectTagListQuery;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ class ProjectTagList extends Datatables
         return [
             'name' => 'Tag',
             'points' => 'Points',
+            'positions' => 'Positions',
             'usage_count' => 'Used By',
             'action' => 'Actions',
         ];
@@ -29,6 +31,13 @@ class ProjectTagList extends Datatables
         return [
             'name' => ['type' => 'text', 'required' => true, 'placeholder' => 'e.g. new feature'],
             'points' => ['type' => 'number', 'required' => true, 'placeholder' => 'e.g. 4'],
+            // Tick any number of positions; none ticked is every position.
+            'positions' => [
+                'type' => 'checkboxes',
+                'name' => 'position_ids',
+                'hint' => 'None ticked = all positions',
+                'options' => StaffPosition::excludingAdmin()->orderBy('position_name')->pluck('position_name', 'id')->all(),
+            ],
         ];
     }
 
@@ -42,7 +51,7 @@ class ProjectTagList extends Datatables
 
     public function centeredColumns(): array
     {
-        return ['points', 'usage_count'];
+        return ['points', 'positions', 'usage_count'];
     }
 
     public function filter(Request $request): LengthAwarePaginator
@@ -50,22 +59,30 @@ class ProjectTagList extends Datatables
         return $this->paginateFromRequest(
             app(ProjectTagListQuery::class)->build(),
             $request,
-            ['usage_count' => null]
+            ['usage_count' => null, 'positions' => null]
         );
     }
 
     public function listing(Request $request, LengthAwarePaginator $result): array
     {
-        $rows = $result->getCollection()->map(function ($tag) {
+        // One lookup for every name the page needs, not one per tag.
+        $names = StaffPosition::pluck('position_name', 'id');
+
+        $rows = $result->getCollection()->map(function ($tag) use ($names) {
             return [
                 'name' => e($tag->name),
                 // Trimmed so 0.20 reads as 0.2 and 13.00 as 13.
                 'points' => rtrim(rtrim(number_format((float) $tag->points, 2, '.', ''), '0'), '.'),
+                'positions' => $tag->positionIds() === []
+                    ? '<span class="kpi-muted">All positions</span>'
+                    : collect($tag->positionIds())->map(fn ($id) => $names[$id] ?? null)->filter()->sort()
+                        ->map(fn ($name) => '<span class="tag-position-pill">'.e($name).'</span>')->implode(' '),
                 'usage_count' => $tag->tasks_count,
                 'action' => $this->actionButtons($tag),
                 '_inline' => [
                     'name' => $tag->name,
                     'points' => (float) $tag->points,
+                    'position_ids' => $tag->positionIds(),
                 ],
             ];
         })->all();

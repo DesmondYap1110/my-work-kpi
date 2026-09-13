@@ -30,10 +30,9 @@
                     {{-- "Project Setup" rather than "Project", so the group and
                          its first child are not both called the same thing. --}}
                     <x-sidebar.ui.dropdown id="sb-project" icon="ri-clipboard-line" label="Project Setup"
-                                           :active="['projects.*', 'project-tasks.*', 'project-tags.*']">
+                                           :active="['projects.*', 'project-tasks.*']">
                         <x-sidebar.ui.dropdown-list route="projects.index" label="Project" active="projects.*" />
                         <x-sidebar.ui.dropdown-list route="project-tasks.index" label="Task" active="project-tasks.*" />
-                        <x-sidebar.ui.dropdown-list route="project-tags.index" label="Tag" active="project-tags.*" />
                     </x-sidebar.ui.dropdown>
 
                     <x-sidebar.ui.dropdown id="sb-kpi" icon="ri-bar-chart-2-line" label="KPI"
@@ -63,7 +62,11 @@
                 @endif
 
                 <x-sidebar.ui.dropdown id="sb-settings" icon="ri-settings-3-line" label="Settings"
-                                       :active="['password.change']">
+                                       :active="['password.change', 'project-tags.*']">
+                    {{-- Tags price project work, so only the administrator sets them. --}}
+                    @if (auth()->user()->isAdmin())
+                        <x-sidebar.ui.dropdown-list route="project-tags.index" label="Project Tag Setting" active="project-tags.*" />
+                    @endif
                     <x-sidebar.ui.dropdown-list route="password.change" label="Change Password" />
                     <x-sidebar.ui.dropdown-list>
                         <form method="POST" action="{{ route('logout') }}">

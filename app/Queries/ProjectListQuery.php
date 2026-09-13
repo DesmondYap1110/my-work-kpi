@@ -11,6 +11,8 @@ class ProjectListQuery
     public function forRequest(Request $request): Builder
     {
         return Project::query()
+            // For Project::hasTasks() - whether Cancel is offered on each row.
+            ->withCount('tasks')
             ->when($request->filled('project_id'), fn ($q) => $q->where('id', $request->integer('project_id')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->integer('status')))
             ->when(

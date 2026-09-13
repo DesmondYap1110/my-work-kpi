@@ -28,7 +28,10 @@
 <script src="{{ \App\Support\Asset::url('js/modules/modal-errors.js') }}"></script>
 <script src="{{ \App\Support\Asset::url('js/modules/text-peek.js') }}"></script>
 <script src="{{ \App\Support\Asset::url('js/modules/table-search.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/help-toggle.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/show-more.js') }}"></script>
 <script src="{{ \App\Support\Asset::url('js/modules/kpi-split.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/tag-position.js') }}"></script>
 <script>window.datatablesEndpoint = @json(route('datatables.listing'));</script>
 <script src="{{ \App\Support\Asset::url('js/modules/datatables.js') }}"></script>
 

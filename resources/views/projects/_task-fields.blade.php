@@ -18,7 +18,7 @@
             <select class="form-control" name="assignee_id">
                 <option value="">Unassigned</option>
                 @foreach ($assignees as $member)
-                    <option value="{{ $member->id }}" @selected($task?->assignee_id === $member->id)>
+                    <option value="{{ $member->id }}" data-position="{{ $member->position_id }}" @selected($task?->assignee_id === $member->id)>
                         {{ $member->staff_name }}
                     </option>
                 @endforeach
@@ -55,10 +55,12 @@
                         <i class="ri-add-line"></i>New Tag
                     </a>
                 </label>
-                <select class="form-control" name="tag_id">
+                {{-- Each tag lists the positions it is for (blank: all), and
+                     the options that do not fit the assignee are hidden. --}}
+                <select class="form-control" name="tag_id" data-tag-position>
                     <option value="">No tag &middot; scores nothing</option>
                     @foreach ($tags as $tag)
-                        <option value="{{ $tag->id }}" @selected($task?->tag_id === $tag->id)>
+                        <option value="{{ $tag->id }}" data-positions="{{ implode(',', $tag->positionIds()) }}" @selected($task?->tag_id === $tag->id)>
                             {{ $tag->name }} ({{ rtrim(rtrim(number_format((float) $tag->points, 2), '0'), '.') }} pts)
                         </option>
                     @endforeach

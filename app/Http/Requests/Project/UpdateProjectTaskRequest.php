@@ -4,6 +4,7 @@ namespace App\Http\Requests\Project;
 
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
+use App\Http\Requests\Concerns\ChecksTagFitsAssignee;
 use App\Http\Requests\Concerns\OnlyAdminAssignsTags;
 use App\Models\Project;
 use App\Models\ProjectTaskFile;
@@ -13,7 +14,7 @@ use Illuminate\Validation\Validator;
 
 class UpdateProjectTaskRequest extends FormRequest
 {
-    use OnlyAdminAssignsTags;
+    use ChecksTagFitsAssignee, OnlyAdminAssignsTags;
 
     public function authorize(): bool
     {
@@ -43,6 +44,7 @@ class UpdateProjectTaskRequest extends FormRequest
     {
         $validator->after(function (Validator $validator) {
             $this->checkDatesAgainstProject($validator);
+            $this->checkTagFitsAssignee($validator);
         });
     }
 

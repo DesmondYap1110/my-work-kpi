@@ -92,9 +92,13 @@ class ProjectTask extends Model
         return $this->belongsTo(Staff::class, 'assignee_id', 'id');
     }
 
+    /**
+     * Includes deleted tags: deleting a tag stops it being offered on new
+     * tasks, but work already tagged with it keeps its points and its label.
+     */
     public function tag(): BelongsTo
     {
-        return $this->belongsTo(ProjectTag::class, 'tag_id', 'id');
+        return $this->belongsTo(ProjectTag::class, 'tag_id', 'id')->withTrashed();
     }
 
     /**

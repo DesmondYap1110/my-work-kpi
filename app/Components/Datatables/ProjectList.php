@@ -99,13 +99,17 @@ class ProjectList extends Datatables
         // and with them the record a KPI was scored from. Members add and
         // edit; ending one is the administrator's.
         if (static::viewerIsAdmin()) {
-            if (in_array($status, [ProjectStatus::Active, ProjectStatus::InProgress], true)) {
+            if ($project->isCancellable()) {
                 // Opens a dialog asking for the reason rather than a yes/no
                 // confirm - see projects/index.blade.php and project/modals.js.
                 $buttons[] = $this->tbButton('ri-close-circle-line', 'tb-ac-btn-3', 'Cancel', [
                     'id' => $project->id,
                     'title' => $project->title,
                 ], 'js-cancel-project');
+            } elseif ($project->isEditable()) {
+                // Greyed out rather than hidden, so the reason is there to read.
+                $buttons[] = '<button type="button" class="tb-ac-btn" id="tb-ac-btn-5" disabled'
+                    .' title="This project has tasks, so it cannot be cancelled."><i class="ri-close-circle-line"></i></button>';
             }
 
             if ($status === ProjectStatus::Active) {
