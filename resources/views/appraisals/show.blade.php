@@ -1,13 +1,17 @@
 @extends('layouts.app')
 
-@section('title', $readOnly ? 'My Appraisal' : 'Review Form')
+@php
+    // Three ways onto this page: the appraiser rating a draft, the member
+    // filling in their self-assessment on a draft, and anyone reading a
+    // generated appraisal. The member's self-assessment touches the Employee
+    // column only; everything else on the page is the appraiser's.
+    $selfAssessment = $selfAssessment ?? false;
+    $appraiserLocked = $readOnly || $selfAssessment;
+@endphp
+
+@section('title', $readOnly || $selfAssessment ? 'My Appraisal' : 'Review Form')
 
 @section('content')
-    @php
-        $scale = $ratings->sortByDesc('value');
-        $max = (int) ($ratings->max('value') ?: 5);
-    @endphp
-
     {{-- Who, for what period, and where it stands. --}}
     <div id="form-box" class="general-box appraisal-head">
         <div class="appraisal-head-main">
@@ -21,6 +25,9 @@
             </p>
         </div>
         <div class="appraisal-head-score">
+          @if ($selfAssessment)
+            <span class="tb-status" id="tb-status-3">Self-assessment</span>
+          @else
             <span class="tb-status" id="tb-status-{{ $appraisal->status->colourId() }}">{{ $appraisal->status->label() }}</span>
             <p class="appraisal-total mb-0">
                 {{ $summary['percentage'] === null ? '-' : $summary['percentage'].'%' }}
@@ -30,41 +37,27 @@
                     {{ $summary['band']->label }}@if ($summary['band']->outcome) &middot; {{ $summary['band']->outcome }} @endif
                 </p>
             @endif
-        </div>
-    </div>
-
-    {{-- What each mark means. Rating anybody without it is guesswork. --}}
-    <div id="form-box" class="general-box">
-        <p id="form-sub-title">Rating Scale</p>
-        <div class="appraisal-scale">
-            @foreach ($scale as $rating)
-                <div class="appraisal-scale-item">
-                    <span class="appraisal-scale-value">{{ $rating->value }}</span>
-                    <div>
-                        <strong>{{ $rating->label }}</strong>
-                        @if ($rating->description)
-                            <span class="kpi-item-desc">{{ $rating->description }}</span>
-                        @endif
-                    </div>
-                </div>
-            @endforeach
+          @endif
         </div>
     </div>
 
     {{-- Before the ratings, as on the paper form: what was said during the
-         period comes before the judgement at the end of it. --}}
-    @include('appraisals._checkins', ['appraisal' => $appraisal, 'readOnly' => $readOnly])
+         period comes before the judgement at the end of it. Not shown to a
+         member mid self-assessment - it is still the appraiser's working note. --}}
+    @unless ($selfAssessment)
+        @include('appraisals._checkins', ['appraisal' => $appraisal, 'readOnly' => $readOnly])
+    @endunless
 
     {{-- Opened only when there is something to submit. A member reading a
          finished appraisal has no business being inside a form that posts to a
          route they are refused anyway. --}}
     @unless ($readOnly)
-        <form action="{{ route('appraisals.update', $appraisal->id) }}" method="POST">
+        <form action="{{ $selfAssessment ? route('my.appraisals.update', $appraisal->id) : route('appraisals.update', $appraisal->id) }}" method="POST">
             @csrf @method('PUT')
     @endunless
 
         {{-- The period is the appraiser's choice of what to judge; changing it
-             rebuilds Part 2 from the work done in the new range. --}}
+             recounts the project marks over the new range. --}}
         <div id="form-box" class="general-box">
             <p id="form-sub-title">Review Period</p>
             <div class="row">
@@ -72,7 +65,7 @@
                     <div class="input-group">
                         <label>From<span>*</span></label>
                         <input type="date" class="form-control" name="period_from" required
-                               @disabled($readOnly)
+                               @disabled($appraiserLocked)
                                value="{{ old('period_from', optional($appraisal->period_from)->format('Y-m-d')) }}">
                     </div>
                 </div>
@@ -80,7 +73,7 @@
                     <div class="input-group">
                         <label>To<span>*</span></label>
                         <input type="date" class="form-control" name="period_to" required
-                               @disabled($readOnly)
+                               @disabled($appraiserLocked)
                                value="{{ old('period_to', optional($appraisal->period_to)->format('Y-m-d')) }}">
                     </div>
                 </div>
@@ -88,7 +81,7 @@
                     <div class="input-group">
                         <label>Review Date</label>
                         <input type="date" class="form-control" name="review_date"
-                               @disabled($readOnly)
+                               @disabled($appraiserLocked)
                                value="{{ old('review_date', optional($appraisal->review_date)->format('Y-m-d')) }}">
                     </div>
                 </div>
@@ -96,56 +89,124 @@
                     <div class="input-group">
                         <label>Next Assessment</label>
                         <input type="date" class="form-control" name="next_assessment_date"
-                               @disabled($readOnly)
+                               @disabled($appraiserLocked)
                                value="{{ old('next_assessment_date', optional($appraisal->next_assessment_date)->format('Y-m-d')) }}">
                     </div>
                 </div>
             </div>
         </div>
 
-        @foreach ($summary['sections'] as $part)
-            @include('appraisals._section', ['part' => $part, 'scale' => $scale, 'max' => $max, 'readOnly' => $readOnly])
-        @endforeach
+        {{-- The two parts of a KPI score, as the position's KPI Setting defines
+             them: project marks earned in the period, then the KPI objectives
+             rated here. See AssessmentScoreService::summary(). --}}
+        @php
+            $p = $summary['projects'];
+            $o = $summary['objectives'];
+            $num = fn ($n) => $n === null ? '-' : rtrim(rtrim(number_format((float) $n, 2), '0'), '.');
+        @endphp
 
-        {{-- The totals, part by part, and what the whole form comes to. --}}
         <div id="form-box" class="general-box">
-            <p id="form-sub-title">Summary</p>
+            <div class="appraisal-section-head">
+                <p id="form-sub-title" class="mb-0">Projects</p>
+                <span class="appraisal-weight">{{ $p['share'] }} of 100 points</span>
+            </div>
+            <p id="footer-p" class="mb-3">
+                Task marks {{ $appraisal->staff->staff_name ?? 'this member' }} earned between {{ $appraisal->periodLabel() }}.
+                @unless ($appraiserLocked) Change the review period above and save to recount. @endunless
+            </p>
             <div id="table-div">
                 <table class="table table-bordered align-middle">
                     <thead>
                         <tr>
+                            <th>Task</th>
+                            <th class="text-center">Tag</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Marks</th>
+                        </tr>
+                    </thead>
+                    <tbody data-show-more="5" data-show-more-label="tasks">
+                        @forelse ($p['tasks'] as $task)
+                            <tr>
+                                <td>{{ $task->title }} <span class="kpi-item-desc">{{ $task->project->title ?? '-' }}</span></td>
+                                <td class="text-center">{{ $task->tag->name ?? 'No tag' }}</td>
+                                <td class="text-center"><span class="tb-status" id="tb-status-{{ $task->status->colourId() }}">{{ $task->status->label() }}</span></td>
+                                <td class="text-center">
+                                    @if ($task->status->isDone())
+                                        <strong>{{ $num($task->points()) }}</strong>
+                                    @else
+                                        <span class="kpi-muted">0 / {{ $num($task->points()) }}</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="4" class="text-center">No project work in this period.</td></tr>
+                        @endforelse
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>Earned</strong></td>
+                            <td class="text-center">
+                                <strong>{{ $num($p['earned']) }}</strong> / {{ $p['target'] ? $num($p['target']).' target' : $num($p['assigned']).' assigned' }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        @include('appraisals._section', [
+            'part' => $o,
+            'objectivesShare' => $o['share'],
+            'selfAssessment' => $selfAssessment,
+            // Employee is the member's column, Reviewer the appraiser's.
+            'employeeReadOnly' => ! $selfAssessment,
+            'reviewerReadOnly' => $appraiserLocked,
+        ])
+
+      @unless ($selfAssessment)
+        {{-- Projects + KPI objectives = KPI score, the same sum as the
+             member's KPI page. --}}
+        <div id="form-box" class="general-box">
+            <p id="form-sub-title">Summary</p>
+            <div id="table-div">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead>
+                        <tr>
                             <th>Part</th>
-                            <th class="text-center">Weighting</th>
-                            <th class="text-center">Score</th>
-                            <th class="text-center">%</th>
+                            <th class="text-center">Result</th>
+                            <th class="text-center">Points</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($summary['sections'] as $part)
-                            <tr>
-                                <td>{{ $part['section']->title }}</td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($part['section']->weight(), 2), '0'), '.') }}%</td>
-                                <td class="text-center">
-                                    @if ($part['max'] > 0)
-                                        {{ $part['earned'] }}/{{ $part['max'] }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    {{ $part['percentage'] === null ? '-' : $part['percentage'].'%' }}
-                                </td>
-                            </tr>
-                        @endforeach
-                        <tr class="appraisal-total-row">
-                            <td colspan="3"><strong>Total</strong></td>
+                        <tr>
+                            <td>Projects</td>
                             <td class="text-center">
-                                <strong>{{ $summary['percentage'] === null ? '-' : $summary['percentage'].'%' }}</strong>
+                                @if ($p['percentage'] === null)
+                                    <span class="kpi-muted">No project work</span>
+                                @else
+                                    {{ $num($p['earned']) }} of {{ $num($p['target'] ?? $p['assigned']) }} marks ({{ $num($p['percentage']) }}%)
+                                @endif
                             </td>
+                            <td class="text-center">{{ $num($p['points']) }} <span class="kpi-muted">/ {{ $p['share'] }}</span></td>
+                        </tr>
+                        <tr>
+                            <td>KPI objectives</td>
+                            <td class="text-center">
+                                @if ($o['percentage'] === null)
+                                    <span class="kpi-muted">Not rated yet</span>
+                                @else
+                                    {{ $num($o['earned']) }} of {{ $num($o['max']) }} rated ({{ $num($o['percentage']) }}%)
+                                @endif
+                            </td>
+                            <td class="text-center">{{ $num($o['points']) }} <span class="kpi-muted">/ {{ $o['share'] }}</span></td>
+                        </tr>
+                        <tr class="appraisal-total-row">
+                            <td colspan="2"><strong>KPI score</strong></td>
+                            <td class="text-center"><strong>{{ $num($summary['percentage']) }}</strong> <span class="kpi-muted">/ 100</span></td>
                         </tr>
                         @if ($summary['band'])
                             <tr>
-                                <td colspan="3">Outcome</td>
+                                <td colspan="2">Outcome</td>
                                 <td class="text-center">
                                     <span class="tb-status" id="tb-status-{{ $summary['band']->outcome === 'Fail' ? 2 : ($summary['band']->outcome === 'Pass' ? 1 : 3) }}">
                                         {{ $summary['band']->label }}@if ($summary['band']->outcome) &middot; {{ $summary['band']->outcome }} @endif
@@ -156,14 +217,6 @@
                     </tbody>
                 </table>
             </div>
-
-            @unless ($summary['percentage'] !== null)
-                <span id="note-p" class="d-block">
-                    Nothing has been rated yet, so there is no score. An item left blank
-                    is left out of the total and out of the maximum &mdash; which is how
-                    the &ldquo;(if applicable)&rdquo; groups are skipped.
-                </span>
-            @endunless
         </div>
 
         <div id="form-box" class="general-box">
@@ -171,62 +224,76 @@
             @if ($readOnly)
                 <p id="footer-p" class="appraisal-comments">{{ $appraisal->comments ?: 'No comments.' }}</p>
             @else
-                {{-- The prompt printed on the form itself. --}}
-                <p id="footer-p" class="mb-2">
-                    Indicate staff&rsquo;s: 1. Value to company &nbsp; 2. Value to clients (if applicable)
-                    &nbsp; 3. Value to the team
-                </p>
                 <textarea class="form-control" name="comments" rows="4">{{ old('comments', $appraisal->comments) }}</textarea>
             @endif
         </div>
+      @endunless
 
-        @unless ($readOnly)
-            <div id="form-btn-div">
-                <a href="{{ route('appraisals.index') }}" id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
-                <button type="submit" id="general-btn" class="btn1"><i class="ri-check-fill"></i>Save Draft</button>
+    @php $memberName = $appraisal->staff->staff_name ?? 'the member'; @endphp
+
+        @if ($selfAssessment)
+            <div id="form-box" class="general-box appraisal-actions">
+                <div class="appraisal-actions-status">
+                    <span class="tb-status" id="tb-status-3">Draft</span>
+                    <span>Rate yourself on each item. You can change it until your appraiser generates the review.</span>
+                </div>
+                <div class="appraisal-actions-buttons">
+                    <a href="{{ route('my.appraisals.index') }}" id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
+                    <button type="submit" id="general-btn" class="btn1"><i class="ri-save-3-line"></i>Save My Marks</button>
+                </div>
+            </div>
+        </form>
+        @elseif (! $readOnly)
+            {{-- One bar for everything that finishes this page. Save & Generate
+                 saves the marks first, so nothing typed is lost, and asks before
+                 handing the appraisal over - see public/js/modules/confirm.js. --}}
+            <div id="form-box" class="general-box appraisal-actions">
+                <div class="appraisal-actions-status">
+                    <span class="tb-status" id="tb-status-3">Draft</span>
+                    <span>Only you can see this until it is generated.</span>
+                    <button type="button" class="kpi-help-btn" aria-label="What does generating do?"
+                            data-help-hover="Save Draft keeps your marks private while you work. Save & Generate saves them and shares the appraisal with {{ $memberName }}. You can reopen it later to make changes.">
+                        <i class="ri-question-line"></i>
+                    </button>
+                </div>
+                <div class="appraisal-actions-buttons">
+                    <a href="{{ route('appraisals.index') }}" id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
+                    <button type="submit" id="general-btn" class="btn2"><i class="ri-save-3-line"></i>Save Draft</button>
+                    <button type="submit" id="general-btn" class="btn1" name="generate" value="1"
+                            data-confirm-title="Generate appraisal"
+                            data-confirm="Your marks will be saved and {{ $memberName }} will be able to read this appraisal."
+                            data-confirm-label="Save & Generate"
+                            data-confirm-icon="ri-send-plane-line">
+                        <i class="ri-send-plane-line"></i>Save &amp; Generate
+                    </button>
+                </div>
             </div>
         </form>
     @else
-        {{-- Back to whichever list the reader came from: their own appraisals,
-             or every appraisal if they are the appraiser. --}}
-        <div id="form-btn-div">
-            <a href="{{ auth()->user()->isAdmin() ? route('appraisals.index') : route('my.appraisals.index') }}"
-               id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
+        <div id="form-box" class="general-box appraisal-actions">
+            <div class="appraisal-actions-status">
+                @if ($appraisal->isGenerated())
+                    <span class="tb-status" id="tb-status-1">Generated</span>
+                    <span>
+                        {{ auth()->user()->isAdmin() ? ucfirst($memberName).' can read this' : 'Shared with you' }}@if ($appraisal->generated_at) since {{ $appraisal->generated_at->format('d M Y H:i') }}@endif.
+                    </span>
+                @endif
+            </div>
+            <div class="appraisal-actions-buttons">
+                {{-- Back to whichever list the reader came from. --}}
+                <a href="{{ auth()->user()->isAdmin() ? route('appraisals.index') : route('my.appraisals.index') }}"
+                   id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
+                @if (auth()->user()->isAdmin() && $appraisal->isGenerated())
+                    <form action="{{ route('appraisals.reopen', $appraisal->id) }}" method="POST" class="d-inline"
+                          data-confirm-title="Reopen appraisal"
+                          data-confirm="{{ ucfirst($memberName) }} will no longer see this until you generate it again."
+                          data-confirm-label="Reopen"
+                          data-confirm-icon="ri-lock-unlock-line">
+                        @csrf
+                        <button type="submit" id="general-btn" class="btn1"><i class="ri-lock-unlock-line"></i>Reopen to Edit</button>
+                    </form>
+                @endif
+            </div>
         </div>
-    @endunless
-
-    {{-- Generating hands the form to the member, so it is its own decision and
-         its own form - not a second button inside the one above. --}}
-    @unless ($readOnly && ! auth()->user()->isAdmin())
-        <div id="form-box" class="general-box">
-            @if ($appraisal->isGenerated())
-                <p id="form-sub-title">Generated</p>
-                <p id="footer-p" class="mb-3">
-                    {{ $appraisal->staff->staff_name ?? 'The member' }} can read this appraisal
-                    @if ($appraisal->generated_at) as of {{ $appraisal->generated_at->format('d M Y H:i') }} @endif.
-                    Reopen it to make changes; it is hidden from them again while it is a draft.
-                </p>
-                <form action="{{ route('appraisals.reopen', $appraisal->id) }}" method="POST">
-                    @csrf
-                    <button type="submit" id="general-btn" class="btn2"><i class="ri-lock-unlock-line"></i>Reopen</button>
-                </form>
-            @else
-                <p id="form-sub-title">Generate</p>
-                <p id="footer-p" class="mb-3">
-                    Until this is generated it is your own working note and
-                    {{ $appraisal->staff->staff_name ?? 'the member' }} cannot see it.
-                    Save your marks first &mdash; generating does not save them.
-                </p>
-                {{-- data-confirm belongs on the form; see public/js/modules/confirm.js --}}
-                <form action="{{ route('appraisals.generate', $appraisal->id) }}" method="POST"
-                      data-confirm-title="Generate appraisal"
-                      data-confirm="{{ $appraisal->staff->staff_name ?? 'The member' }} will be able to read this appraisal once it is generated."
-                      data-confirm-label="Generate"
-                      data-confirm-icon="ri-send-plane-line">
-                    @csrf
-                    <button type="submit" id="general-btn" class="btn1"><i class="ri-send-plane-line"></i>Generate</button>
-                </form>
-            @endif
-        </div>
-    @endunless
+    @endif
 @endsection

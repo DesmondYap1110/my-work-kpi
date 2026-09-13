@@ -2,9 +2,12 @@
 
 namespace App\Http\Requests\Appraisal;
 
+use App\Enums\AssessmentStatus;
+use App\Models\Assessment;
 use App\Models\StaffPosition;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreAppraisalRequest extends FormRequest
 {
@@ -28,6 +31,27 @@ class StoreAppraisalRequest extends FormRequest
             'review_date' => ['nullable', 'date'],
             'next_assessment_date' => ['nullable', 'date', 'after_or_equal:review_date'],
         ];
+    }
+
+    /**
+     * One draft at a time per member: a second would split the same review
+     * across two forms, and nobody could say which one is the real one.
+     * Finish (generate) or delete the draft first.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $draft = Assessment::query()
+                ->with('staff')
+                ->forStaff((int) $this->input('staff_id'))
+                ->where('status', AssessmentStatus::Draft)
+                ->first();
+
+            if ($draft) {
+                $validator->errors()->add('staff_id', ($draft->staff->staff_name ?? 'This member')
+                    .' already has a draft appraisal ('.$draft->periodLabel().'). Continue that one, or delete it before opening another.');
+            }
+        });
     }
 
     public function attributes(): array

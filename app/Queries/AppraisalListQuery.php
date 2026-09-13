@@ -13,9 +13,12 @@ class AppraisalListQuery
         return Assessment::query()
             // The score column totals each row, so the pieces it totals are
             // loaded with the page rather than one query per appraisal.
-            ->with(['staff', 'position', 'reviewer', 'scores', 'projectScores',
-                'template.sections', 'template.ratings', 'template.bands'])
+            ->with(['staff.team', 'position', 'reviewer', 'scores', 'template.bands'])
             ->when($request->filled('staff_id'), fn ($q) => $q->where('staff_id', $request->integer('staff_id')))
+            // Team is the member's current team - an appraisal does not pin one.
+            ->when($request->filled('team_id'), fn ($q) => $q->whereHas('staff', fn ($s) => $s->where('team_id', $request->integer('team_id'))))
+            // Position is the one pinned to the appraisal, the role that was reviewed.
+            ->when($request->filled('position_id'), fn ($q) => $q->where('position_id', $request->integer('position_id')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
             // An appraisal covers a span, so "in this period" means the two
             // spans overlap - not that it starts inside the filter.

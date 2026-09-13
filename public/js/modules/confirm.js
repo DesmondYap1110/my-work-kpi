@@ -3,6 +3,7 @@
  *
  *   <form class="js-confirm-delete"> ... </form>
  *   <form data-confirm="Cancel this project?" data-confirm-label="Cancel Project">
+ *   <button type="submit" name="generate" value="1" data-confirm="...">   <- one button of a form
  *
  * Replaces window.confirm(), which can't be styled, announces the site's
  * hostname instead of the record, and puts OK on the left where Delete is the
@@ -62,7 +63,30 @@ App.module('confirm', function () {
         };
     }
 
-    $(document).on('submit', '.js-confirm-delete, .js-confirm-cancel, [data-confirm]', function (e) {
+    // A single submit button that needs confirming, inside a form whose other
+    // buttons do not - e.g. Save & Generate beside Save Draft. On accept the
+    // form is sent with that button's name/value, as a normal click would.
+    $(document).on('click', 'button[type=submit][data-confirm]', function (e) {
+        var $button = $(this);
+        var form = this.form;
+
+        if (!form) {
+            return;
+        }
+
+        e.preventDefault();
+
+        var settings = settingsFor($button);
+
+        $title.text(settings.title);
+        $message.text(settings.message);
+        $accept.html('<i class="' + settings.icon + '"></i>' + settings.label);
+
+        pending = { isButton: true, button: this, form: form };
+        modal.show();
+    });
+
+    $(document).on('submit', 'form.js-confirm-delete, form.js-confirm-cancel, form[data-confirm]', function (e) {
         var $form = $(this);
 
         // Second pass, after the dialog was accepted - let it through.
@@ -92,6 +116,18 @@ App.module('confirm', function () {
         pending = null;
 
         modal.hide();
+
+        if ($form.isButton) {
+            // Carry the button's name/value, then submit natively - the form
+            // itself asks nothing, so nothing else needs to see it twice.
+            var carry = document.createElement('input');
+            carry.type = 'hidden';
+            carry.name = $form.button.name;
+            carry.value = $form.button.value;
+            $form.form.appendChild(carry);
+            $form.form.submit();
+            return;
+        }
 
         // Flag it, then go back through jQuery's submit so any other module
         // listening for this form still sees it.

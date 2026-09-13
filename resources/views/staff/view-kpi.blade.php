@@ -63,48 +63,6 @@
         #bg-btn-div a {
             margin-right: 15px;
         }
-        #bg-ft-div {
-            width: 100%;
-            align-items: center;
-            display: inline-flex;
-            justify-content: flex-end;
-        }
-        #bg-ft-box {
-            display: flex;
-            overflow: hidden;
-            position: relative;
-            align-items: center;
-            padding: 0 0 15px 40px;
-        }
-        #bg-ft-title {
-            font-size: 13px;
-            font-weight: 500;
-            line-height: 1.4;
-            margin-bottom: 0;
-            color: #000000;
-        }
-        #bg-ft-p {
-            font-size: 21px;
-            font-weight: 600;
-            line-height: 1.4;
-            margin-bottom: 0;
-            color: #1896BD;
-        }
-        #bg-ft-icon-div {
-            margin-right: 10px;
-            
-        }
-        #bg-ft-icon {
-            color:#fff;
-            width: 50px;
-            height: 50px;
-            font-size: 20px;
-            line-height: 50px;
-            text-align: center;
-            border-radius: 50%;
-            box-shadow: 0 5px 10px #4be8d340;
-            background: linear-gradient(to bottom right, #4be8d4 0%, #129bd2 100%);
-        }
         .profile-nav.nav-pills .nav-link {
             border-radius: unset;
             padding: 0 15px 15px 15px;
@@ -175,32 +133,6 @@
             #bg-since {
                 font-size: 9px;
             }
-            #bg-ft-div {
-                width: unset;
-                margin-top: 30px;
-                align-items: unset;
-                display: -webkit-box;
-                justify-content: unset;
-            }
-            #bg-ft-box {
-                display: block;
-                padding: 0 15px;
-                text-align: center;
-            }
-            #bg-ft-icon-div {
-                margin-right: 0;
-                margin-bottom: 15px;
-            }
-            #bg-ft-icon {
-                margin: 0 auto;
-            }
-            #bg-ft-title {
-                font-size: 11px;
-                margin-bottom: 2px;
-            }
-            #bg-ft-p {
-                font-size: 18px;
-            }
             #bg-ul {
                 justify-content: space-between;
             }
@@ -242,10 +174,6 @@
 @endpush
 
 @section('content')
-    @php
-        $fmtTop = fn ($n) => $n === null ? '-' : rtrim(rtrim(number_format((float) $n, 2), '0'), '.');
-        $topProjectShare = round($finalScore['weight'] * 100);
-    @endphp
 
     <section id="bg-section">
         <div class="container-fluid">
@@ -273,36 +201,6 @@
                             <a href="{{ route('staff.index') }}" id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
                             <a href="{{ route('staff.edit', $staff->id) }}" id="general-btn" class="btn1"><i class="ri-edit-2-line"></i>Edit Member</a>
                         @endunless
-                    </div>
-                    {{-- The three numbers of the calculation below, at a glance. --}}
-                    <div id="bg-ft-div">
-                        <div id="bg-ft-box">
-                            <div id="bg-ft-icon-div">
-                                <div id="bg-ft-icon" class="bg-ft-icon-1"><i class="ri-bar-chart-line"></i></div>
-                            </div>
-                            <div>
-                                <p id="bg-ft-title">KPI Score</p>
-                                <p id="bg-ft-p">{{ $fmtTop($finalScore['percentage']) }} <small>/ 100</small></p>
-                            </div>
-                        </div>
-                        <div id="bg-ft-box">
-                            <div id="bg-ft-icon-div">
-                                <div id="bg-ft-icon" class="bg-ft-icon-1"><i class="ri-clipboard-line"></i></div>
-                            </div>
-                            <div>
-                                <p id="bg-ft-title">Project Marks</p>
-                                <p id="bg-ft-p">{{ $fmtTop($finalScore['project_points']) }} <small>/ {{ $topProjectShare }}</small></p>
-                            </div>
-                        </div>
-                        <div id="bg-ft-box">
-                            <div id="bg-ft-icon-div">
-                                <div id="bg-ft-icon" class="bg-ft-icon-3"><i class="ri-list-check-2"></i></div>
-                            </div>
-                            <div>
-                                <p id="bg-ft-title">KPI Objectives</p>
-                                <p id="bg-ft-p">{{ $fmtTop($finalScore['objective_points']) }} <small>/ {{ 100 - $topProjectShare }}</small></p>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

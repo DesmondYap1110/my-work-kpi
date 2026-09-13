@@ -19,6 +19,7 @@ use App\Http\Controllers\Kpi\KpiObjectiveController;
 use App\Http\Controllers\Kpi\KpiObjectiveItemController;
 use App\Http\Controllers\Kpi\KpiSettingController;
 use App\Http\Controllers\Kpi\PositionTagController;
+use App\Http\Controllers\Kpi\KpiReportController;
 use App\Http\Controllers\Kpi\ManagePendingController;
 use App\Http\Controllers\Project\ProjectController;
 use App\Http\Controllers\Project\ProjectTagController;
@@ -60,13 +61,15 @@ Route::middleware(['auth', 'active'])->group(function () {
     // same distinction the routes do - see DatatablesController.
     Route::post('/datatables/listing', [DatatablesController::class, 'listing'])->name('datatables.listing');
 
-    // A staff member's own corner of the app. An appraisal is readable only by
-    // the member it is about, and only once it has been generated - both
-    // checked in MyAppraisalController, not by hiding the link.
+    // A staff member's own corner of the app. An appraisal is reachable only by
+    // the member it is about: a draft for their self-assessment (Employee
+    // column), a generated one to read - both checked in MyAppraisalController,
+    // not by hiding the link.
     Route::get('/my-kpi', [StaffController::class, 'myKpi'])->name('my.kpi');
     Route::get('/my-tasks', [ProjectTaskController::class, 'mine'])->name('my.tasks');
     Route::get('/my-appraisals', [MyAppraisalController::class, 'index'])->name('my.appraisals.index');
     Route::get('/my-appraisals/{appraisal}', [MyAppraisalController::class, 'show'])->name('my.appraisals.show');
+    Route::put('/my-appraisals/{appraisal}', [MyAppraisalController::class, 'update'])->name('my.appraisals.update');
 
     // Moving your own work along, and looking at what is attached to it. Both
     // check ownership in the controller: an administrator may touch any task,
@@ -164,6 +167,11 @@ Route::middleware(['auth', 'active'])->group(function () {
         // Appraisal: the administrator reviewing a member's performance over a
         // period of their choosing. generate() is what hands it to the member,
         // so it is an action of its own rather than a flag on update().
+        // How often each member is appraised, and who is due - the Review
+        // Schedule. Before the resource, or /appraisals/schedule reads as an id.
+        Route::get('/appraisals/schedule', [AppraisalController::class, 'schedule'])->name('appraisals.schedule');
+        Route::put('/appraisals/schedule-notice', [AppraisalController::class, 'updateNotice'])->name('appraisals.notice.update');
+        Route::put('/appraisals/schedule/{staff}', [AppraisalController::class, 'updateCycle'])->name('appraisals.cycle.update');
         Route::resource('appraisals', AppraisalController::class)
             ->only(['index', 'store', 'show', 'update', 'destroy']);
         Route::post('/appraisals/{appraisal}/generate', [AppraisalController::class, 'generate'])->name('appraisals.generate');
@@ -178,13 +186,12 @@ Route::middleware(['auth', 'active'])->group(function () {
         // The form's own shape. Nothing about it is fixed in code - a company
         // sets its own parts, its own scale and its own bands.
         Route::get('/appraisal-form', [AppraisalFormController::class, 'edit'])->name('appraisal-form.edit');
-        Route::put('/appraisal-form', [AppraisalFormController::class, 'update'])->name('appraisal-form.update');
-        Route::post('/appraisal-form/parts', [AppraisalFormController::class, 'storeSection'])->name('appraisal-form.parts.store');
-        Route::delete('/appraisal-form/parts/{section}', [AppraisalFormController::class, 'destroySection'])->name('appraisal-form.parts.destroy');
-        Route::post('/appraisal-form/marks', [AppraisalFormController::class, 'storeRating'])->name('appraisal-form.marks.store');
-        Route::delete('/appraisal-form/marks/{rating}', [AppraisalFormController::class, 'destroyRating'])->name('appraisal-form.marks.destroy');
         Route::post('/appraisal-form/bands', [AppraisalFormController::class, 'storeBand'])->name('appraisal-form.bands.store');
+        Route::put('/appraisal-form/bands/{band}', [AppraisalFormController::class, 'updateBand'])->name('appraisal-form.bands.update');
         Route::delete('/appraisal-form/bands/{band}', [AppraisalFormController::class, 'destroyBand'])->name('appraisal-form.bands.destroy');
+
+        // Company, team, position or member performance over a period.
+        Route::get('/kpi-report', [KpiReportController::class, 'index'])->name('kpi-report.index');
 
         Route::get('/manage-pending', [ManagePendingController::class, 'index'])->name('manage-pending.index');
         Route::post('/manage-pending/{project_kpi}/approve', [ManagePendingController::class, 'approve'])->name('manage-pending.approve');

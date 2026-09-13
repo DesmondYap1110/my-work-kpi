@@ -35,18 +35,20 @@
                         <x-sidebar.ui.dropdown-list route="project-tasks.index" label="Task" active="project-tasks.*" />
                     </x-sidebar.ui.dropdown>
 
-                    <x-sidebar.ui.dropdown id="sb-kpi" icon="ri-bar-chart-2-line" label="KPI"
-                                           :active="['kpi.*', 'manage-pending.*']">
-                        <x-sidebar.ui.dropdown-list route="manage-pending.index" label="Manage Pending" active="manage-pending.*" />
-                    </x-sidebar.ui.dropdown>
-
                     {{-- Appraisal is the administrator acting as appraiser:
                          reviewing a member over a period and handing them the
                          result. Form Setup is the scale and bands it scores by. --}}
                     <x-sidebar.ui.dropdown id="sb-appraisal" icon="ri-survey-line" label="Appraisal"
                                            :active="['appraisals.*', 'appraisal-form.*']">
-                        <x-sidebar.ui.dropdown-list route="appraisals.index" label="Review" active="appraisals.*" />
+                        <x-sidebar.ui.dropdown-list route="appraisals.index" label="Review" active="appraisals.index" />
+                        <x-sidebar.ui.dropdown-list route="appraisals.schedule" label="Schedule" active="appraisals.schedule" />
                         <x-sidebar.ui.dropdown-list route="appraisal-form.edit" label="Form Setup" active="appraisal-form.*" />
+                    </x-sidebar.ui.dropdown>
+
+                    <x-sidebar.ui.dropdown id="sb-kpi" icon="ri-bar-chart-2-line" label="KPI"
+                                           :active="['kpi.*', 'kpi-report.*', 'manage-pending.*']">
+                        <x-sidebar.ui.dropdown-list route="manage-pending.index" label="Manage Pending" active="manage-pending.*" />
+                        <x-sidebar.ui.dropdown-list route="kpi-report.index" label="Report" active="kpi-report.*" />
                     </x-sidebar.ui.dropdown>
                 @else
                     {{-- A staff member's own pages: how they are scored, the

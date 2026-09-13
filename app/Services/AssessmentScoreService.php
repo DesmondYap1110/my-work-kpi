@@ -3,30 +3,25 @@
 namespace App\Services;
 
 use App\Models\Assessment;
-use App\Models\AssessmentProjectScore;
 use App\Models\AssessmentScore;
-use App\Models\AssessmentSection;
 use App\Models\KpiCategory;
 use App\Models\KpiObjectiveInfo;
+use App\Models\KpiSetting;
 use App\Models\ProjectTask;
 use Illuminate\Support\Collection;
 
 /**
- * The arithmetic of an appraisal: what each part scored, and what the whole
- * form comes to.
+ * The arithmetic of an appraisal, which is the arithmetic of a KPI score:
  *
- * Two rules run through all of it.
+ *   Projects        task marks earned in the review period, against the
+ *                   position's target (or the work assigned)
+ * + KPI objectives  the ratings given on this form
+ * = KPI score out of 100, split by the position's Project KPI setting
  *
- * An unrated row counts for nothing on either side - it is left out of the
- * total and out of the maximum. That is what makes the form's "(if
- * applicable)" groups work without a flag: skip Leadership and the member is
- * neither rewarded nor punished for it, and the remaining groups still add up
- * to a fair percentage.
- *
- * A part with nothing in it scores null, not zero, and drops out of the
- * weighting - the other part then stands alone at its full value. A member
- * with no project work in the period is scored on soft skills, not scored down
- * for projects nobody gave them. This is the same rule the KPI blend uses; see
+ * Two rules run through it. An unrated item counts for nothing on either side -
+ * left out of the total and out of the maximum - so a group that does not apply
+ * can simply be skipped. And a half with nothing to score is null, not zero: it
+ * drops out and the other half stands alone, the same rule as
  * StaffKpiScoreService::blend().
  */
 class AssessmentScoreService
@@ -35,52 +30,55 @@ class AssessmentScoreService
      * Everything a form needs to render and total itself.
      *
      * @return array{
-     *     sections: array<int, array<string, mixed>>,
+     *     objectives: array<string, mixed>,
+     *     projects: array<string, mixed>,
      *     percentage: float|null,
      *     band: \App\Models\AssessmentBand|null
      * }
      */
     public function summary(Assessment $assessment): array
     {
-        $sections = [];
+        $objectives = $this->objectives($assessment);
+        $projects = $this->projectMarks($assessment);
 
-        foreach ($assessment->template->sections as $section) {
-            $sections[] = $section->isProject()
-                ? $this->projectSection($assessment, $section)
-                : $this->ratingSection($assessment, $section);
-        }
-
-        $percentage = $this->overall($sections);
+        // The same split, and the same rule, as the member's KPI score - the
+        // position's Project KPI setting. See StaffKpiScoreService.
+        $share = $this->projectShare($assessment);
+        $points = StaffKpiScoreService::points($objectives['percentage'], $projects['percentage'], $share);
+        $percentage = StaffKpiScoreService::blend($objectives['percentage'], $projects['percentage'], $share);
 
         return [
-            'sections' => $sections,
+            'objectives' => $objectives + [
+                'points' => $points['objectives'],
+                'share' => 100 - (int) round($share * 100),
+            ],
+            'projects' => $projects + [
+                'points' => $points['project'],
+                'share' => (int) round($share * 100),
+            ],
             'percentage' => $percentage,
             'band' => $assessment->template->bandFor($percentage),
         ];
     }
 
     /**
-     * The rated half, as the form prints it: heading, objective, item, mark.
+     * The KPI objectives, as the form prints them: category, objective, item,
+     * mark.
      *
      * Rows come from the position pinned to the appraisal rather than the
      * member's current one, so a promotion mid-review does not rewrite a form
      * that has already been filled in.
      *
-     * @return array<string, mixed>
+     * @return array{groups: array<int, array<string, mixed>>, earned: float, max: float, percentage: float|null}
      */
-    public function ratingSection(Assessment $assessment, AssessmentSection $section): array
+    public function objectives(Assessment $assessment): array
     {
         $scores = $assessment->scores->keyBy('objective_info_id');
-        // The top of the scale comes from the template, not from each item's
-        // own allowed_marks - those belong to the older self-scoring flow and
-        // still say 1-5. A company that moves its form to a six-point scale
-        // must have its maximums move with it, or a perfect form reads 120%.
-        $maxMark = $this->maxRating($assessment);
         $groups = [];
         $earned = 0;
         $max = 0;
 
-        foreach ($this->categoriesFor($assessment, $section) as $category) {
+        foreach ($this->categoriesFor($assessment) as $category) {
             $rows = [];
             $groupEarned = 0;
             $groupMax = 0;
@@ -90,21 +88,25 @@ class AssessmentScoreService
                 foreach ($objective->infos as $info) {
                     $score = $scores->get($info->id);
                     $value = $score?->score();
+                    // Each item's own best mark, as set on the position's KPI
+                    // Setting page - an item marked 1-3 is out of 3, not 5.
+                    $itemMax = $this->maxFor($info, $assessment);
 
                     $rows[] = [
                         'objective' => $objective->title,
                         'info' => $info,
+                        'marks' => $this->marksFor($info, $assessment),
                         'employee_score' => $score?->employee_score,
                         'reviewer_score' => $score?->reviewer_score,
                     ];
 
-                    // The printed "/30" is every item, rated or not; the
+                    // The printed maximum is every item, rated or not; the
                     // scored maximum counts only the ones that were rated.
-                    $groupTotal += $maxMark;
+                    $groupTotal += $itemMax;
 
                     if ($value !== null) {
                         $groupEarned += $value;
-                        $groupMax += $maxMark;
+                        $groupMax += $itemMax;
                     }
                 }
             }
@@ -122,9 +124,7 @@ class AssessmentScoreService
         }
 
         return [
-            'section' => $section,
             'groups' => $groups,
-            'rows' => [],
             'earned' => $earned,
             'max' => $max,
             'percentage' => $this->percentage($earned, $max),
@@ -132,98 +132,31 @@ class AssessmentScoreService
     }
 
     /**
-     * Part 2, whose rows are the member's own work rather than a fixed list.
+     * Project marks earned in the review period, measured the way the member's
+     * KPI score measures them: against the position's target, or against the
+     * work assigned when no target is set. Uses the position pinned to the
+     * appraisal, so a later promotion does not rescore an old review.
      *
-     * @return array<string, mixed>
+     * @return array{earned: float, assigned: float, target: float|null, percentage: float|null, tasks: Collection}
      */
-    public function projectSection(Assessment $assessment, AssessmentSection $section): array
+    public function projectMarks(Assessment $assessment): array
     {
-        $maxRating = $this->maxRating($assessment);
-        $rows = $assessment->projectScores;
+        $tasks = $assessment->period_from && $assessment->period_to && $assessment->staff
+            ? app(ProjectDeliveryScoreService::class)->tasksFor($assessment->staff, $assessment->period_from->copy()->startOfDay(), $assessment->period_to->copy()->endOfDay())
+            : collect();
 
-        $rated = $rows->filter(fn (AssessmentProjectScore $row) => $row->score() !== null);
-        $earned = $rated->sum(fn (AssessmentProjectScore $row) => $row->score());
-        $max = $rated->count() * $maxRating;
+        $earned = (float) $tasks->filter(fn (ProjectTask $task) => $task->status->isDone())->sum(fn (ProjectTask $task) => $task->points());
+        $assigned = (float) $tasks->sum(fn (ProjectTask $task) => $task->points());
+        $target = $assessment->position?->project_target;
+        $target = $target !== null && (float) $target > 0 ? (float) $target : null;
 
         return [
-            'section' => $section,
-            'groups' => [],
-            'rows' => $rows,
-            'earned' => $earned,
-            'max' => $max,
-            'printed_max' => $rows->count() * $maxRating,
-            'percentage' => $this->percentage($earned, $max),
+            'earned' => round($earned, 2),
+            'assigned' => round($assigned, 2),
+            'target' => $target,
+            'percentage' => ProjectDeliveryScoreService::percentage($earned, $assigned, $target),
+            'tasks' => $tasks,
         ];
-    }
-
-    /**
-     * Part 2's rows, drawn from the work the member actually did in the period
-     * the appraiser chose.
-     *
-     * One row per project, not per task: the form asks about a body of work,
-     * and a row per task would be unreadable on a busy quarter. The line is
-     * written out in full and stored, so a project renamed or deleted later
-     * does not change what a finished appraisal says.
-     *
-     * @return Collection<int, array<string, mixed>>
-     */
-    public function projectRowsFor(Assessment $assessment): Collection
-    {
-        if (! $assessment->period_from || ! $assessment->period_to) {
-            return collect();
-        }
-
-        return ProjectTask::query()
-            ->with('project')
-            ->where('assignee_id', $assessment->staff_id)
-            ->where(function ($query) use ($assessment) {
-                // Matches ProjectDeliveryScoreService: due in the period, or
-                // finished in it.
-                $query->whereBetween('due_date', [$assessment->period_from, $assessment->period_to])
-                    ->orWhereBetween('completed_at', [$assessment->period_from, $assessment->period_to]);
-            })
-            ->get()
-            ->groupBy('project_id')
-            ->map(function (Collection $tasks, $projectId) {
-                $done = $tasks->filter(fn (ProjectTask $task) => $task->status->isDone())->count();
-                $title = $tasks->first()->project->title ?? 'Project';
-
-                return [
-                    'project_id' => $projectId,
-                    'description' => $title.' - '.$done.' of '.$tasks->count().' '
-                        .\Illuminate\Support\Str::plural('task', $tasks->count()).' completed',
-                ];
-            })
-            ->values();
-    }
-
-    /**
-     * Fills Part 2 in from the member's work, replacing whatever was there.
-     *
-     * Called when the period changes, so the rows always describe the period
-     * being judged. Ratings already given are carried across by project, so
-     * moving the end date by a week does not throw away the appraiser's work.
-     */
-    public function syncProjectRows(Assessment $assessment): void
-    {
-        $existing = $assessment->projectScores()->get()->keyBy('project_id');
-        $rows = $this->projectRowsFor($assessment);
-
-        $assessment->projectScores()->delete();
-
-        foreach ($rows as $row) {
-            $previous = $existing->get($row['project_id']);
-
-            AssessmentProjectScore::create([
-                'assessment_id' => $assessment->id,
-                'project_id' => $row['project_id'],
-                'description' => $row['description'],
-                'employee_score' => $previous?->employee_score,
-                'reviewer_score' => $previous?->reviewer_score,
-            ]);
-        }
-
-        $assessment->load('projectScores');
     }
 
     /**
@@ -234,91 +167,25 @@ class AssessmentScoreService
      */
     public function measurementsFor(Assessment $assessment): Collection
     {
-        return KpiCategory::query()
-            ->with('objectives.infos')
-            ->where('position_id', $assessment->position_id)
-            ->get()
+        return $this->categoriesFor($assessment)
             ->flatMap(fn (KpiCategory $category) => $category->objectives->flatMap->infos);
     }
 
     /**
-     * @return Collection<int, KpiCategory>
-     */
-    private function categoriesFor(Assessment $assessment, AssessmentSection $section): Collection
-    {
-        return KpiCategory::query()
-            ->with(['objectives' => fn ($q) => $q->with('infos')])
-            ->where('position_id', $assessment->position_id)
-            ->where(function ($query) use ($section) {
-                // A category added before the form existed has no section.
-                // Rather than vanish from the appraisal, it is rated under the
-                // first rating part - which is where the seeder puts them too.
-                $query->where('section_id', $section->id);
-
-                if ($section->sort_order <= 1) {
-                    $query->orWhereNull('section_id');
-                }
-            })
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get();
-    }
-
-    /**
-     * The top of the scale, read from the template rather than assumed to be
-     * five - a company may rate out of ten.
-     */
-    private function maxRating(Assessment $assessment): int
-    {
-        return (int) ($assessment->template->ratings->max('value') ?: 5);
-    }
-
-    private function percentage(float $earned, float $max): ?float
-    {
-        return $max > 0 ? round(($earned / $max) * 100, 2) : null;
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $sections
-     */
-    private function overall(array $sections): ?float
-    {
-        return self::combine(array_map(
-            fn (array $part) => [$part['percentage'], $part['section']->weight()],
-            $sections
-        ));
-    }
-
-    /**
-     * The rule that turns the parts into one number, kept public and static so
-     * it can be tested on its own - it decides what somebody's review says, so
-     * every edge case in it is a decision rather than an implementation detail.
+     * The marks an item may be given, highest first: the item's own allowed
+     * marks from the position's KPI Setting. An item with none cannot be rated.
      *
-     * Weights are divided by what actually counted rather than by 100. A form
-     * of 50 + 50 where one part has nothing to score still reads out of 100:
-     * the part that was scored stands alone at its full value. A member given
-     * no project work in the period is judged on soft skills, not marked down
-     * for projects nobody assigned them.
-     *
-     * @param  array<int, array{0: float|null, 1: float}>  $parts  [percentage, weight]
+     * @return array<int, int>
      */
-    public static function combine(array $parts): ?float
+    public function marksFor(KpiObjectiveInfo $info, Assessment $assessment): array
     {
-        $weighted = 0.0;
-        $weight = 0.0;
-
-        foreach ($parts as [$percentage, $partWeight]) {
-            // Null is "nothing to score", which is not the same as zero and
-            // must not drag the other parts down.
-            if ($percentage === null || $partWeight <= 0) {
-                continue;
-            }
-
-            $weighted += $percentage * $partWeight;
-            $weight += $partWeight;
-        }
-
-        return $weight > 0 ? round($weighted / $weight, 2) : null;
+        return collect($info->allowed_marks ?? [])
+            ->map(fn ($mark) => (int) $mark)
+            ->filter(fn ($mark) => $mark > 0)
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->all();
     }
 
     /**
@@ -326,11 +193,53 @@ class AssessmentScoreService
      * rated. Blank clears the mark rather than storing a zero - see
      * AssessmentScore::score().
      */
-    public function putScore(Assessment $assessment, int $infoId, ?int $employee, ?int $reviewer): void
+    /**
+     * Records one side's mark and leaves the other side's alone - the member
+     * owns the Employee column, the appraiser the Reviewer column.
+     *
+     * @param  'employee_score'|'reviewer_score'  $column
+     */
+    public function putMark(Assessment $assessment, int $infoId, string $column, ?int $mark): void
     {
         AssessmentScore::updateOrCreate(
             ['assessment_id' => $assessment->id, 'objective_info_id' => $infoId],
-            ['employee_score' => $employee, 'reviewer_score' => $reviewer]
+            [$column => $mark]
         );
+    }
+
+    private function maxFor(KpiObjectiveInfo $info, Assessment $assessment): int
+    {
+        return (int) (max($this->marksFor($info, $assessment) ?: [0]));
+    }
+
+    /**
+     * @return Collection<int, KpiCategory>
+     */
+    private function categoriesFor(Assessment $assessment): Collection
+    {
+        return KpiCategory::query()
+            ->with(['objectives' => fn ($q) => $q->with('infos')])
+            ->where('position_id', $assessment->position_id)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * Projects' share of the score, 0.0 - 1.0: the appraised position's own
+     * figure, else the company figure.
+     */
+    private function projectShare(Assessment $assessment): float
+    {
+        $own = $assessment->position?->project_weight;
+
+        return $own !== null
+            ? max(0, min(100, (int) $own)) / 100
+            : KpiSetting::current()->projectShare();
+    }
+
+    private function percentage(float $earned, float $max): ?float
+    {
+        return $max > 0 ? round(($earned / $max) * 100, 2) : null;
     }
 }

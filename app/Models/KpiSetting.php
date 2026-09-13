@@ -19,10 +19,12 @@ class KpiSetting extends Model
 
     protected $fillable = [
         'project_weight',
+        'appraisal_notice_days',
     ];
 
     protected $casts = [
         'project_weight' => 'integer',
+        'appraisal_notice_days' => 'integer',
     ];
 
     /**

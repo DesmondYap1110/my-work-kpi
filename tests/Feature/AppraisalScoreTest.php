@@ -5,84 +5,18 @@ namespace Tests\Feature;
 use App\Models\AssessmentBand;
 use App\Models\AssessmentScore;
 use App\Models\AssessmentTemplate;
-use App\Services\AssessmentScoreService;
 use Tests\TestCase;
 
 /**
  * What an appraisal comes to, and what it is then called.
  *
  * Both are decisions rather than arithmetic: an unrated item counting for
- * nothing, a part with no work in it dropping out of the weighting instead of
- * scoring zero, and the band that turns a percentage into "Extend". Each is
+ * nothing, and the band that turns a score into "Extend". How projects and
+ * KPI objectives combine is the KPI blend - see KpiScoreBlendTest. Each is
  * pure, so none of this needs a database.
  */
 class AppraisalScoreTest extends TestCase
 {
-    public function test_an_even_split_averages_the_two_parts(): void
-    {
-        $this->assertSame(70.0, AssessmentScoreService::combine([[80.0, 50], [60.0, 50]]));
-    }
-
-    public function test_a_heavier_part_pulls_the_total_towards_itself(): void
-    {
-        // 80 x 0.7 + 60 x 0.3 = 74
-        $this->assertSame(74.0, AssessmentScoreService::combine([[80.0, 70], [60.0, 30]]));
-    }
-
-    /**
-     * The rule that makes "no project work this period" fair.
-     */
-    public function test_a_part_with_nothing_to_score_drops_out_rather_than_scoring_zero(): void
-    {
-        $this->assertSame(80.0, AssessmentScoreService::combine([[80.0, 50], [null, 50]]),
-            'A member given no project work should be judged on the part that was scored, not marked down to 40.');
-    }
-
-    public function test_nothing_scored_at_all_is_null_rather_than_zero(): void
-    {
-        $this->assertNull(AssessmentScoreService::combine([[null, 50], [null, 50]]));
-        $this->assertNull(AssessmentScoreService::combine([]));
-    }
-
-    public function test_a_real_zero_still_counts_against_the_total(): void
-    {
-        $this->assertSame(40.0, AssessmentScoreService::combine([[80.0, 50], [0.0, 50]]),
-            'Scored and found wanting is not the same as not scored.');
-    }
-
-    public function test_a_part_weighted_at_nothing_is_ignored(): void
-    {
-        $this->assertSame(80.0, AssessmentScoreService::combine([[80.0, 50], [10.0, 0]]));
-    }
-
-    /**
-     * Weights are divided by what counted, not by 100, so parts that do not
-     * add up to 100 still produce a percentage a person can read.
-     */
-    public function test_parts_that_do_not_total_a_hundred_still_read_out_of_a_hundred(): void
-    {
-        $this->assertSame(70.0, AssessmentScoreService::combine([[80.0, 10], [60.0, 10]]));
-    }
-
-    /**
-     * The worked example printed on the company's own filled-in form.
-     *
-     * Part 1 was scored 65 out of 130 - only three of its five groups were
-     * rated, so the other two left the denominator - and the summary page
-     * turns that into 25 of a possible 50. Part 2 came to 30 of 50. The form
-     * calls the result "Extend", which is what 55 means under its thresholds.
-     */
-    public function test_it_reproduces_the_worked_example_on_the_form(): void
-    {
-        $partOne = round(65 / 130 * 100, 2);   // 50%
-        $partTwo = 60.0;                        // 30 of 50
-
-        $total = AssessmentScoreService::combine([[$partOne, 50], [$partTwo, 50]]);
-
-        $this->assertSame(55.0, $total);
-        $this->assertSame('Extend', $this->templateWithBands()->bandFor($total)?->outcome);
-    }
-
     public function test_an_unrated_item_contributes_nothing_on_either_side(): void
     {
         $unrated = new AssessmentScore(['employee_score' => null, 'reviewer_score' => null]);

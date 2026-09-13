@@ -7,6 +7,8 @@ use App\Components\Filters\SelectFilter;
 use App\Enums\AssessmentStatus;
 use App\Models\Assessment;
 use App\Models\Staff;
+use App\Models\StaffPosition;
+use App\Models\Team;
 use App\Queries\AppraisalListQuery;
 use App\Services\AssessmentScoreService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -40,6 +42,8 @@ class AppraisalList extends Datatables
 
         return [
             new SelectFilter('staff_id', 'Member', Staff::excludingAdmin()->orderBy('staff_name')->pluck('staff_name', 'id')->all()),
+            new SelectFilter('team_id', 'Team', Team::orderBy('team_name')->pluck('team_name', 'id')->all()),
+            new SelectFilter('position_id', 'Position', StaffPosition::orderBy('position_name')->pluck('position_name', 'id')->all()),
             new SelectFilter('status', 'Status', $statuses),
             new DateFilter('period_from', 'Period From'),
             new DateFilter('period_to', 'Period To'),
@@ -89,7 +93,8 @@ class AppraisalList extends Datatables
             'Open the review form'
         );
 
-        return $name.'<span class="kpi-item-desc">'.e($appraisal->position->position_name ?? 'No position').'</span>';
+        return $name.'<span class="kpi-item-desc">'.e($appraisal->position->position_name ?? 'No position')
+            .' &middot; '.e($appraisal->staff->team->team_name ?? 'No team').'</span>';
     }
 
     /**

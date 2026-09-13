@@ -54,12 +54,8 @@ class KpiObjectiveController extends Controller implements BreadcrumbInterfaces
             // appear (with its own "add objective" button). Scoped to this
             // position - categories are not shared between jobs.
             'categories' => KpiCategory::forPosition($position->id)
-                ->with('section')
                 ->orderBy('sort_order')->orderBy('name')->get(),
             'objectivesByCategory' => $objectives,
-            // Which part of the appraisal form a category is rated under. A
-            // company that has added a part needs somewhere to point headings
-            // at it, or the part renders empty.
             // For the weighting box: the company figure the position follows
             // when it has no figure of its own.
             'companyProjectWeight' => (int) \App\Models\KpiSetting::current()->project_weight,
@@ -72,11 +68,6 @@ class KpiObjectiveController extends Controller implements BreadcrumbInterfaces
                 ->orderBy('name')->get()
                 ->reject(fn ($tag) => $tag->allowsPosition($position->id))->values(),
             'positionNames' => StaffPosition::pluck('position_name', 'id'),
-            'sections' => \App\Models\AssessmentSection::query()
-                ->where('template_id', \App\Models\AssessmentTemplate::current()->id)
-                ->where('type', \App\Models\AssessmentSection::TYPE_RATING)
-                ->orderBy('sort_order')
-                ->get(),
         ]);
     }
 

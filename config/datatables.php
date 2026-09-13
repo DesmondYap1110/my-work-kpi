@@ -19,5 +19,7 @@ return [
         'ManagePendingList',
         'ProjectTagList',
         'AppraisalList',
+        'PerformanceBandList',
+        'ReviewScheduleList',
     ],
 ];

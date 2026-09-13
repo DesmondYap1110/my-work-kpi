@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Appraisal;
 
+use App\Enums\AppraisalCycle;
 use App\Enums\AssessmentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Appraisal\StoreAppraisalRequest;
@@ -9,8 +10,12 @@ use App\Http\Requests\Appraisal\UpdateAppraisalRequest;
 use App\Interfaces\BreadcrumbInterfaces;
 use App\Models\Assessment;
 use App\Models\AssessmentTemplate;
+use App\Models\KpiSetting;
 use App\Models\Staff;
+use App\Services\AppraisalScheduleService;
 use App\Services\AssessmentScoreService;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -36,6 +41,10 @@ class AppraisalController extends Controller implements BreadcrumbInterfaces
     {
         $crumbs = [['name' => 'Appraisal', 'route' => 'appraisals.index', 'active' => false]];
 
+        if (request()->routeIs('appraisals.schedule')) {
+            return [['name' => 'Appraisal', 'route' => '', 'active' => false], ['name' => 'Schedule', 'route' => '', 'active' => true]];
+        }
+
         if (request()->routeIs('appraisals.show')) {
             $crumbs[] = ['name' => 'Review Form', 'route' => '', 'active' => true];
 
@@ -52,6 +61,62 @@ class AppraisalController extends Controller implements BreadcrumbInterfaces
         ]);
     }
 
+    /**
+     * Review Schedule: each member's cycle and when they are due, as a paged,
+     * filterable table - see App\Components\Datatables\ReviewScheduleList.
+     */
+    public function schedule(AppraisalScheduleService $schedule): View
+    {
+        $rows = $schedule->rows();
+
+        return view('appraisals.schedule', [
+            'members' => Staff::active()->excludingAdmin()->with('position')->orderBy('staff_name')->get(),
+            'overdueCount' => $rows->where('state', 'overdue')->count(),
+            'soonCount' => $rows->where('state', 'soon')->count(),
+            'noticeDays' => $schedule->noticeDays(),
+        ]);
+    }
+
+    /**
+     * How many days before an appraisal is due the administrator is notified -
+     * set on the Review Schedule page.
+     */
+    public function updateNotice(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'appraisal_notice_days' => ['required', 'integer', 'min:0', 'max:60'],
+        ], [], ['appraisal_notice_days' => 'notice days']);
+
+        KpiSetting::current()->update($validated);
+
+        $days = (int) $validated['appraisal_notice_days'];
+
+        return back()->with('status', $days === 0
+            ? 'You will be notified on the day an appraisal is due.'
+            : 'You will be notified '.$days.' '.\Illuminate\Support\Str::plural('day', $days).' before an appraisal is due.');
+    }
+
+    /**
+     * Sets how often a member is appraised - from the Review Schedule on the
+     * Appraisal page.
+     */
+    public function updateCycle(Request $request, Staff $staff): RedirectResponse
+    {
+        abort_if($staff->isAdmin(), 404);
+
+        $validated = $request->validate([
+            'appraisal_cycle' => ['required', Rule::enum(AppraisalCycle::class)],
+        ]);
+
+        $staff->update(['appraisal_cycle' => $validated['appraisal_cycle']]);
+
+        $cycle = AppraisalCycle::from($validated['appraisal_cycle']);
+
+        return back()->with('status', $cycle->isScheduled()
+            ? $staff->staff_name.' will be appraised every '.$cycle->label().'.'
+            : $staff->staff_name.' is now appraised manually - no schedule.');
+    }
+
     public function store(StoreAppraisalRequest $request): RedirectResponse
     {
         $staff = Staff::findOrFail($request->integer('staff_id'));
@@ -66,13 +131,12 @@ class AppraisalController extends Controller implements BreadcrumbInterfaces
             'period_from' => $request->date('period_from'),
             'period_to' => $request->date('period_to'),
             'review_date' => $request->date('review_date'),
-            'next_assessment_date' => $request->date('next_assessment_date'),
+            // Left blank, it follows the member's review cycle, so the next one
+            // is scheduled without anyone having to work the date out.
+            'next_assessment_date' => $request->date('next_assessment_date')
+                ?? AppraisalCycle::tryFrom((string) $staff->appraisal_cycle)?->after($request->date('period_to')),
             'status' => AssessmentStatus::Draft,
         ]);
-
-        // Part 2 is the member's own work in the period, so it can be filled in
-        // the moment the period is known.
-        $this->scores->syncProjectRows($assessment);
 
         return redirect()->route('appraisals.show', $assessment->id)
             ->with('status', 'Appraisal opened for '.$staff->staff_name.'.');
@@ -87,16 +151,17 @@ class AppraisalController extends Controller implements BreadcrumbInterfaces
     {
         $this->refuseGenerated($appraisal);
 
-        // Marks first, period second. Moving the period rebuilds Part 2 with
-        // fresh rows, and the marks in this request were given against the rows
-        // that were on screen - recording them afterwards would look them up by
-        // ids that no longer exist and quietly wipe them. Saved first, they are
-        // on the old rows when syncProjectRows() carries them over by project.
         $this->applyScores($request, $appraisal);
         $periodMoved = $this->applyPeriod($request, $appraisal);
 
+        // Save & Generate: the marks on screen are saved above, then handed to
+        // the member in the same step - so nothing typed is ever left behind.
+        if ($request->boolean('generate')) {
+            return $this->generate($appraisal->fresh());
+        }
+
         return back()->with('status', $periodMoved
-            ? 'Appraisal saved. Part 2 was rebuilt for the new review period.'
+            ? 'Appraisal saved. Project marks were recounted for the new review period.'
             : 'Appraisal saved.');
     }
 
@@ -109,7 +174,7 @@ class AppraisalController extends Controller implements BreadcrumbInterfaces
      */
     public function generate(Assessment $appraisal): RedirectResponse
     {
-        $appraisal->load(['template.sections', 'template.ratings', 'template.bands', 'scores', 'projectScores']);
+        $appraisal->load(['template.bands', 'scores', 'staff', 'position']);
 
         if ($this->scores->summary($appraisal)['percentage'] === null) {
             return back()->withErrors(['appraisal' => 'Rate at least one item before generating this appraisal.']);
@@ -149,21 +214,19 @@ class AppraisalController extends Controller implements BreadcrumbInterfaces
     {
         $appraisal->load([
             'staff', 'position', 'reviewer',
-            'template.sections', 'template.ratings', 'template.bands',
-            'scores', 'projectScores.project',
+            'template.bands', 'scores',
         ]);
 
         return [
             'appraisal' => $appraisal,
             'summary' => $this->scores->summary($appraisal),
-            'ratings' => $appraisal->template->ratings,
             'readOnly' => $readOnly || $appraisal->isGenerated(),
         ];
     }
 
     /**
-     * Returns true when the period moved, since that means Part 2 no longer
-     * describes the work being judged and has to be rebuilt.
+     * Returns true when the period moved, since the project marks are then
+     * counted over a different stretch of work.
      */
     private function applyPeriod(UpdateAppraisalRequest $request, Assessment $appraisal): bool
     {
@@ -180,47 +243,41 @@ class AppraisalController extends Controller implements BreadcrumbInterfaces
             'comments' => $request->input('comments'),
         ]);
 
-        if ($moved) {
-            $this->scores->syncProjectRows($appraisal);
-        }
-
         return $moved;
     }
 
     private function applyScores(UpdateAppraisalRequest $request, Assessment $appraisal): void
     {
-        $employee = $request->input('employee', []);
+        // The Reviewer column only. The Employee column is the member's own
+        // self-assessment - see MyAppraisalController::update() - so the
+        // appraiser's save never touches it.
         $reviewer = $request->input('reviewer', []);
 
         // Only measurements this member's position is actually rated on: the
         // ids arrive from a form, and a stray one would attach a score to
         // somebody else's KPI item.
         foreach ($this->scores->measurementsFor($appraisal) as $info) {
-            $this->scores->putScore(
-                $appraisal,
-                $info->id,
-                $this->mark($employee[$info->id] ?? null),
-                $this->mark($reviewer[$info->id] ?? null),
-            );
-        }
+            // Only a mark the item actually allows - see its allowed marks on
+            // the position's KPI Setting page.
+            $allowed = $this->scores->marksFor($info, $appraisal);
 
-        $projectEmployee = $request->input('project_employee', []);
-        $projectReviewer = $request->input('project_reviewer', []);
-
-        foreach ($appraisal->projectScores()->get() as $row) {
-            $row->update([
-                'employee_score' => $this->mark($projectEmployee[$row->id] ?? null),
-                'reviewer_score' => $this->mark($projectReviewer[$row->id] ?? null),
-            ]);
+            $this->scores->putMark($appraisal, $info->id, 'reviewer_score', $this->mark($reviewer[$info->id] ?? null, $allowed));
         }
     }
 
     /**
-     * Blank means unrated, and unrated is not zero - see AssessmentScore.
+     * Blank means unrated, and unrated is not zero - see AssessmentScore. A
+     * mark the item does not allow is treated as blank rather than trusted.
+     *
+     * @param  array<int, int>  $allowed
      */
-    private function mark($value): ?int
+    private function mark($value, array $allowed): ?int
     {
-        return $value === null || $value === '' ? null : (int) $value;
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return in_array((int) $value, $allowed, true) ? (int) $value : null;
     }
 
     private function refuseGenerated(Assessment $appraisal): void

@@ -61,7 +61,6 @@ class Assessment extends Model
             }
 
             $assessment->scores()->delete();
-            $assessment->projectScores()->delete();
         });
     }
 
@@ -92,11 +91,6 @@ class Assessment extends Model
     public function scores(): HasMany
     {
         return $this->hasMany(AssessmentScore::class, 'assessment_id', 'id');
-    }
-
-    public function projectScores(): HasMany
-    {
-        return $this->hasMany(AssessmentProjectScore::class, 'assessment_id', 'id');
     }
 
     public function checkins(): HasMany

@@ -12,6 +12,9 @@
 <link href="{{ asset('assets/css/responsive.bootstrap.min.css') }}" rel="stylesheet">
 <link href="{{ asset('assets/css/buttons.dataTables.min.css') }}" rel="stylesheet">
 
+{{-- Select2: searchable multi-selects for long lists (e.g. a tag's positions). --}}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet">
+
 <link href="{{ \App\Support\Asset::url('assets/css/app-custom.css') }}" rel="stylesheet">
 
 {{-- Branding tokens (config/branding.php) - last, so they win. --}}

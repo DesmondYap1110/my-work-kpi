@@ -31,11 +31,13 @@ class ProjectTagList extends Datatables
         return [
             'name' => ['type' => 'text', 'required' => true, 'placeholder' => 'e.g. new feature'],
             'points' => ['type' => 'number', 'required' => true, 'placeholder' => 'e.g. 4'],
-            // Tick any number of positions; none ticked is every position.
+            // Pick any number of positions; none picked is every position.
+            // A searchable multi-select, since a company may have many.
             'positions' => [
-                'type' => 'checkboxes',
+                'type' => 'multiselect',
                 'name' => 'position_ids',
-                'hint' => 'None ticked = all positions',
+                'placeholder' => 'All positions',
+                'hint' => 'Leave empty for all positions',
                 'options' => StaffPosition::excludingAdmin()->orderBy('position_name')->pluck('position_name', 'id')->all(),
             ],
         ];

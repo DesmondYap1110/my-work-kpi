@@ -22,7 +22,9 @@ App.module('datatables', function () {
         var centeredKeys = String($table.data('centered') || '').split('|');
         var pageLength = parseInt($table.data('page-length'), 10) || 10;
         var extraParams = $table.data('extra') || {};
-        var $filterForm = $('.js-datatable-filter');
+        // The filter bar made for this table (see buildHTMLFilter()), so a
+        // page with two tables does not feed one table's filters to the other.
+        var $filterForm = $('.js-datatable-filter[data-for="' + listClass + '"]');
 
         var columns = columnKeys.map(function (key) {
             return {
@@ -52,6 +54,9 @@ App.module('datatables', function () {
             serverSide: true,
             searching: false,
             pageLength: pageLength,
+            // A list class may open sorted by something other than its first
+            // column - see defaultOrder() in App\Components\Datatables\Datatables.
+            order: $table.data('order') || [[0, 'asc']],
             ajax: {
                 url: window.datatablesEndpoint,
                 type: 'POST',

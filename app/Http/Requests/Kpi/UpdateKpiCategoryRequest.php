@@ -17,12 +17,7 @@ class UpdateKpiCategoryRequest extends FormRequest
         $category = $this->route('category');
 
         return [
-            // A category may be moved between the form's parts, but never
-            // between positions.
-            'section_id' => [
-                'nullable', 'integer',
-                Rule::exists('assessment_section', 'id')->where('type', 'rating'),
-            ],
+            // Renamed only - a category never moves between positions.
             'name' => [
                 'required', 'string', 'max:255',
                 Rule::unique('kpi_category', 'name')

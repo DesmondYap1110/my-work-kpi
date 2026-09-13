@@ -50,21 +50,6 @@
                                placeholder="e.g. Soft Skill, Technical Skill, Service" required>
                     </div>
                 </div>
-                @if ($sections->count() > 1)
-                    {{-- Only worth asking once a company has more than one part
-                         to choose between; otherwise everything is rated under
-                         the only one there is. --}}
-                    <div class="col-lg-6">
-                        <div class="input-group">
-                            <label>Rated under</label>
-                            <select class="form-control" name="section_id">
-                                @foreach ($sections as $section)
-                                    <option value="{{ $section->id }}">{{ $section->title }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                @endif
             </div>
             <div class="kpi-inline-actions">
                 <button type="submit" id="general-btn" class="btn1"><i class="ri-check-fill"></i>Add Category</button>
@@ -135,20 +120,6 @@
                                        value="{{ $category->name }}" required>
                             </div>
                         </div>
-                        @if ($sections->count() > 1)
-                            <div class="col-lg-6">
-                                <div class="input-group">
-                                    <label>Rated under</label>
-                                    <select class="form-control" name="section_id">
-                                        @foreach ($sections as $section)
-                                            <option value="{{ $section->id }}" @selected($category->section_id === $section->id)>
-                                                {{ $section->title }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        @endif
                     </div>
                     <div class="kpi-inline-actions">
                         <button type="submit" id="general-btn" class="btn1"><i class="ri-check-fill"></i>Save</button>

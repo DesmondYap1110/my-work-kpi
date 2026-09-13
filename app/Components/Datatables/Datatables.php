@@ -127,6 +127,18 @@ abstract class Datatables
     }
 
     /**
+     * The column the table sorts by when it first opens, and which way -
+     * [column key, 'asc'|'desc']. Null keeps DataTables' default: the first
+     * column, ascending.
+     *
+     * @return array{0: string, 1: string}|null
+     */
+    public function defaultOrder(): ?array
+    {
+        return null;
+    }
+
+    /**
      * $extraParams are static, page-scoped values (e.g. a parent record's
      * id) that every AJAX request for this table must carry - stamped as a
      * data-extra JSON attribute and merged client-side, for list pages
@@ -139,6 +151,9 @@ abstract class Datatables
         $columns = $object::getTableColumns();
         $dataCols = implode('|', array_keys($columns));
         $dataExtra = e(json_encode($extraParams));
+
+        $order = $object->defaultOrder();
+        $dataOrder = $order ? e(json_encode([[array_search($order[0], array_keys($columns), true), $order[1]]])) : '';
 
         $centered = array_unique([...$object->centeredColumns(), 'action']);
         $dataCentered = implode('|', $centered);
@@ -157,7 +172,7 @@ abstract class Datatables
                 .' data-inline-routes=\''.e(json_encode($object->inlineRoutes())).'\'';
         }
 
-        $table = '<table class="table table-bordered nowrap table-striped align-middle ajax-datatable w-100" data-class="'.$class.'" data-cols="'.$dataCols.'" data-centered="'.$dataCentered.'" data-page-length="'.static::PAGINATION_NUMBER.'" data-extra=\''.$dataExtra.'\''.$inlineAttributes.'>'
+        $table = '<table class="table table-bordered nowrap table-striped align-middle ajax-datatable w-100" data-class="'.$class.'" data-cols="'.$dataCols.'" data-centered="'.$dataCentered.'" data-page-length="'.static::PAGINATION_NUMBER.'" data-extra=\''.$dataExtra.'\''.($dataOrder ? ' data-order=\''.$dataOrder.'\'' : '').$inlineAttributes.'>'
             ."<thead><tr>{$headers}</tr></thead><tbody></tbody></table>";
 
         return '<div id="tb-box" class="general-box"><div id="table-padding"><div id="table-div">'.$table.'</div></div></div>';
@@ -185,7 +200,7 @@ abstract class Datatables
 
         return '<div id="tb-box" class="general-box mb-3">'
             .'<div id="table-padding">'
-            .'<form class="row g-2 align-items-end js-datatable-filter">'
+            .'<form class="row g-2 align-items-end js-datatable-filter" data-for="'.e($class).'">'
             .$fields
             .'<div class="col-md-3" id="filter-btn-div">'
             .'<button type="submit" id="general-btn" class="btn1"><i class="ri-filter-3-line"></i>Filter</button>'

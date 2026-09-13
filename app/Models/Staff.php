@@ -33,6 +33,8 @@ class Staff extends Authenticatable
         'is_active',
         'position_id',
         'team_id',
+        // How often this member is appraised - see App\Enums\AppraisalCycle.
+        'appraisal_cycle',
     ];
 
     protected $hidden = [

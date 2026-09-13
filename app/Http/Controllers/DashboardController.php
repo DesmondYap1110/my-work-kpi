@@ -9,6 +9,7 @@ use App\Models\ProjectTask;
 use App\Models\Staff;
 use App\Models\StaffPosition;
 use App\Models\Team;
+use App\Services\AppraisalScheduleService;
 use App\Services\StaffKpiScoreService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -44,6 +45,8 @@ class DashboardController extends Controller
             'activeTeamsCount' => Team::active()->count(),
             'activeMembersCount' => Staff::active()->excludingAdmin()->count(),
             'totalProjectsCount' => Project::count(),
+            // Members whose appraisal is overdue or due within a week.
+            'appraisalsDue' => app(AppraisalScheduleService::class)->attention(),
         ];
     }
 

@@ -62,6 +62,21 @@ App.module('inline-edit', function () {
             return boxes + '</div>';
         }
 
+        // A searchable multi-select (Select2) for lists that can grow long -
+        // e.g. a tag's positions. Posts as an array, like checkboxes.
+        if (field.type === 'multiselect') {
+            var multi = '<select multiple class="form-control js-inline-input js-inline-select2" data-field="' + name + '" data-multiple="1"'
+                + ' data-placeholder="' + $('<span>').text(field.placeholder || 'Select').html() + '">';
+            $.each(field.options || {}, function (optValue, label) {
+                multi += '<option value="' + optValue + '">' + $('<span>').text(label).html() + '</option>';
+            });
+            multi += '</select>';
+            if (field.hint) {
+                multi += '<span class="inline-checkboxes-hint">' + $('<span>').text(field.hint).html() + '</span>';
+            }
+            return multi;
+        }
+
         if (field.type === 'select') {
             var html = '<select class="form-control js-inline-input" data-field="' + name + '"' + required + '>';
             html += '<option value="">' + (field.placeholder || 'Select') + '</option>';
@@ -98,6 +113,10 @@ App.module('inline-edit', function () {
 
             if ($(this).data('multiple')) {
                 var picked = (values && values[key] ? values[key] : []).map(String);
+                if ($(this).is('select')) {
+                    $(this).val(picked).trigger('change');
+                    return;
+                }
                 $(this).find('input[type=checkbox]').each(function () {
                     this.checked = picked.indexOf(this.value) !== -1;
                 });
@@ -105,6 +124,25 @@ App.module('inline-edit', function () {
             }
 
             $(this).val(values && values[key] !== undefined ? values[key] : '');
+        });
+    }
+
+    /**
+     * Turns multiselect fields into Select2 once the row is in the page -
+     * Select2 measures its container, so it cannot run on a detached row.
+     */
+    function enhance($row) {
+        if (!$.fn.select2) {
+            return;
+        }
+
+        $row.find('.js-inline-select2').each(function () {
+            $(this).select2({
+                width: '100%',
+                closeOnSelect: false,
+                placeholder: $(this).data('placeholder'),
+                dropdownParent: $(this).parent(),
+            });
         });
     }
 
@@ -147,6 +185,10 @@ App.module('inline-edit', function () {
             var key = $(this).data('field');
 
             if ($(this).data('multiple')) {
+                if ($(this).is('select')) {
+                    data[key] = $(this).val() || [];
+                    return;
+                }
                 data[key] = $(this).find('input[type=checkbox]:checked').map(function () { return this.value; }).get();
                 return;
             }
@@ -240,6 +282,7 @@ App.module('inline-edit', function () {
             var $row = buildRow(columns, fields, 'create', {});
             $row.addClass('js-inline-create');
             $table.find('tbody').append($row);
+            enhance($row);
         }
 
         // The create row is re-added after every draw, because DataTables
@@ -303,6 +346,7 @@ App.module('inline-edit', function () {
             var $editRow = buildRow(columns, fields, 'edit', values);
             $editRow.attr('data-id', $trigger.data('id'));
             $row.replaceWith($editRow);
+            enhance($editRow);
             setValues($editRow, values);
             $editRow.find('.js-inline-input').first().trigger('focus');
         });

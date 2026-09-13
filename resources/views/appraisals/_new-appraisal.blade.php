@@ -18,12 +18,23 @@
         <div class="col-lg-12">
             <div class="input-group">
                 <label>Member<span>*</span></label>
-                <select class="form-control" name="staff_id" required>
+                {{-- Each member carries their review cycle, so Next Assessment can
+                     be filled in from it - see public/js/modules/appraisal-next-date.js. --}}
+                {{-- Members with a draft already open are shown but cannot be
+                     picked - see StoreAppraisalRequest::withValidator(). --}}
+                @php $draftStaffIds = \App\Models\Assessment::where('status', \App\Enums\AssessmentStatus::Draft)->pluck('staff_id')->all(); @endphp
+                <select class="form-control" name="staff_id" required data-next-date-source>
                     <option value="">Select Member</option>
-                    @foreach ($members as $member)
-                        <option value="{{ $member->id }}" @selected(old('staff_id') == $member->id)>
-                            {{ $member->staff_name }}@if ($member->position) &middot; {{ $member->position->position_name }} @endif
-                        </option>
+                    {{-- Grouped by team, so a long member list stays findable. --}}
+                    @foreach ($members->loadMissing('team')->groupBy(fn ($m) => $m->team->team_name ?? 'No team')->sortKeys() as $teamName => $teamMembers)
+                        <optgroup label="{{ $teamName }}">
+                            @foreach ($teamMembers as $member)
+                                @php $memberCycle = \App\Enums\AppraisalCycle::tryFrom((string) $member->appraisal_cycle) ?? \App\Enums\AppraisalCycle::Manual; @endphp
+                                <option value="{{ $member->id }}" data-cycle="{{ $memberCycle->value }}" data-cycle-label="{{ $memberCycle->label() }}" @selected(old('staff_id') == $member->id) @disabled(in_array($member->id, $draftStaffIds))>
+                                    {{ $member->staff_name }}@if ($member->position) &middot; {{ $member->position->position_name }} @endif @if (in_array($member->id, $draftStaffIds)) (draft open) @endif
+                                </option>
+                            @endforeach
+                        </optgroup>
                     @endforeach
                 </select>
             </div>
@@ -59,7 +70,8 @@
             <div class="input-group">
                 <label>Next Assessment</label>
                 <input type="date" class="form-control" name="next_assessment_date"
-                       value="{{ old('next_assessment_date') }}">
+                       value="{{ old('next_assessment_date') }}" data-next-date>
+                <span id="note-p" class="d-block appraisal-next-note" data-next-date-note>Filled in from the member's review cycle.</span>
             </div>
         </div>
     </div>

@@ -22,13 +22,6 @@ class StoreKpiCategoryRequest extends FormRequest
                     ->whereNot('id', StaffPosition::ADMIN_ID)
                     ->whereNull('deleted_at'),
             ],
-            // Which part of the appraisal form this heading is rated under.
-            // Left out when a company has only one part to choose from, in
-            // which case KpiCategory::booted() picks it.
-            'section_id' => [
-                'nullable', 'integer',
-                Rule::exists('assessment_section', 'id')->where('type', 'rating'),
-            ],
             // Unique within the position, not globally: two positions are both
             // entitled to a category called "Technical Skill".
             'name' => [

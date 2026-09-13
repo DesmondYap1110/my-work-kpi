@@ -13,11 +13,6 @@ class UpdateAppraisalRequest extends FormRequest
 
     public function rules(): array
     {
-        // Marks are bounded by the template's own scale rather than a constant:
-        // a company rating out of ten should not be told 6 is invalid. The
-        // controller supplies the ceiling.
-        $max = (int) $this->route('appraisal')->template->ratings->max('value') ?: 5;
-
         return [
             'period_from' => ['required', 'date'],
             'period_to' => ['required', 'date', 'after_or_equal:period_from'],
@@ -26,16 +21,11 @@ class UpdateAppraisalRequest extends FormRequest
             'comments' => ['nullable', 'string', 'max:5000'],
 
             // Blank is meaningful - it leaves a measurement unrated, which
-            // drops it from the score rather than marking it zero.
-            'employee' => ['array'],
-            'employee.*' => ['nullable', 'integer', 'between:1,'.$max],
+            // drops it from the score rather than marking it zero. Whether a
+            // mark is one the item allows is checked per item in the controller.
+            // Reviewer only: the Employee column is filled in by the member.
             'reviewer' => ['array'],
-            'reviewer.*' => ['nullable', 'integer', 'between:1,'.$max],
-
-            'project_employee' => ['array'],
-            'project_employee.*' => ['nullable', 'integer', 'between:1,'.$max],
-            'project_reviewer' => ['array'],
-            'project_reviewer.*' => ['nullable', 'integer', 'between:1,'.$max],
+            'reviewer.*' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
@@ -51,10 +41,7 @@ class UpdateAppraisalRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'employee.*.between' => 'Every mark must be on the rating scale.',
-            'reviewer.*.between' => 'Every mark must be on the rating scale.',
-            'project_employee.*.between' => 'Every mark must be on the rating scale.',
-            'project_reviewer.*.between' => 'Every mark must be on the rating scale.',
+            'reviewer.*.integer' => 'Every mark must be a whole number.',
         ];
     }
 }

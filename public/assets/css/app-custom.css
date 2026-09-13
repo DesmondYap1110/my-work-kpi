@@ -755,16 +755,6 @@ select.appraisal-mark {
     flex-wrap: wrap;
 }
 
-/* "Start an Appraisal" sits above the form's own setup: a heading on the left,
-   the action on the right. */
-.appraisal-start {
-    gap: 16px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-}
-
 /* A task's own words, under its title. Pre-wrap so a member's line breaks
    survive; clamped so a long brief does not push every other task off screen
    (the whole thing is in the edit form). */
@@ -1373,8 +1363,55 @@ input.kpi-split-bar:focus-visible::-webkit-slider-thumb {
 }
 .inline-checkboxes-hint {
     width: 100%;
+    display: block;
+    text-align: left;
+    margin-top: 3px;
     font-size: 11px;
     color: var(--brand-text-muted, #6e6e6e);
+}
+
+/* Select2 multi-selects, dressed as the theme's .form-control with the tags
+   shown as the same pills as the table. See inline-edit.js (multiselect). */
+.select2-container {
+    min-width: 200px;
+    text-align: left;
+}
+.select2-container--default .select2-selection--multiple {
+    min-height: 38px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--brand-border, #dfe3ea);
+}
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: var(--brand-primary, #6366f1);
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    border: 0;
+    font-size: 12px;
+    border-radius: 20px;
+    padding: 1px 8px 1px 20px;
+    color: var(--brand-primary, #6366f1);
+    background: rgb(99 102 241 / 10%);
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    border: 0;
+    top: 1px;
+    color: var(--brand-primary, #6366f1);
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    background: transparent;
+    color: #f06548;
+}
+.select2-container .select2-search--inline .select2-search__field {
+    margin-top: 6px;
+    font-size: 13px;
+}
+.select2-dropdown {
+    font-size: 13px;
+    border-color: var(--brand-border, #dfe3ea);
+}
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+    background: var(--brand-primary, #6366f1);
 }
 
 /* Show all / Show less under a short table - see public/js/modules/show-more.js. */
@@ -1399,4 +1436,96 @@ input.kpi-split-bar:focus-visible::-webkit-slider-thumb {
 .kpi-objectives-section .kpi-group:last-child,
 .kpi-objectives-section > .general-box:last-child {
     margin-bottom: 0 !important;
+}
+
+/* Review Schedule on the Appraisal page - see appraisals/_schedule. */
+.appraisal-cycle-select.form-control {
+    width: 140px !important;
+    margin: 0 auto;
+}
+/* Review Schedule header: "Notify me [3] days before due [Save]". */
+.appraisal-notice-form {
+    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 13px;
+}
+.appraisal-notice-form label,
+.appraisal-notice-form span {
+    font-weight: 500;
+    color: var(--brand-text, #212529);
+}
+.appraisal-notice-form .form-control {
+    width: 70px !important;
+    text-align: center;
+}
+/* Dashboard notice: appraisals overdue or due soon. */
+.appraisal-due-notice {
+    border-left: 4px solid #f7b84b;
+}
+.appraisal-due-notice.is-overdue {
+    border-left-color: var(--brand-danger, #ff4d4d);
+}
+.appraisal-due-notice #form-sub-title i {
+    color: var(--brand-danger, #ff4d4d);
+}
+.appraisal-due-notice.is-soon #form-sub-title i {
+    color: #f7b84b;
+}
+.appraisal-due-list {
+    padding: 0;
+    list-style: none;
+}
+.appraisal-due-list li {
+    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 8px 0;
+    font-size: 13px;
+    align-items: center;
+    border-top: 1px solid var(--brand-border, #e9e9ef);
+}
+.appraisal-due-list .kpi-item-desc {
+    display: inline;
+}
+.appraisal-due-when {
+    gap: 8px;
+    display: inline-flex;
+    margin-left: auto;
+    align-items: center;
+}
+.appraisal-due-list strong,
+.appraisal-due-when {
+    font-weight: 600;
+    color: var(--brand-text, #1e293b);
+}
+#note-p.appraisal-next-note {
+    color: var(--brand-text, #3b3b3b);
+}
+
+/* The action bar at the foot of an appraisal - see appraisals/show. */
+.appraisal-actions {
+    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px !important;
+}
+.appraisal-actions-status {
+    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 13px;
+    align-items: center;
+    color: var(--brand-text, #3b3b3b);
+}
+.appraisal-actions-buttons {
+    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+}
+.appraisal-actions-buttons #general-btn {
+    margin: 0;
 }

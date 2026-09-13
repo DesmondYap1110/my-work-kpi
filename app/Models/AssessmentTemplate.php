@@ -32,16 +32,6 @@ class AssessmentTemplate extends Model
         'is_active' => 'boolean',
     ];
 
-    public function sections(): HasMany
-    {
-        return $this->hasMany(AssessmentSection::class, 'template_id', 'id')->orderBy('sort_order');
-    }
-
-    public function ratings(): HasMany
-    {
-        return $this->hasMany(AssessmentRating::class, 'template_id', 'id')->orderByDesc('value');
-    }
-
     public function bands(): HasMany
     {
         return $this->hasMany(AssessmentBand::class, 'template_id', 'id')->orderByDesc('min_score');

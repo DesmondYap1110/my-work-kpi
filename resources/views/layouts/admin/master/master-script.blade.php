@@ -1,6 +1,7 @@
 {{-- Script imports. jQuery must load before the DataTables plugins, and the
      theme libs before sidebar-toggle.js, which drives the hamburger. --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
 <script src="{{ asset('assets/js/datatable/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('assets/js/datatable/dataTables.bootstrap5.min.js') }}"></script>
 <script src="{{ asset('assets/js/datatable/dataTables.responsive.min.js') }}"></script>
@@ -32,6 +33,7 @@
 <script src="{{ \App\Support\Asset::url('js/modules/show-more.js') }}"></script>
 <script src="{{ \App\Support\Asset::url('js/modules/kpi-split.js') }}"></script>
 <script src="{{ \App\Support\Asset::url('js/modules/tag-position.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/appraisal-next-date.js') }}"></script>
 <script>window.datatablesEndpoint = @json(route('datatables.listing'));</script>
 <script src="{{ \App\Support\Asset::url('js/modules/datatables.js') }}"></script>
 
