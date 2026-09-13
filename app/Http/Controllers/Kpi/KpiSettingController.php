@@ -3,55 +3,17 @@
 namespace App\Http\Controllers\Kpi;
 
 use App\Http\Controllers\Controller;
-use App\Interfaces\BreadcrumbInterfaces;
-use App\Models\KpiSetting;
 use App\Models\StaffPosition;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 /**
- * How much of a KPI score comes from delivering project work.
- *
- * One number for the company, with a per-position override for roles the
- * company answer does not fit - an office admin in a project-driven firm.
+ * A position's Project KPI: how its KPI score's 100 points split between
+ * projects and KPI objectives, and the project marks that earn the full project
+ * points. Set from the position's KPI page.
  */
-class KpiSettingController extends Controller implements BreadcrumbInterfaces
+class KpiSettingController extends Controller
 {
-    public function getBreadcrumbs(): array
-    {
-        return [
-            ['name' => 'Project Setup', 'route' => '', 'active' => false],
-            ['name' => 'Weighting', 'route' => '', 'active' => true],
-        ];
-    }
-
-    /**
-     * The company figure only. A position's own figure is set on that
-     * position's KPI page, next to the objectives it weighs against - see
-     * updatePosition().
-     */
-    public function edit(): View
-    {
-        return view('kpi-settings.edit', [
-            'setting' => KpiSetting::current(),
-            'overrides' => StaffPosition::excludingAdmin()->where(fn ($q) => $q->whereNotNull('project_weight')->orWhereNotNull('project_target'))->orderBy('position_name')->get(),
-        ]);
-    }
-
-    public function update(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'project_weight' => ['required', 'integer', 'between:0,100'],
-        ], [
-            'project_weight.between' => 'The company weighting must be between 0 and 100.',
-        ]);
-
-        KpiSetting::current()->update(['project_weight' => $validated['project_weight']]);
-
-        return back()->with('status', 'Weighting updated successfully.');
-    }
-
     /**
      * One position's own weighting, saved from its KPI page.
      *

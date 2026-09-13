@@ -37,7 +37,6 @@ class AdminOnlyAccessTest extends TestCase
         'project-tags.',
         'kpi.',
         'kpi-categories.',
-        'kpi-settings.',
         'manage-pending.',
         'project-tasks.',
         'appraisals.',

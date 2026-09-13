@@ -11,8 +11,8 @@
     Dragging the coloured bar sets the split; the example underneath is worked
     out live as it moves - see public/js/modules/kpi-split.js.
 
-    A position never saved starts at the company figure (Project Setup >
-    Weighting). A blank target measures project work against the tasks the
+    A position never saved starts at the company figure (kpi_setting, 0 by
+    default). A blank target measures project work against the tasks the
     member was given instead. See ProjectDeliveryScoreService::percentage()
     and StaffKpiScoreService::blend().
 

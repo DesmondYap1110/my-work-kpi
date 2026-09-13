@@ -934,44 +934,7 @@ input[type="file"].form-control:hover:not(:disabled):not([readonly])::file-selec
     color: var(--brand-text, #3b3b3b);
 }
 
-/* A position's project KPI weighting, on its KPI page. */
-.kpi-weighting-row {
-    gap: 16px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-}
-.kpi-weighting-input {
-    margin-bottom: 0 !important;
-}
-.kpi-weighting-split {
-    gap: 8px;
-    display: flex;
-    align-items: center;
-    min-height: 40px;
-    font-size: 13px;
-}
-.kpi-weighting-part {
-    padding: 8px 12px;
-    border-radius: 5px;
-    color: var(--brand-text, #3b3b3b);
-}
-.kpi-weighting-part strong {
-    font-size: 15px;
-    margin-right: 4px;
-}
-.kpi-weighting-part.is-project {
-    background: rgb(99 102 241 / 10%);
-}
-.kpi-weighting-part.is-project strong {
-    color: var(--brand-primary, #6366f1);
-}
-.kpi-weighting-part.is-objectives {
-    background: var(--brand-background, #eaedf7);
-}
-.kpi-weighting-plus {
-    color: var(--brand-text-muted, #6e6e6e);
-}
+/* Notes under the Project KPI fields, on a position's KPI page. */
 #note-p.kpi-weighting-note {
     margin-top: 10px;
     color: var(--brand-text, #3b3b3b);

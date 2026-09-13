@@ -150,15 +150,11 @@ Route::middleware(['auth', 'active'])->group(function () {
             ->parameters(['kpi' => 'position', 'items' => 'item'])
             ->only(['index', 'store', 'update', 'destroy']);
 
-        // Project setup: what kinds of work are worth, and how much of a KPI
-        // score comes from delivering them.
+        // Project setup: what kinds of work are worth.
         Route::resource('project-tags', ProjectTagController::class)
             ->only(['index', 'store', 'update', 'destroy']);
 
-        Route::get('/kpi-weighting', [KpiSettingController::class, 'edit'])->name('kpi-settings.edit');
-        Route::put('/kpi-weighting', [KpiSettingController::class, 'update'])->name('kpi-settings.update');
-        // A position's own figure, set on its KPI page rather than in a table
-        // of every position on the company screen.
+        // A position's Project KPI split and target, set on its KPI page.
         Route::put('/kpi/{position}/weighting', [KpiSettingController::class, 'updatePosition'])->name('kpi.weighting.update');
 
         // Appraisal: the administrator reviewing a member's performance over a

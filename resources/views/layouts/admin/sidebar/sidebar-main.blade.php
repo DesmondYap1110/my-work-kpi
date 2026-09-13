@@ -30,11 +30,10 @@
                     {{-- "Project Setup" rather than "Project", so the group and
                          its first child are not both called the same thing. --}}
                     <x-sidebar.ui.dropdown id="sb-project" icon="ri-clipboard-line" label="Project Setup"
-                                           :active="['projects.*', 'project-tasks.*', 'project-tags.*', 'kpi-settings.*']">
+                                           :active="['projects.*', 'project-tasks.*', 'project-tags.*']">
                         <x-sidebar.ui.dropdown-list route="projects.index" label="Project" active="projects.*" />
                         <x-sidebar.ui.dropdown-list route="project-tasks.index" label="Task" active="project-tasks.*" />
                         <x-sidebar.ui.dropdown-list route="project-tags.index" label="Tag" active="project-tags.*" />
-                        <x-sidebar.ui.dropdown-list route="kpi-settings.edit" label="Weighting" active="kpi-settings.*" />
                     </x-sidebar.ui.dropdown>
 
                     <x-sidebar.ui.dropdown id="sb-kpi" icon="ri-bar-chart-2-line" label="KPI"
