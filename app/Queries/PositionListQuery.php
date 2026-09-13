@@ -11,6 +11,6 @@ class PositionListQuery
     {
         // withCount so StaffPosition::hasKpi() answers from the loaded count
         // instead of querying once per row.
-        return StaffPosition::query()->withCount('objectives')->latest('id');
+        return StaffPosition::query()->withCount('scoreableItems')->latest('id');
     }
 }

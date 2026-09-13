@@ -218,7 +218,7 @@ button.tb-status:hover {
     border: 1px solid var(--brand-border, #e9e9e9);
 }
 .js-mark-add {
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 /*
@@ -864,4 +864,37 @@ input[type="file"].form-control:hover:not(:disabled):not([readonly])::file-selec
    shared with other screens. */
 #note-p.task-file-note {
     color: var(--brand-text, #3b3b3b);
+}
+
+/* Truncated cell text with the full value on hover - see text-peek.js. A dotted
+   underline says "there is more here" without looking like a link. */
+.text-peek {
+    cursor: help;
+    text-decoration: underline dotted rgb(0 0 0 / 30%);
+    text-underline-offset: 3px;
+}
+.text-peek-popover {
+    max-width: 420px;
+    font-size: 12px;
+}
+/* The theme paints popovers dark; set both the panel and its text explicitly so
+   the two can never end up the same colour. */
+.text-peek-popover.popover {
+    background: #fff !important;
+    border: 1px solid var(--brand-border, #e9e9ef);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+}
+.text-peek-popover .popover-body {
+    padding: 10px 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: var(--brand-text, #3b3b3b) !important;
+}
+.text-peek-popover .popover-arrow::after {
+    border-top-color: #fff !important;
+    border-bottom-color: #fff !important;
+}
+.text-peek-popover .popover-arrow::before {
+    border-top-color: var(--brand-border, #e9e9ef) !important;
+    border-bottom-color: var(--brand-border, #e9e9ef) !important;
 }

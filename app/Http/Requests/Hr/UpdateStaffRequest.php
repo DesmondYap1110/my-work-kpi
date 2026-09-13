@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests\Hr;
 
+use App\Http\Requests\Hr\Concerns\ChecksPositionAcceptsMembers;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateStaffRequest extends FormRequest
 {
+    use ChecksPositionAcceptsMembers;
+
     public function authorize(): bool
     {
         return true;
@@ -54,7 +57,8 @@ class UpdateStaffRequest extends FormRequest
             'states' => ['required', 'string', 'max:100'],
             'team_joined_date' => ['required', 'date'],
             'company_joined_date' => ['required', 'date'],
-            'position_id' => ['required', 'exists:staff_position,id'],
+            'position_id' => ['required', 'exists:staff_position,id',
+                $this->positionAcceptsMembers($this->route('staff')->position_id)],
             'team_id' => ['required', 'exists:team,id'],
             'is_active' => ['nullable', 'boolean'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:10240'],

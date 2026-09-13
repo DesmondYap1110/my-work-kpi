@@ -41,6 +41,18 @@ class StaffPosition extends Model
     }
 
     /**
+     * The scoreable items under this position's objectives - the rows an
+     * appraiser actually puts a mark against. Only those with marks to choose
+     * from count: an item with no allowed marks cannot be scored.
+     */
+    public function scoreableItems(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    {
+        return $this->hasManyThrough(KpiObjectiveInfo::class, KpiObjective::class, 'position_id', 'objective_id')
+            ->whereNotNull('kpi_objective_info.allowed_marks')
+            ->where('kpi_objective_info.allowed_marks', '!=', '[]');
+    }
+
+    /**
      * The Administrator position is the portal's access gate, not a job that
      * gets reviewed, so it never carries a KPI.
      */
@@ -60,34 +72,67 @@ class StaffPosition extends Model
      * Derived, not stored. A has_kpi column used to record it, and it drifted:
      * assigning a KPI set the flag and dropped you on the objectives page, so
      * walking away without adding anything left a position reading "Yes" with
-     * nothing behind it. Having objectives IS having a KPI.
+     * nothing behind it.
+     *
+     * The same trap one level down: an objective is only a heading. What gets
+     * marked is the items under it, so a position with an objective and no
+     * items still has nothing anybody can be scored on. Having at least one
+     * item with marks IS having a KPI - and the Positions list, the dashboard's
+     * "Pending KPI" count and the member form all ask this one question.
      *
      * Uses the eager-loaded count when the caller asked for one
-     * (->withCount('objectives')), so a list does not run a query per row.
+     * (->withCount('scoreableItems')), so a list does not run a query per row.
      */
     public function hasKpi(): bool
     {
-        if ($this->objectives_count !== null) {
-            return $this->objectives_count > 0;
+        if ($this->scoreable_items_count !== null) {
+            return $this->scoreable_items_count > 0;
         }
 
-        return $this->objectives()->exists();
+        return $this->scoreableItems()->exists();
     }
 
     /**
-     * Positions that already have objectives.
+     * Whether anyone may be put in this position.
+     *
+     * A member is scored against their position's KPI, so a position without
+     * one would hold people who can never be assessed - their scorecard empty
+     * and their appraisal with nothing to rate.
+     *
+     * The Administrator is the exception: it is the portal's access gate, never
+     * assessed, so it needs no KPI to hold the administrator account.
+     *
+     * Asked by the member form's dropdown, its validation, and the Positions
+     * list's add-member button, so the three cannot disagree.
+     */
+    public function acceptsMembers(): bool
+    {
+        return $this->isAdministrator() || $this->hasKpi();
+    }
+
+    /**
+     * The positions acceptsMembers() allows, as a query.
+     */
+    public function scopeAcceptingMembers($query)
+    {
+        return $query->where(fn ($q) => $q->whereKey(self::ADMIN_ID)->orHas('scoreableItems'));
+    }
+
+    /**
+     * Positions with at least one item a member can be marked on.
      */
     public function scopeWithKpi($query)
     {
-        return $query->has('objectives')->excludingAdmin();
+        return $query->has('scoreableItems')->excludingAdmin();
     }
 
     /**
-     * Positions that can still be given a KPI. Administrator is excluded
-     * rather than merely unassigned, so it never turns up as a candidate.
+     * Positions that still need a KPI - including ones with objectives but no
+     * items yet. Administrator is excluded rather than merely unassigned, so it
+     * never turns up as a candidate.
      */
     public function scopeWithoutKpi($query)
     {
-        return $query->doesntHave('objectives')->excludingAdmin();
+        return $query->doesntHave('scoreableItems')->excludingAdmin();
     }
 }

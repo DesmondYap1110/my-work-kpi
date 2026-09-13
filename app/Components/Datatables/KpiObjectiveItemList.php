@@ -42,7 +42,7 @@ class KpiObjectiveItemList extends Datatables
 
             return [
                 'title' => e($item->title),
-                'description' => e(\Illuminate\Support\Str::limit($item->description, 60)) ?: '-',
+                'description' => $this->tbTruncated($item->description, 60),
                 'allowed_marks' => $marks
                     ? implode(', ', array_map(fn ($m) => ($m > 0 ? '+' : '').$m, $marks))
                     : '-',

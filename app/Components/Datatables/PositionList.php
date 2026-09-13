@@ -43,11 +43,11 @@ class PositionList extends Datatables
     public function filter(Request $request): LengthAwarePaginator
     {
         // The cell is rendered HTML, so sort it by the underlying count -
-        // positions with no objectives group together.
+        // positions with nothing to mark group together.
         return $this->paginateFromRequest(
             app(PositionListQuery::class)->build(),
             $request,
-            ['kpi_assigned' => 'objectives_count']
+            ['kpi_assigned' => 'scoreable_items_count']
         );
     }
 
@@ -56,7 +56,7 @@ class PositionList extends Datatables
         $rows = $result->getCollection()->map(function ($position) {
             return [
                 'position_name' => $this->nameLink($position),
-                'job_scope' => e(\Illuminate\Support\Str::limit($position->job_scope, 80)),
+                'job_scope' => $this->tbTruncated($position->job_scope, 80),
                 'kpi_assigned' => $this->kpiStatusAction($position),
                 'action' => $this->actionButtons($position),
                 '_inline' => [
@@ -121,14 +121,20 @@ class PositionList extends Datatables
     {
         // Opens the member form with this position already chosen, so adding
         // to a position never means picking it again from the dropdown.
-        $addMember = Route::has('staff.create')
-            ? $this->tbLink(
+        // Greyed out rather than hidden while the position has no KPI: a
+        // button that vanishes gives no hint why, and the reason is the
+        // useful part - see StaffPosition::acceptsMembers().
+        $addMember = match (true) {
+            ! Route::has('staff.create') => '',
+            ! $position->acceptsMembers() => '<button type="button" class="tb-ac-btn" id="tb-ac-btn-5" disabled'
+                .' title="Add at least one KPI item with marks before adding members."><i class="ri-user-add-line"></i></button> ',
+            default => $this->tbLink(
                 route('staff.create', ['pid' => $position->id]),
                 'ri-user-add-line',
                 'tb-ac-btn-6',
                 'Add a member to this position'
-            ).' '
-            : '';
+            ).' ',
+        };
 
         // Administrator is the portal's access gate. Renaming or deleting it
         // would lock people out, so it is not offered at all - the controller

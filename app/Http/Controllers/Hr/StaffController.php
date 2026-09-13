@@ -66,7 +66,9 @@ class StaffController extends Controller implements BreadcrumbInterfaces
     public function create(): View
     {
         return view('staff.create', [
-            'positions' => StaffPosition::orderBy('position_name')->get(),
+            // Only positions a member can actually be assessed in - see
+            // StaffPosition::acceptsMembers().
+            'positions' => StaffPosition::acceptingMembers()->orderBy('position_name')->get(),
             'teams' => Team::orderBy('team_name')->get(),
         ]);
     }
@@ -101,7 +103,13 @@ class StaffController extends Controller implements BreadcrumbInterfaces
     {
         return view('staff.edit', [
             'staff' => $staff,
-            'positions' => StaffPosition::orderBy('position_name')->get(),
+            // Plus the member's own position even if its KPI has since been
+            // removed: otherwise the dropdown silently shows nothing selected,
+            // and saving an unrelated change would appear to demand a move.
+            'positions' => StaffPosition::query()
+                ->where(fn ($q) => $q->acceptingMembers()->orWhereKey($staff->position_id))
+                ->orderBy('position_name')
+                ->get(),
             'teams' => Team::orderBy('team_name')->get(),
         ]);
     }

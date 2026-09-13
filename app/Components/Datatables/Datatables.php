@@ -301,6 +301,30 @@ abstract class Datatables
     }
 
     /**
+     * Long text cut to fit a cell, with the whole of it shown on hover.
+     *
+     * The full text only goes on the element when something was actually cut,
+     * so short values do not pop up a copy of what is already on screen. See
+     * public/js/modules/text-peek.js.
+     */
+    protected function tbTruncated(?string $text, int $limit, string $empty = '-'): string
+    {
+        $text = trim((string) $text);
+
+        if ($text === '') {
+            return $empty;
+        }
+
+        $short = \Illuminate\Support\Str::limit($text, $limit);
+
+        if ($short === $text) {
+            return e($text);
+        }
+
+        return '<span class="text-peek" tabindex="0" data-full-text="'.e($text).'">'.e($short).'</span>';
+    }
+
+    /**
      * A status pill. The colour lives on the id, as the theme expects:
      * 1 green, 2 red, 3 orange, 4 blue, 5 pink.
      */

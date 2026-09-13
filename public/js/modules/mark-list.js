@@ -50,7 +50,10 @@ App.module('mark-list', function () {
     function build($list) {
         $list.html(
             '<div class="js-mark-rows"></div>'
-            + '<button type="button" class="js-mark-add general-btn btn2">'
+            // id, not class: the theme shapes its buttons with #general-btn
+            // (padding, radius, icon spacing) and colours them with .btn1 /
+            // .btn2. As a class it picked up the colour and none of the shape.
+            + '<button type="button" id="general-btn" class="js-mark-add btn1">'
             + '<i class="ri-add-line"></i>Add Mark</button>'
         );
 

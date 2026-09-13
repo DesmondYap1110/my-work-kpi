@@ -61,8 +61,11 @@ class PositionController extends Controller implements BreadcrumbInterfaces
             return $this->refuseAdministrator($request);
         }
 
-        if ($position->hasKpi()) {
-            return back()->withErrors(['position' => 'This position has a KPI template assigned. Remove the KPI first before deleting the position.']);
+        // Objectives, not hasKpi(): a position can have objectives with no
+        // items yet, which reads as "no KPI" - but deleting it would still
+        // leave those objectives behind with no position to belong to.
+        if ($position->objectives()->exists()) {
+            return back()->withErrors(['position' => 'This position still has KPI objectives. Remove the KPI first before deleting the position.']);
         }
 
         $position->delete();

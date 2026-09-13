@@ -26,6 +26,7 @@
 <script src="{{ \App\Support\Asset::url('js/modules/quick-create.js') }}"></script>
 <script src="{{ \App\Support\Asset::url('js/modules/status-select.js') }}"></script>
 <script src="{{ \App\Support\Asset::url('js/modules/modal-errors.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/text-peek.js') }}"></script>
 <script>window.datatablesEndpoint = @json(route('datatables.listing'));</script>
 <script src="{{ \App\Support\Asset::url('js/modules/datatables.js') }}"></script>
 
