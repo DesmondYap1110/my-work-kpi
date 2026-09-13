@@ -15,10 +15,10 @@ use Illuminate\View\View;
 
 /**
  * KPI > Report: how the company, a team, a position or one member is
- * performing over a period - summary, monthly trend, projects, objectives,
+ * performing over a period - summary, monthly trend, projects, teams and
  * members compared, and points by kind of work.
  *
- * All six read the same filters, so narrowing to a team narrows every report.
+ * All of them read the same filters, so narrowing to a team narrows every report.
  * The arithmetic lives in KpiReportService.
  */
 class KpiReportController extends Controller implements BreadcrumbInterfaces
@@ -58,7 +58,10 @@ class KpiReportController extends Controller implements BreadcrumbInterfaces
         // done by someone since deactivated still shows against its project.
         $memberIds = $filtered ? $members->pluck('id')->all() : null;
 
+        $tags = $reports->tags($memberIds, $from, $to);
         $bands = AssessmentTemplate::current()->load('bands');
+        $ranking = $scores->sortByDesc(fn ($s) => $s['percentage'] ?? -1)->values()
+            ->map(fn ($s) => $s + ['band' => $bands->bandFor($s['percentage'])]);
 
         return view('kpi.report.index', [
             'periods' => self::PERIODS,
@@ -71,10 +74,16 @@ class KpiReportController extends Controller implements BreadcrumbInterfaces
             'summary' => $reports->summary($scores),
             'trend' => $reports->trend($members, $from, $to),
             'projects' => $reports->projects($memberIds, $from, $to),
-            'objectives' => $reports->objectives($members, $from, $to),
-            'ranking' => $scores->sortByDesc(fn ($s) => $s['percentage'] ?? -1)->values()
-                ->map(fn ($s) => $s + ['band' => $bands->bandFor($s['percentage'])]),
-            'tags' => $reports->tags($memberIds, $from, $to),
+            'ranking' => $ranking,
+            'teamRows' => $reports->teams($scores, $bands),
+            // Chart series, shaped here rather than in the view.
+            'rankingChart' => $ranking->whereNotNull('percentage')->values()->map(fn ($r) => [
+                'name' => $r['staff']->staff_name,
+                'project' => $r['project_points'] ?? 0,
+                'objective' => $r['objective_points'] ?? 0,
+            ]),
+            'tags' => $tags,
+            'tagChart' => $tags->where('earned', '>', 0)->values(),
         ]);
     }
 

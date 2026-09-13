@@ -30,6 +30,8 @@ class StoreAppraisalRequest extends FormRequest
             'period_to' => ['required', 'date', 'after_or_equal:period_from'],
             'review_date' => ['nullable', 'date'],
             'next_assessment_date' => ['nullable', 'date', 'after_or_equal:review_date'],
+            // How often the member is appraised from now on - saved to them.
+            'appraisal_cycle' => ['nullable', Rule::enum(\App\Enums\AppraisalCycle::class)],
         ];
     }
 

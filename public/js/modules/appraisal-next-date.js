@@ -58,6 +58,9 @@ App.module('appraisal-next-date', function () {
         var periodTo = form && form.querySelector('[name="period_to"]');
         var next = form && form.querySelector('[data-next-date]');
         var note = form && form.querySelector('[data-next-date-note]');
+        // Optional "Review Every" picker: follows the member, and can be changed
+        // to put them on a schedule from here.
+        var cyclePicker = form && form.querySelector('select[data-next-date-cycle]');
 
         if (!periodTo || !next) {
             return;
@@ -72,6 +75,11 @@ App.module('appraisal-next-date', function () {
             var cycle = option ? option.getAttribute('data-cycle') : '';
             var label = option ? option.getAttribute('data-cycle-label') : '';
 
+            if (cyclePicker) {
+                cycle = cyclePicker.value;
+                label = cyclePicker.options[cyclePicker.selectedIndex].text.toLowerCase();
+            }
+
             if (!member.value) {
                 if (note) note.textContent = 'Pick a member to fill this in from their review cycle.';
                 return;
@@ -79,7 +87,9 @@ App.module('appraisal-next-date', function () {
 
             if (!cycle || cycle === 'manual') {
                 if (!touched) next.value = '';
-                if (note) note.textContent = 'This member is reviewed manually - set a date if you want one.';
+                if (note) note.textContent = cyclePicker
+                    ? 'No schedule. Pick how often under Review Every, or set a date.'
+                    : 'This member is reviewed manually - set a date if you want one.';
                 return;
             }
 
@@ -98,13 +108,30 @@ App.module('appraisal-next-date', function () {
 
         member.addEventListener('change', function () {
             touched = false;
+            // A different member brings their own cycle with them.
+            var option = member.options[member.selectedIndex];
+            if (cyclePicker && option && option.getAttribute('data-cycle')) {
+                cyclePicker.value = option.getAttribute('data-cycle');
+            }
             fill();
         });
+        if (cyclePicker) {
+            cyclePicker.addEventListener('change', function () {
+                touched = false;
+                fill();
+            });
+        }
         periodTo.addEventListener('change', fill);
         next.addEventListener('input', function () {
             touched = next.value !== '';
             fill();
         });
+
+        // On load, a picker with no old() value follows the chosen member.
+        var initial = member.options[member.selectedIndex];
+        if (cyclePicker && initial && initial.getAttribute('data-cycle') && !cyclePicker.querySelector('option[selected]')) {
+            cyclePicker.value = initial.getAttribute('data-cycle');
+        }
 
         fill();
     });

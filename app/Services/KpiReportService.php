@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\ProjectKpiStatus;
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
-use App\Models\KpiObjective;
 use App\Models\KpiSetting;
 use App\Models\Project;
 use App\Models\ProjectKpi;
@@ -103,9 +102,14 @@ class KpiReportService
             ? null
             : round($values->avg(), 2);
 
+        $scored = $scores->filter(fn ($s) => $s['percentage'] !== null);
+
         return [
             'members' => $scores->count(),
-            'scored' => $scores->filter(fn ($s) => $s['percentage'] !== null)->count(),
+            'scored' => $scored->count(),
+            // The best and weakest scored member - null when nobody was scored.
+            'highest' => $scored->sortByDesc('percentage')->first(),
+            'lowest' => $scored->sortBy('percentage')->first(),
             'percentage' => $avg('percentage'),
             'project' => $avg('project'),
             'objective' => $avg('objective'),
@@ -113,6 +117,35 @@ class KpiReportService
             'tasks_total' => (int) $scores->sum('tasks_total'),
             'earned' => round((float) $scores->sum('earned'), 2),
         ];
+    }
+
+    /**
+     * Team Performance, one row per team: average KPI score over the members
+     * who were scored, head count, and the performance band that average
+     * falls in. Members without a team are grouped as "No team".
+     *
+     * @param  Collection<int, array<string, mixed>>  $scores
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function teams(Collection $scores, \App\Models\AssessmentTemplate $template): Collection
+    {
+        return $scores
+            ->groupBy(fn ($s) => $s['staff']->team_id ?? 0)
+            ->map(function (Collection $rows) use ($template) {
+                $summary = $this->summary($rows);
+
+                return [
+                    'team' => $rows->first()['staff']->team->team_name ?? 'No team',
+                    'members' => $summary['members'],
+                    'scored' => $summary['scored'],
+                    'percentage' => $summary['percentage'],
+                    'project' => $summary['project'],
+                    'objective' => $summary['objective'],
+                    'band' => $template->bandFor($summary['percentage']),
+                ];
+            })
+            ->sortByDesc(fn ($row) => $row['percentage'] ?? -1)
+            ->values();
     }
 
     /**
@@ -207,70 +240,6 @@ class KpiReportService
                 'earned' => round((float) $row->earned, 2),
             ])
             ->sortByDesc('earned')
-            ->values();
-    }
-
-    /**
-     * KPI Objective Report: target against actual for each objective.
-     *
-     * Target is the most that could have been earned - every item's best mark
-     * on every project the member completed in the period. Actual is the
-     * approved marks. The same numbers the objectives half of the score uses.
-     *
-     * @param  Collection<int, Staff>  $members
-     * @return Collection<int, array<string, mixed>>
-     */
-    public function objectives(Collection $members, Carbon $from, Carbon $to): Collection
-    {
-        if ($members->isEmpty()) {
-            return collect();
-        }
-
-        $ids = $members->pluck('id')->all();
-        $completed = $this->completedProjectPairs($ids, $from, $to);
-
-        // Completed projects per position, since the objectives are the position's.
-        $projectsByPosition = [];
-        foreach ($members as $staff) {
-            $projectsByPosition[$staff->position_id] = ($projectsByPosition[$staff->position_id] ?? 0) + count($completed[$staff->id] ?? []);
-        }
-
-        // Approved marks per item, only on the projects that count.
-        $marks = [];
-        if ($completed !== []) {
-            ProjectKpi::query()
-                ->whereIn('staff_id', array_keys($completed))
-                ->whereIn('project_id', collect($completed)->flatten()->unique()->all())
-                ->where('status', ProjectKpiStatus::Approved)
-                ->get(['staff_id', 'project_id', 'objective_info_id', 'mark'])
-                ->each(function ($row) use ($completed, &$marks) {
-                    if (in_array($row->project_id, $completed[$row->staff_id] ?? [], true)) {
-                        $marks[$row->objective_info_id] = ($marks[$row->objective_info_id] ?? 0) + (int) $row->mark;
-                    }
-                });
-        }
-
-        return KpiObjective::query()
-            ->with(['position', 'category', 'infos'])
-            ->whereIn('position_id', array_keys($projectsByPosition))
-            ->orderBy('position_id')->orderBy('category_id')->orderBy('id')
-            ->get()
-            ->map(function (KpiObjective $objective) use ($projectsByPosition, $marks) {
-                $projects = $projectsByPosition[$objective->position_id] ?? 0;
-                $target = $objective->infos->sum(fn ($item) => $item->maxMark()) * $projects;
-                $actual = $objective->infos->sum(fn ($item) => $marks[$item->id] ?? 0);
-
-                return [
-                    'position' => $objective->position->position_name ?? '-',
-                    'category' => $objective->category->name ?? 'Uncategorised',
-                    'objective' => $objective->title ?? 'Untitled objective',
-                    'items' => $objective->infos->count(),
-                    'target' => (int) $target,
-                    'actual' => (int) $actual,
-                    'rate' => $target > 0 ? round($actual / $target * 100, 1) : null,
-                ];
-            })
-            ->filter(fn ($row) => $row['items'] > 0)
             ->values();
     }
 

@@ -93,11 +93,6 @@ class Assessment extends Model
         return $this->hasMany(AssessmentScore::class, 'assessment_id', 'id');
     }
 
-    public function checkins(): HasMany
-    {
-        return $this->hasMany(AssessmentCheckin::class, 'assessment_id', 'id')->orderBy('sort_order');
-    }
-
     public function scopeGenerated(Builder $query): Builder
     {
         return $query->where('status', AssessmentStatus::Generated);

@@ -121,6 +121,12 @@ class AppraisalController extends Controller implements BreadcrumbInterfaces
     {
         $staff = Staff::findOrFail($request->integer('staff_id'));
 
+        // Review Every on the New Appraisal form: a first appraisal can put the
+        // member on a schedule without a trip to Appraisal > Schedule.
+        if ($request->filled('appraisal_cycle') && $request->input('appraisal_cycle') !== $staff->appraisal_cycle) {
+            $staff->update(['appraisal_cycle' => $request->input('appraisal_cycle')]);
+        }
+
         $assessment = Assessment::create([
             'template_id' => AssessmentTemplate::current()->id,
             'staff_id' => $staff->id,

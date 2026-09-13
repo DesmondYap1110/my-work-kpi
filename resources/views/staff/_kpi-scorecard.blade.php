@@ -25,12 +25,12 @@
     <div class="kpi-card-head">
         <div>
             <p id="form-sub-title" class="mb-1">KPI Score</p>
-            <p id="footer-p" class="mb-0">
+            <p id="footer-p" class="mb-0 kpi-card-period">
                 {{ $periodLabel }}
                 @if ($lastAppraisal)
-                    <span class="kpi-item-desc">last appraisal {{ $lastAppraisal->periodLabel() }}</span>
+                    <span class="kpi-item-desc kpi-card-period-note">last appraisal {{ $lastAppraisal->periodLabel() }}</span>
                 @else
-                    <span class="kpi-item-desc">no appraisal yet</span>
+                    <span class="kpi-item-desc kpi-card-period-note">no appraisal yet</span>
                 @endif
             </p>
         </div>

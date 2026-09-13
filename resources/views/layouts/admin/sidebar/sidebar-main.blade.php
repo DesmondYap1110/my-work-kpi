@@ -37,17 +37,16 @@
 
                     {{-- Appraisal is the administrator acting as appraiser:
                          reviewing a member over a period and handing them the
-                         result. Form Setup is the scale and bands it scores by. --}}
+                         result. Its performance bands live under Settings >
+                         Project Form Setup. --}}
                     <x-sidebar.ui.dropdown id="sb-appraisal" icon="ri-survey-line" label="Appraisal"
-                                           :active="['appraisals.*', 'appraisal-form.*']">
+                                           :active="['appraisals.*']">
                         <x-sidebar.ui.dropdown-list route="appraisals.index" label="Review" active="appraisals.index" />
                         <x-sidebar.ui.dropdown-list route="appraisals.schedule" label="Schedule" active="appraisals.schedule" />
-                        <x-sidebar.ui.dropdown-list route="appraisal-form.edit" label="Form Setup" active="appraisal-form.*" />
                     </x-sidebar.ui.dropdown>
 
                     <x-sidebar.ui.dropdown id="sb-kpi" icon="ri-bar-chart-2-line" label="KPI"
                                            :active="['kpi.*', 'kpi-report.*', 'manage-pending.*']">
-                        <x-sidebar.ui.dropdown-list route="manage-pending.index" label="Manage Pending" active="manage-pending.*" />
                         <x-sidebar.ui.dropdown-list route="kpi-report.index" label="Report" active="kpi-report.*" />
                     </x-sidebar.ui.dropdown>
                 @else
@@ -64,10 +63,12 @@
                 @endif
 
                 <x-sidebar.ui.dropdown id="sb-settings" icon="ri-settings-3-line" label="Settings"
-                                       :active="['password.change', 'project-tags.*']">
-                    {{-- Tags price project work, so only the administrator sets them. --}}
+                                       :active="['password.change', 'project-tags.*', 'appraisal-form.*']">
+                    {{-- Tags price project work and bands name a score, so only
+                         the administrator sets them. --}}
                     @if (auth()->user()->isAdmin())
                         <x-sidebar.ui.dropdown-list route="project-tags.index" label="Project Tag Setting" active="project-tags.*" />
+                        <x-sidebar.ui.dropdown-list route="appraisal-form.edit" label="Project Form Setup" active="appraisal-form.*" />
                     @endif
                     <x-sidebar.ui.dropdown-list route="password.change" label="Change Password" />
                     <x-sidebar.ui.dropdown-list>

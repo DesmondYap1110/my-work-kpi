@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
- * Appraisal Form Setup: the performance bands - what a final KPI score is
+ * Settings > Project Form Setup: the performance bands - what a final KPI score is
  * called, and what it means for the review.
  *
  * Nothing here is fixed, because no two companies describe performance the
@@ -28,8 +28,8 @@ class AppraisalFormController extends Controller implements BreadcrumbInterfaces
     public function getBreadcrumbs(): array
     {
         return [
-            ['name' => 'Appraisal', 'route' => 'appraisals.index', 'active' => false],
-            ['name' => 'Form Setup', 'route' => '', 'active' => true],
+            ['name' => 'Settings', 'route' => '', 'active' => false],
+            ['name' => 'Project Form Setup', 'route' => '', 'active' => true],
         ];
     }
 

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Appraisal Form')
+@section('title', 'Project Form Setup')
 
 @section('content')
     <div id="tb-box" class="general-box mb-3">

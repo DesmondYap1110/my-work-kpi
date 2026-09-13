@@ -41,13 +41,6 @@
         </div>
     </div>
 
-    {{-- Before the ratings, as on the paper form: what was said during the
-         period comes before the judgement at the end of it. Not shown to a
-         member mid self-assessment - it is still the appraiser's working note. --}}
-    @unless ($selfAssessment)
-        @include('appraisals._checkins', ['appraisal' => $appraisal, 'readOnly' => $readOnly])
-    @endunless
-
     {{-- Opened only when there is something to submit. A member reading a
          finished appraisal has no business being inside a form that posts to a
          route they are refused anyway. --}}

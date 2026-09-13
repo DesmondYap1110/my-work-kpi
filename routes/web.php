@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Appraisal\AppraisalCheckinController;
 use App\Http\Controllers\Appraisal\AppraisalController;
 use App\Http\Controllers\Appraisal\AppraisalFormController;
 use App\Http\Controllers\Appraisal\MyAppraisalController;
@@ -176,12 +175,6 @@ Route::middleware(['auth', 'active'])->group(function () {
             ->only(['index', 'store', 'show', 'update', 'destroy']);
         Route::post('/appraisals/{appraisal}/generate', [AppraisalController::class, 'generate'])->name('appraisals.generate');
         Route::post('/appraisals/{appraisal}/reopen', [AppraisalController::class, 'reopen'])->name('appraisals.reopen');
-
-        // The monthly check-ins held during the period, added on the appraisal's
-        // own page rather than a screen of their own.
-        Route::post('/appraisals/{appraisal}/checkins', [AppraisalCheckinController::class, 'store'])->name('appraisals.checkins.store');
-        Route::put('/appraisals/{appraisal}/checkins/{checkin}', [AppraisalCheckinController::class, 'update'])->name('appraisals.checkins.update');
-        Route::delete('/appraisals/{appraisal}/checkins/{checkin}', [AppraisalCheckinController::class, 'destroy'])->name('appraisals.checkins.destroy');
 
         // The form's own shape. Nothing about it is fixed in code - a company
         // sets its own parts, its own scale and its own bands.

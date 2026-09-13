@@ -36,7 +36,7 @@
                 <input type="number" id="appraisal-notice-days" name="appraisal_notice_days" class="form-control"
                        min="0" max="60" required value="{{ old('appraisal_notice_days', $noticeDays) }}">
                 <span>days before due</span>
-                <button type="submit" id="general-btn" class="btn1"><i class="ri-save-3-line"></i>Save</button>
+                <button type="submit" class="appraisal-notice-save" title="Save" aria-label="Save notice days"><i class="ri-save-3-line"></i></button>
                 <button type="button" class="kpi-help-btn" aria-label="What does the notice period do?"
                         data-help-hover="A member shows as due soon - on the dashboard and here - this many days before their next appraisal. 0 means only on the day it is due. Overdue members always show.">
                     <i class="ri-question-line"></i>
