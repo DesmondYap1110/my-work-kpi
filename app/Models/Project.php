@@ -18,7 +18,6 @@ class Project extends Model
 
     protected $fillable = [
         'title',
-        'added_date',
         'start_date',
         'end_date',
         'assigned_date',
@@ -27,7 +26,6 @@ class Project extends Model
     ];
 
     protected $casts = [
-        'added_date' => 'date',
         'start_date' => 'date',
         'end_date' => 'date',
         'assigned_date' => 'date',
@@ -51,15 +49,6 @@ class Project extends Model
     public function tasks(): HasMany
     {
         return $this->hasMany(ProjectTask::class, 'project_id', 'id');
-    }
-
-    /**
-     * Top-level tasks only - subtasks are reached through their parent, so a
-     * project page lists them nested rather than twice.
-     */
-    public function rootTasks(): HasMany
-    {
-        return $this->tasks()->whereNull('parent_id');
     }
 
     public function projectKpis(): HasMany

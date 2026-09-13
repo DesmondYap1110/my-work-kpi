@@ -18,12 +18,9 @@
             <input type="text" class="form-control" name="title" maxlength="200" value="{{ old('title', $project->title ?? '') }}" required>
         </div>
     </div>
-    <div class="col-lg-6">
-        <div class="input-group">
-            <label>Date<span>*</span></label>
-            <input type="date" class="form-control" name="added_date" value="{{ old('added_date', optional($project->added_date ?? null)->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required>
-        </div>
-    </div>
+    {{-- No "added date" field: created_at already records when this was
+         entered, and a second copy of the same fact is one that can disagree
+         with it. --}}
     <div class="col-lg-6">
         <div class="input-group">
             <label>Start Date<span>*</span></label>

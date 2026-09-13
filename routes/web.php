@@ -1,23 +1,27 @@
 <?php
 
+use App\Http\Controllers\Appraisal\AppraisalCheckinController;
+use App\Http\Controllers\Appraisal\AppraisalController;
+use App\Http\Controllers\Appraisal\AppraisalFormController;
+use App\Http\Controllers\Appraisal\MyAppraisalController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DatatablesController;
-use App\Http\Controllers\KpiController;
-use App\Http\Controllers\KpiSettingController;
-use App\Http\Controllers\KpiCategoryController;
-use App\Http\Controllers\KpiObjectiveController;
-use App\Http\Controllers\KpiObjectiveItemController;
-use App\Http\Controllers\ManagePendingController;
-use App\Http\Controllers\PositionController;
-use App\Http\Controllers\ProjectController;
-use App\Http\Controllers\ProjectTaskController;
-use App\Http\Controllers\ProjectTagController;
-use App\Http\Controllers\StaffController;
-use App\Http\Controllers\TeamController;
+use App\Http\Controllers\Hr\PositionController;
+use App\Http\Controllers\Hr\StaffController;
+use App\Http\Controllers\Hr\TeamController;
+use App\Http\Controllers\Kpi\KpiCategoryController;
+use App\Http\Controllers\Kpi\KpiController;
+use App\Http\Controllers\Kpi\KpiObjectiveController;
+use App\Http\Controllers\Kpi\KpiObjectiveItemController;
+use App\Http\Controllers\Kpi\KpiSettingController;
+use App\Http\Controllers\Kpi\ManagePendingController;
+use App\Http\Controllers\Project\ProjectController;
+use App\Http\Controllers\Project\ProjectTagController;
+use App\Http\Controllers\Project\ProjectTaskController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
@@ -55,15 +59,39 @@ Route::middleware(['auth', 'active'])->group(function () {
     // same distinction the routes do - see DatatablesController.
     Route::post('/datatables/listing', [DatatablesController::class, 'listing'])->name('datatables.listing');
 
-    // A staff member's own corner of the app.
+    // A staff member's own corner of the app. An appraisal is readable only by
+    // the member it is about, and only once it has been generated - both
+    // checked in MyAppraisalController, not by hiding the link.
     Route::get('/my-kpi', [StaffController::class, 'myKpi'])->name('my.kpi');
     Route::get('/my-tasks', [ProjectTaskController::class, 'mine'])->name('my.tasks');
+    Route::get('/my-appraisals', [MyAppraisalController::class, 'index'])->name('my.appraisals.index');
+    Route::get('/my-appraisals/{appraisal}', [MyAppraisalController::class, 'show'])->name('my.appraisals.show');
 
     // Moving your own work along, and looking at what is attached to it. Both
     // check ownership in the controller: an administrator may touch any task,
     // anyone else only the ones assigned to them.
     Route::patch('/project-tasks/{project_task}/status', [ProjectTaskController::class, 'updateStatus'])->name('project-tasks.status');
     Route::get('/project-tasks/{project_task}/attachments', [ProjectTaskController::class, 'attachments'])->name('project-tasks.attachments');
+
+    /*
+    |----------------------------------------------------------------------
+    | Projects - open to every member
+    |----------------------------------------------------------------------
+    |
+    | Anyone may start a project and plan the work in it. What they may not do
+    | is put a tag on a task: a tag carries points, and points are what a
+    | delivery score is made of, so letting people tag their own work would let
+    | them set their own KPI. The tag field is dropped from any request that
+    | does not come from the administrator - see StoreProjectTaskRequest.
+    |
+    | Cancelling and deleting stay administrator-only below: they end a project
+    | and take its tasks, and with them the record a KPI was scored from.
+    |
+    */
+    Route::resource('projects', ProjectController::class)->only(['index', 'store', 'show', 'edit', 'update']);
+
+    // Tasks are created and edited inside a project, so they travel with it.
+    Route::resource('project-tasks', ProjectTaskController::class)->only(['store', 'update', 'destroy']);
 
     /*
     |----------------------------------------------------------------------
@@ -93,17 +121,14 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/staff/{staff}/kpi', [StaffController::class, 'viewKpi'])->name('staff.view-kpi');
         Route::post('/staff/check-unique', [StaffController::class, 'checkUnique'])->name('staff.check-unique');
 
-        // show() is the project workspace: its tasks, added and edited in place.
-        // No create screen - a project is made in a modal on the list.
-        Route::resource('projects', ProjectController::class)->except(['create']);
+        // Ending a project, and ending it for good. Adding and editing one is
+        // open to every member, above.
         Route::post('/projects/{project}/cancel', [ProjectController::class, 'cancel'])->name('projects.cancel');
+        Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
 
-        // Tasks are created from inside a project, so there is no create/edit
-        // screen - only the cross-project list at index. Changing a task's
-        // status and reading its attachments sit outside this group, since
-        // the person doing the work needs both.
-        Route::resource('project-tasks', ProjectTaskController::class)
-            ->only(['index', 'store', 'update', 'destroy']);
+        // The cross-project task list. A member reads their own work at
+        // my-tasks instead.
+        Route::get('/project-tasks', [ProjectTaskController::class, 'index'])->name('project-tasks.index');
         Route::post('/project-tasks/{project_task}/approve', [ProjectTaskController::class, 'approve'])->name('project-tasks.approve');
         Route::post('/project-tasks/{project_task}/reject', [ProjectTaskController::class, 'reject'])->name('project-tasks.reject');
 
@@ -130,6 +155,31 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         Route::get('/kpi-weighting', [KpiSettingController::class, 'edit'])->name('kpi-settings.edit');
         Route::put('/kpi-weighting', [KpiSettingController::class, 'update'])->name('kpi-settings.update');
+
+        // Appraisal: the administrator reviewing a member's performance over a
+        // period of their choosing. generate() is what hands it to the member,
+        // so it is an action of its own rather than a flag on update().
+        Route::resource('appraisals', AppraisalController::class)
+            ->only(['index', 'store', 'show', 'update', 'destroy']);
+        Route::post('/appraisals/{appraisal}/generate', [AppraisalController::class, 'generate'])->name('appraisals.generate');
+        Route::post('/appraisals/{appraisal}/reopen', [AppraisalController::class, 'reopen'])->name('appraisals.reopen');
+
+        // The monthly check-ins held during the period, added on the appraisal's
+        // own page rather than a screen of their own.
+        Route::post('/appraisals/{appraisal}/checkins', [AppraisalCheckinController::class, 'store'])->name('appraisals.checkins.store');
+        Route::put('/appraisals/{appraisal}/checkins/{checkin}', [AppraisalCheckinController::class, 'update'])->name('appraisals.checkins.update');
+        Route::delete('/appraisals/{appraisal}/checkins/{checkin}', [AppraisalCheckinController::class, 'destroy'])->name('appraisals.checkins.destroy');
+
+        // The form's own shape. Nothing about it is fixed in code - a company
+        // sets its own parts, its own scale and its own bands.
+        Route::get('/appraisal-form', [AppraisalFormController::class, 'edit'])->name('appraisal-form.edit');
+        Route::put('/appraisal-form', [AppraisalFormController::class, 'update'])->name('appraisal-form.update');
+        Route::post('/appraisal-form/parts', [AppraisalFormController::class, 'storeSection'])->name('appraisal-form.parts.store');
+        Route::delete('/appraisal-form/parts/{section}', [AppraisalFormController::class, 'destroySection'])->name('appraisal-form.parts.destroy');
+        Route::post('/appraisal-form/marks', [AppraisalFormController::class, 'storeRating'])->name('appraisal-form.marks.store');
+        Route::delete('/appraisal-form/marks/{rating}', [AppraisalFormController::class, 'destroyRating'])->name('appraisal-form.marks.destroy');
+        Route::post('/appraisal-form/bands', [AppraisalFormController::class, 'storeBand'])->name('appraisal-form.bands.store');
+        Route::delete('/appraisal-form/bands/{band}', [AppraisalFormController::class, 'destroyBand'])->name('appraisal-form.bands.destroy');
 
         Route::get('/manage-pending', [ManagePendingController::class, 'index'])->name('manage-pending.index');
         Route::post('/manage-pending/{project_kpi}/approve', [ManagePendingController::class, 'approve'])->name('manage-pending.approve');

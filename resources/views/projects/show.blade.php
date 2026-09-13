@@ -42,7 +42,7 @@
               action="{{ route('project-tasks.store') }}" enctype="multipart/form-data" hidden>
             @csrf
             <input type="hidden" name="project_id" value="{{ $project->id }}">
-            @include('projects._task-fields', ['task' => null, 'parentId' => null])
+            @include('projects._task-fields', ['task' => null])
             <div class="kpi-inline-actions">
                 <button type="submit" id="general-btn" class="btn1"><i class="ri-check-fill"></i>Add Task</button>
                 <a href="javascript:void(0);" id="general-btn" class="btn2 js-inline-form-cancel"><i class="ri-close-fill"></i>Cancel</a>
@@ -98,5 +98,8 @@
         </div>
     @endforelse
 
-    @include('projects._quick-create-tag')
+    {{-- Only the administrator assigns tags, so only they can need a new one. --}}
+    @if (auth()->user()->isAdmin())
+        @include('projects._quick-create-tag')
+    @endif
 @endsection

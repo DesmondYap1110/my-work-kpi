@@ -38,25 +38,38 @@
             </select>
         </div>
     </div>
+    {{-- A tag carries the points a delivery score is made of, so only the
+         administrator sets one. Members see what it is worth, not a way to
+         change it - and the field is dropped server-side too, so hiding it
+         here is presentation rather than the rule. See
+         App\Http\Requests\Concerns\OnlyAdminAssignsTags. --}}
     <div class="col-lg-3">
         <div class="input-group">
-            <label class="d-flex justify-content-between align-items-center">
-                <span>Tag</span>
-                {{-- The tag carries the points, so it is worth being able to
-                     add a missing one without abandoning the task. --}}
-                <a href="javascript:void(0);" class="quick-create-link"
-                   data-quick-create-open="#quickCreateTag">
-                    <i class="ri-add-line"></i>New Tag
-                </a>
-            </label>
-            <select class="form-control" name="tag_id">
-                <option value="">No tag &middot; scores nothing</option>
-                @foreach ($tags as $tag)
-                    <option value="{{ $tag->id }}" @selected($task?->tag_id === $tag->id)>
-                        {{ $tag->name }} ({{ rtrim(rtrim(number_format((float) $tag->points, 2), '0'), '.') }} pts)
-                    </option>
-                @endforeach
-            </select>
+            @if (auth()->user()->isAdmin())
+                <label class="d-flex justify-content-between align-items-center">
+                    <span>Tag</span>
+                    {{-- Worth being able to add a missing one without
+                         abandoning the task. --}}
+                    <a href="javascript:void(0);" class="quick-create-link"
+                       data-quick-create-open="#quickCreateTag">
+                        <i class="ri-add-line"></i>New Tag
+                    </a>
+                </label>
+                <select class="form-control" name="tag_id">
+                    <option value="">No tag &middot; scores nothing</option>
+                    @foreach ($tags as $tag)
+                        <option value="{{ $tag->id }}" @selected($task?->tag_id === $tag->id)>
+                            {{ $tag->name }} ({{ rtrim(rtrim(number_format((float) $tag->points, 2), '0'), '.') }} pts)
+                        </option>
+                    @endforeach
+                </select>
+            @else
+                <label>Tag</label>
+                <input type="text" class="form-control" readonly
+                       value="{{ $task?->tag
+                            ? $task->tag->name.' · '.rtrim(rtrim(number_format((float) $task->tag->points, 2), '0'), '.').' pts'
+                            : 'Set by the administrator' }}">
+            @endif
         </div>
     </div>
     <div class="col-lg-3">
@@ -93,9 +106,9 @@
     <div class="col-lg-12">
         <div class="form-check form-switch form-switch-success mt-1">
             <input class="form-check-input" type="checkbox" role="switch" value="1"
-                   name="is_milestone" id="milestone-{{ $task?->id ?? 'new-'.($parentId ?? 'root') }}"
+                   name="is_milestone" id="milestone-{{ $task?->id ?? 'new' }}"
                    @checked($task?->is_milestone)>
-            <label class="form-check-label" for="milestone-{{ $task?->id ?? 'new-'.($parentId ?? 'root') }}">
+            <label class="form-check-label" for="milestone-{{ $task?->id ?? 'new' }}">
                 Milestone &mdash; a checkpoint worth calling out, not just another task
             </label>
         </div>

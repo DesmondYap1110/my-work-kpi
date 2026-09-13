@@ -22,6 +22,7 @@ class KpiCategory extends Model
 
     protected $fillable = [
         'position_id',
+        'section_id',
         'name',
         'sort_order',
     ];
@@ -34,6 +35,20 @@ class KpiCategory extends Model
      */
     protected static function booted(): void
     {
+        // A new heading is rated under the first part of the appraisal form
+        // unless it says otherwise. Done here rather than in the controller so
+        // that every way of adding a category - form, seeder, tinker - lands
+        // somewhere an appraisal can find it, instead of silently missing from
+        // the form.
+        static::creating(function (KpiCategory $category) {
+            if ($category->section_id === null) {
+                $category->section_id = AssessmentSection::query()
+                    ->where('type', AssessmentSection::TYPE_RATING)
+                    ->orderBy('sort_order')
+                    ->value('id');
+            }
+        });
+
         static::deleting(function (KpiCategory $category) {
             if ($category->isForceDeleting()) {
                 return;
@@ -51,6 +66,15 @@ class KpiCategory extends Model
     public function objectives(): HasMany
     {
         return $this->hasMany(KpiObjective::class, 'category_id', 'id');
+    }
+
+    /**
+     * Which part of the appraisal form this heading is rated under. Null means
+     * free-standing, which is how categories behaved before the form existed.
+     */
+    public function section(): BelongsTo
+    {
+        return $this->belongsTo(AssessmentSection::class, 'section_id', 'id');
     }
 
     public function scopeForPosition($query, int $positionId)

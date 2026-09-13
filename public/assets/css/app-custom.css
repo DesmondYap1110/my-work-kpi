@@ -541,12 +541,6 @@ select.task-status {
 .task-row.is-status-changed {
     background: var(--brand-background, #eaedf7);
 }
-.task-children {
-    margin: 4px 0 10px 26px;
-    padding-left: 12px;
-    border-left: 1px dashed #00000026;
-}
-
 /* How much of the project is done, above the groups. */
 .project-progress {
     gap: 10px;
@@ -599,4 +593,164 @@ select.task-status {
     width: 90px;
     margin: 0 auto;
     text-align: center;
+}
+
+/* ---------------------------------------------------------------------------
+   Appraisal form
+
+   A review is read top to bottom, so the marks stay in narrow columns on the
+   right and the wording keeps the width. The theme declares
+   .form-control { width: 100% !important }, hence the !important on the mark
+   dropdown - the same override the task status select needs.
+--------------------------------------------------------------------------- */
+.appraisal-head {
+    gap: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+.appraisal-head-main {
+    min-width: 0;
+}
+.appraisal-head-score {
+    gap: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+}
+.appraisal-total {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--brand-primary, #1896bd);
+}
+.appraisal-section-head {
+    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.appraisal-weight {
+    font-size: 12px;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.appraisal-scale {
+    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+}
+.appraisal-scale-item {
+    gap: 10px;
+    flex: 1 1 200px;
+    display: flex;
+    align-items: flex-start;
+    font-size: 13px;
+}
+.appraisal-scale-value {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    display: flex;
+    font-weight: 600;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: var(--brand-primary, #1896bd);
+}
+.appraisal-mark-col {
+    width: 150px;
+}
+.appraisal-weight-col {
+    width: 120px;
+}
+select.appraisal-mark {
+    width: 132px !important;
+    margin: 0 auto;
+}
+.appraisal-mark-value {
+    font-size: 16px;
+    font-weight: 600;
+    display: block;
+    color: var(--brand-primary, #1896bd);
+}
+.appraisal-mark-empty {
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.appraisal-total-row td {
+    background: rgba(24, 150, 189, 0.06);
+}
+.appraisal-comments {
+    white-space: pre-wrap;
+}
+
+@media (max-width: 767px) {
+    .appraisal-head-score {
+        align-items: flex-start;
+        text-align: left;
+    }
+    .appraisal-mark-col {
+        width: auto;
+    }
+    select.appraisal-mark {
+        width: 100% !important;
+    }
+}
+
+/* Monthly check-ins: a record of conversations, so they read as entries
+   rather than as table rows. */
+.appraisal-checkin {
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    border-radius: 5px;
+    border: 1px solid var(--brand-border, #e9e9ef);
+}
+.appraisal-checkin-head {
+    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    margin-bottom: 10px;
+}
+.appraisal-checkin-head .kpi-item-desc {
+    display: inline;
+}
+.appraisal-checkin-actions {
+    gap: 6px;
+    display: flex;
+    margin-left: auto;
+}
+.appraisal-checkin-label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+
+/* Appraisal form setup: a narrow column for the remove button, and a lock
+   where a mark is in use and cannot go. */
+.appraisal-row-actions-col {
+    width: 60px;
+}
+.appraisal-locked {
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.appraisal-add-row {
+    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+/* "Start an Appraisal" sits above the form's own setup: a heading on the left,
+   the action on the right. */
+.appraisal-start {
+    gap: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
 }

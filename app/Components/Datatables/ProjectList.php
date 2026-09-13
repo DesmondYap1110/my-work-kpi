@@ -76,6 +76,16 @@ class ProjectList extends Datatables
         });
     }
 
+    /**
+     * Every member may start a project and plan it, so this list is not
+     * administrator-only. Pricing the work is - see the tag field in
+     * projects/_task-fields.blade.php.
+     */
+    public static function adminOnly(): bool
+    {
+        return false;
+    }
+
     private function actionButtons($project): string
     {
         $status = $project->status;
@@ -88,6 +98,16 @@ class ProjectList extends Datatables
 
         if (in_array($status, [ProjectStatus::Active, ProjectStatus::InProgress], true)) {
             $buttons[] = $this->tbLink(route('projects.edit', $project->id), 'ri-edit-2-line', 'tb-ac-btn-1', 'Edit');
+        }
+
+        // Cancelling and deleting end a project and take its tasks with it -
+        // and with them the record a KPI was scored from. Members add and
+        // edit; ending one is the administrator's.
+        if (! static::viewerIsAdmin()) {
+            return implode(' ', $buttons);
+        }
+
+        if (in_array($status, [ProjectStatus::Active, ProjectStatus::InProgress], true)) {
             $buttons[] = $this->tbForm(route('projects.cancel', $project->id), 'POST', 'ri-close-circle-line', 'tb-ac-btn-3', 'Cancel', 'js-confirm-cancel');
         }
 

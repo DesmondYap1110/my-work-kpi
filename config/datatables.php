@@ -18,5 +18,6 @@ return [
         'KpiObjectiveItemList',
         'ManagePendingList',
         'ProjectTagList',
+        'AppraisalList',
     ],
 ];

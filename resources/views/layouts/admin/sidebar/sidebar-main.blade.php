@@ -41,11 +41,26 @@
                                            :active="['kpi.*', 'manage-pending.*']">
                         <x-sidebar.ui.dropdown-list route="manage-pending.index" label="Manage Pending" active="manage-pending.*" />
                     </x-sidebar.ui.dropdown>
+
+                    {{-- Appraisal is the administrator acting as appraiser:
+                         reviewing a member over a period and handing them the
+                         result. Form Setup is the scale and bands it scores by. --}}
+                    <x-sidebar.ui.dropdown id="sb-appraisal" icon="ri-survey-line" label="Appraisal"
+                                           :active="['appraisals.*', 'appraisal-form.*']">
+                        <x-sidebar.ui.dropdown-list route="appraisals.index" label="Review" active="appraisals.*" />
+                        <x-sidebar.ui.dropdown-list route="appraisal-form.edit" label="Form Setup" active="appraisal-form.*" />
+                    </x-sidebar.ui.dropdown>
                 @else
-                    {{-- A staff member's own two pages: how they are scored,
-                         and the work that scores them. --}}
+                    {{-- A staff member's own pages: how they are scored, the
+                         work that scores them, and the reviews of both. --}}
                     <x-sidebar.ui.list route="my.kpi" icon="ri-bar-chart-2-line" label="My KPI" active="my.kpi" />
                     <x-sidebar.ui.list route="my.tasks" icon="ri-list-check-2" label="My Tasks" active="my.tasks" />
+                    <x-sidebar.ui.list route="my.appraisals.index" icon="ri-survey-line" label="My Appraisal" active="my.appraisals.*" />
+
+                    {{-- Projects are open to everyone: anyone may start one and
+                         plan the work in it. Only the tag - the points - is
+                         withheld. --}}
+                    <x-sidebar.ui.list route="projects.index" icon="ri-clipboard-line" label="Project" active="projects.*" />
                 @endif
 
                 <x-sidebar.ui.dropdown id="sb-settings" icon="ri-settings-3-line" label="Settings"

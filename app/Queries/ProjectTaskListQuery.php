@@ -12,7 +12,7 @@ class ProjectTaskListQuery
     public function forRequest(Request $request): Builder
     {
         return ProjectTask::query()
-            ->with(['project', 'assignee', 'tag', 'parent'])
+            ->with(['project', 'assignee', 'tag'])
             ->tap(fn ($q) => $this->scopeToViewer($q))
             ->when($request->filled('project_id'), fn ($q) => $q->where('project_id', $request->integer('project_id')))
             ->when($request->filled('assignee_id'), fn ($q) => $q->where('assignee_id', $request->integer('assignee_id')))

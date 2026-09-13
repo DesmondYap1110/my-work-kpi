@@ -16,10 +16,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * A unit of work on a project.
  *
- * One table covers what ClickUp calls tasks, subtasks and milestones: a
- * subtask is a task with a parent, and a milestone is a task with the flag
- * set. That keeps a single set of rules for status, assignment and scoring
- * rather than three near-identical tables.
+ * A flat list: one task is one piece of work, owned by one person. A milestone
+ * is the same row with a flag set, so status, assignment and scoring keep a
+ * single set of rules rather than two near-identical tables.
  *
  * Finishing a task earns its tag's points for its assignee - see
  * App\Services\ProjectDeliveryScoreService.
@@ -32,7 +31,6 @@ class ProjectTask extends Model
 
     protected $fillable = [
         'project_id',
-        'parent_id',
         'assignee_id',
         'title',
         'is_milestone',
@@ -63,23 +61,8 @@ class ProjectTask extends Model
         'completed_at' => 'datetime',
     ];
 
-    /**
-     * Subtasks go with their parent.
-     *
-     * The foreign key is ON DELETE CASCADE, but that only fires on a real
-     * DELETE - a soft delete is an UPDATE, so it has to be done here or the
-     * children are left live under a deleted parent.
-     */
     protected static function booted(): void
     {
-        static::deleting(function (ProjectTask $task) {
-            if ($task->isForceDeleting()) {
-                return;
-            }
-
-            $task->children()->get()->each->delete();
-        });
-
         // completed_at is what the delivery score counts against a review
         // period, so it tracks the status rather than waiting for someone to
         // set it by hand.
@@ -105,16 +88,6 @@ class ProjectTask extends Model
         return $this->belongsTo(Project::class, 'project_id', 'id');
     }
 
-    public function parent(): BelongsTo
-    {
-        return $this->belongsTo(self::class, 'parent_id', 'id');
-    }
-
-    public function children(): HasMany
-    {
-        return $this->hasMany(self::class, 'parent_id', 'id');
-    }
-
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'assignee_id', 'id');
@@ -128,15 +101,6 @@ class ProjectTask extends Model
     public function files(): HasMany
     {
         return $this->hasMany(ProjectTaskFile::class, 'task_id', 'id');
-    }
-
-    /**
-     * Top-level tasks - the ones a project page lists, with their subtasks
-     * nested underneath rather than repeated alongside.
-     */
-    public function scopeRoots(Builder $query): Builder
-    {
-        return $query->whereNull('parent_id');
     }
 
     public function scopeDone(Builder $query): Builder

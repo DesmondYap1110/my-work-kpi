@@ -106,8 +106,8 @@ class ProjectTaskList extends Datatables
     }
 
     /**
-     * A milestone earns a marker, and a subtask says whose it is - otherwise
-     * the flat list loses the shape the project page shows.
+     * A milestone earns a marker, so a checkpoint is not lost among the
+     * ordinary work in a flat list.
      */
     private function titleCell(ProjectTask $task): string
     {
@@ -115,10 +115,6 @@ class ProjectTaskList extends Datatables
 
         if ($task->is_milestone) {
             $title = '<i class="ri-flag-2-fill kpi-milestone-icon" title="Milestone"></i>'.$title;
-        }
-
-        if ($task->parent) {
-            $title .= '<span class="kpi-item-desc">in '.e($task->parent->title).'</span>';
         }
 
         return $title;

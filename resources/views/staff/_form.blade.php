@@ -1,6 +1,6 @@
 {{-- Shared add/edit form for staff, used by both create.blade.php and edit.blade.php --}}
 @php
-    $defaultPhotoUrl = asset('storage/staff-photos/'.\App\Http\Controllers\StaffController::DEFAULT_PHOTO);
+    $defaultPhotoUrl = asset('storage/staff-photos/'.\App\Http\Controllers\Hr\StaffController::DEFAULT_PHOTO);
     $photoUrl = isset($staff) && $staff->photo
         ? asset('storage/staff-photos/'.$staff->photo)
         : $defaultPhotoUrl;
@@ -151,6 +151,46 @@
                     <option value="{{ $state }}" @selected(old('states', $staff->states ?? '') === $state)>{{ $state }}</option>
                 @endforeach
             </select>
+        </div>
+    </div>
+</div>
+
+{{--
+    Setting a password by hand.
+
+    Members normally set their own through the welcome email, and that stays
+    the default - it is the only route that ends with nobody but the member
+    knowing it. This is for when that does not work: a member who never got the
+    email, or has lost access and needs to be let back in today.
+
+    Always optional. Left blank on an edit, the existing password is untouched;
+    left blank on a new member, the welcome email goes out as before.
+--}}
+<p id="form-sub-title" class="mt-4">Password</p>
+<p id="footer-p" class="mb-3">
+    @isset($staff)
+        Leave blank to keep the member&rsquo;s current password. Setting one here
+        replaces it immediately &mdash; tell them what it is, and ask them to change
+        it from Settings once they are in.
+    @else
+        Leave blank and a welcome email will be sent so the member sets their own.
+        Fill it in only if you need to hand them one directly.
+    @endisset
+</p>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="input-group">
+            <label>{{ isset($staff) ? 'New Password' : 'Password' }}</label>
+            <input type="password" class="form-control" name="password"
+                   autocomplete="new-password" minlength="8" placeholder="At least 8 characters">
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="input-group">
+            <label>Confirm Password</label>
+            <input type="password" class="form-control" name="password_confirmation"
+                   autocomplete="new-password" minlength="8">
         </div>
     </div>
 </div>
