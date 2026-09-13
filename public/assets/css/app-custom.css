@@ -1110,7 +1110,7 @@ input.kpi-split-bar:focus-visible::-webkit-slider-thumb {
 }
 .kpi-split-example {
     max-width: 460px;
-    margin: 16px 0;
+    margin: 16px auto;
     padding: 12px 16px;
     border-radius: 5px;
     border: 1px dashed #00000026;

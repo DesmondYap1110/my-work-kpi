@@ -8,8 +8,8 @@
             objectives 80%  -> 80% of 50 = 40
             KPI score                    = 80 / 100
 
-    One slider sets the split; the example underneath is worked out live as it
-    moves - see public/js/modules/kpi-split.js.
+    Dragging the coloured bar sets the split; the example underneath is worked
+    out live as it moves - see public/js/modules/kpi-split.js.
 
     A position never saved starts at the company figure (Project Setup >
     Weighting). A blank target measures project work against the tasks the
@@ -32,8 +32,8 @@
 
         <p id="form-sub-title" class="mb-1">Project KPI</p>
         <p id="footer-p" class="mb-3">
-            Every member's <strong>KPI score is out of 100 points</strong>. Slide to decide how
-            many come from <strong>projects</strong> and how many from the
+            Every member's <strong>KPI score is out of 100 points</strong>. Drag the bar to decide
+            how many come from <strong>projects</strong> and how many from the
             <strong>KPI objectives</strong> - the two always add up to 100.
         </p>
 
