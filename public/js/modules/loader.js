@@ -46,6 +46,11 @@ App.module('loader', function () {
         if (link.target === '_blank' || link.hasAttribute('data-bs-toggle')) {
             return;
         }
+        // A file download (CSV export) never leaves the page, so the overlay
+        // would stay up with nothing to take it down again.
+        if (link.hasAttribute('download')) {
+            return;
+        }
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) {
             return;
         }

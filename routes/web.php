@@ -169,10 +169,12 @@ Route::middleware(['auth', 'active'])->group(function () {
         // How often each member is appraised, and who is due - the Review
         // Schedule. Before the resource, or /appraisals/schedule reads as an id.
         Route::get('/appraisals/schedule', [AppraisalController::class, 'schedule'])->name('appraisals.schedule');
+        Route::get('/appraisals/export', [AppraisalController::class, 'export'])->name('appraisals.export');
         Route::put('/appraisals/schedule-notice', [AppraisalController::class, 'updateNotice'])->name('appraisals.notice.update');
         Route::put('/appraisals/schedule/{staff}', [AppraisalController::class, 'updateCycle'])->name('appraisals.cycle.update');
         Route::resource('appraisals', AppraisalController::class)
             ->only(['index', 'store', 'show', 'update', 'destroy']);
+        Route::get('/appraisals/{appraisal}/export', [AppraisalController::class, 'exportOne'])->name('appraisals.export-one');
         Route::post('/appraisals/{appraisal}/generate', [AppraisalController::class, 'generate'])->name('appraisals.generate');
         Route::post('/appraisals/{appraisal}/reopen', [AppraisalController::class, 'reopen'])->name('appraisals.reopen');
 
@@ -185,6 +187,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         // Company, team, position or member performance over a period.
         Route::get('/kpi-report', [KpiReportController::class, 'index'])->name('kpi-report.index');
+        Route::get('/kpi-report/export', [KpiReportController::class, 'export'])->name('kpi-report.export');
 
         Route::get('/manage-pending', [ManagePendingController::class, 'index'])->name('manage-pending.index');
         Route::post('/manage-pending/{project_kpi}/approve', [ManagePendingController::class, 'approve'])->name('manage-pending.approve');

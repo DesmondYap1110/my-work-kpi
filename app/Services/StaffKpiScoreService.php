@@ -2,11 +2,8 @@
 
 namespace App\Services;
 
-use App\Enums\ProjectKpiStatus;
-use App\Enums\ProjectStatus;
 use App\Models\Assessment;
 use App\Models\KpiSetting;
-use App\Models\Project;
 use App\Models\Staff;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -17,9 +14,8 @@ use Illuminate\Support\Collection;
  *
  * A score has two halves:
  *
- *   objectives - what this class has always computed: marks the staff member
- *                submitted against their position's scored items, approved by
- *                a manager.
+ *   objectives - the appraiser's ratings on the member's generated appraisals
+ *                covering the period. See objectiveScore().
  *   delivery   - project work actually finished, priced by its tag's points.
  *                See ProjectDeliveryScoreService.
  *
@@ -29,53 +25,8 @@ class StaffKpiScoreService
 {
     public function __construct(
         private readonly ProjectDeliveryScoreService $delivery,
+        private readonly AssessmentScoreService $appraisals,
     ) {
-    }
-
-    /**
-     * Highest achievable mark for one completed project, for this staff
-     * member's position: the sum of every scored item's best allowed mark.
-     *
-     * The legacy app split items into Standard and Extra, adding a flat +2
-     * when any Extra existed. That flag is gone - an item worth more than the
-     * others simply allows higher marks, which the sum already reflects.
-     */
-    public function maxMarkPerProject(Staff $staff): int
-    {
-        $position = $staff->position;
-
-        if (! $position || ! $position->hasKpi()) {
-            return 0;
-        }
-
-        // The scored items hang off each objective and carry the mark range.
-        return (int) $position->objectives()->with('infos')->get()
-            ->flatMap->infos
-            ->sum(fn ($item) => $item->maxMark());
-    }
-
-    /**
-     * Completed projects this staff member worked on — the only projects that
-     * ever carry scored project_kpi rows for them.
-     *
-     * "Worked on" means they were assigned a task. It used to mean "belongs to
-     * my team", which counted every colleague's project as theirs; a project
-     * has no team of its own any more.
-     */
-    public function completedProjectsFor(Staff $staff, $from = null, $to = null): Collection
-    {
-        return Project::query()
-            ->status(ProjectStatus::Completed)
-            ->whereHas('tasks', fn ($q) => $q->where('assignee_id', $staff->id))
-            // Within a period: completed in it. complete_date is stamped when a
-            // project is marked Completed; older rows without one fall back to
-            // their last update.
-            ->when($from && $to, fn ($q) => $q->whereRaw(
-                'COALESCE(complete_date, updated_at) BETWEEN ? AND ?',
-                [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]
-            ))
-            ->orderByDesc('complete_date')
-            ->get();
     }
 
     /**
@@ -162,38 +113,17 @@ class StaffKpiScoreService
     }
 
     /**
-     * Total approved mark and percentage across the staff member's completed
-     * team projects, optionally scoped to a single project. Rejected/pending
-     * rows are intentionally excluded from the total (only approved marks
-     * count), per the corrected scoring semantics for this rewrite.
+     * The KPI objectives half: the appraiser's ratings on the member's
+     * generated appraisals whose review period overlaps this one. See
+     * AssessmentScoreService::objectivesAcross().
      *
-     * @return array{total_mark: int, max_possible: int, percentage: float}
+     * @return array{earned: float, max: float, percentage: float|null, appraisals: int, list: Collection}
      */
-    public function totalScore(Staff $staff, ?int $projectId = null, $from = null, $to = null): array
+    public function objectiveScore(Staff $staff, $from, $to): array
     {
-        $maxPerProject = $this->maxMarkPerProject($staff);
+        $list = $this->appraisals->generatedOverlapping([$staff->id], $from, $to);
 
-        // pluck('id'): the projects table's key was renamed from project_id,
-        // and this still asked for the old name - so it collected nulls, matched
-        // no project_kpi rows, and every approved mark silently scored zero.
-        $projectIds = $this->completedProjectsFor($staff, $from, $to)->pluck('id');
-
-        if ($projectId) {
-            $projectIds = $projectIds->filter(fn ($id) => $id === $projectId);
-        }
-
-        $approvedMark = (int) $staff->projectKpis()
-            ->whereIn('project_id', $projectIds)
-            ->where('status', ProjectKpiStatus::Approved)
-            ->sum('mark');
-
-        $maxPossible = $maxPerProject * $projectIds->count();
-
-        return [
-            'total_mark' => $approvedMark,
-            'max_possible' => $maxPossible,
-            'percentage' => $maxPossible > 0 ? round(($approvedMark / $maxPossible) * 100, 2) : 0.0,
-        ];
+        return $this->appraisals->objectivesAcross($list) + ['list' => $list];
     }
 
     /**
@@ -233,9 +163,9 @@ class StaffKpiScoreService
         $to ??= now()->endOfYear();
 
         // Both halves over the same period: project marks from tasks due or
-        // finished in it, objective marks from projects completed in it.
-        $objectiveScore = $this->totalScore($staff, null, $from, $to);
-        $objective = $objectiveScore['max_possible'] > 0 ? $objectiveScore['percentage'] : null;
+        // finished in it, objective marks from generated appraisals covering it.
+        $objectiveScore = $this->objectiveScore($staff, $from, $to);
+        $objective = $objectiveScore['percentage'];
 
         $deliveryDetail = $this->delivery->forStaff($staff, $from, $to);
         $delivery = $deliveryDetail['percentage'];
@@ -291,60 +221,6 @@ class StaffKpiScoreService
             'objectives' => $objective === null ? null : round($objective * $objectivesShare / 100, 2),
             'objectives_share' => $objectivesShare,
         ];
-    }
-
-    /**
-     * The KPI objectives behind the objectives half, item by item: approved
-     * marks against the most that could have been earned, across the member's
-     * completed projects - or one of them.
-     *
-     * Only approved marks count towards the score; pending and rejected ones
-     * are counted separately so the scorecard can say what is still waiting.
-     *
-     * @return \Illuminate\Support\Collection<int, array{category: string, objectives: \Illuminate\Support\Collection}>
-     */
-    public function objectiveBreakdown(Staff $staff, ?int $projectId = null, $from = null, $to = null): Collection
-    {
-        $position = $staff->position;
-
-        if (! $position) {
-            return collect();
-        }
-
-        $projectIds = $this->completedProjectsFor($staff, $from, $to)->pluck('id');
-
-        if ($projectId) {
-            $projectIds = $projectIds->filter(fn ($id) => $id === $projectId)->values();
-        }
-
-        $entries = $staff->projectKpis()
-            ->whereIn('project_id', $projectIds)
-            ->get()
-            ->groupBy('objective_info_id');
-
-        return $position->objectives()
-            ->with(['category', 'infos'])
-            ->orderBy('id')
-            ->get()
-            ->groupBy(fn ($objective) => $objective->category->name ?? 'Uncategorised')
-            ->map(fn ($objectives, $category) => [
-                'category' => $category,
-                'objectives' => $objectives->map(fn ($objective) => [
-                    'title' => $objective->title,
-                    'items' => $objective->infos->map(function ($item) use ($entries, $projectIds) {
-                        $rows = $entries->get($item->id, collect());
-
-                        return [
-                            'title' => $item->title,
-                            'approved' => (int) $rows->where('status', ProjectKpiStatus::Approved)->sum('mark'),
-                            'max' => $item->maxMark() * $projectIds->count(),
-                            'pending' => $rows->filter(fn ($r) => $r->status === null && $r->submitted_at !== null)->count(),
-                            'rejected' => $rows->where('status', ProjectKpiStatus::Rejected)->count(),
-                        ];
-                    }),
-                ]),
-            ])
-            ->values();
     }
 
     /**

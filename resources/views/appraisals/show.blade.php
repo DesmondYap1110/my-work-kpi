@@ -232,6 +232,7 @@
                 </div>
                 <div class="appraisal-actions-buttons">
                     <a href="{{ route('my.appraisals.index') }}" id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
+                    <button type="button" id="general-btn" class="btn2" onclick="window.print()"><i class="ri-printer-line"></i>Print</button>
                     <button type="submit" id="general-btn" class="btn1"><i class="ri-save-3-line"></i>Save My Marks</button>
                 </div>
             </div>
@@ -251,6 +252,9 @@
                 </div>
                 <div class="appraisal-actions-buttons">
                     <a href="{{ route('appraisals.index') }}" id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
+                    {{-- Exports what is saved: save first to include changes on screen. --}}
+                    <a href="{{ route('appraisals.export-one', $appraisal->id) }}" id="general-btn" class="btn2" download title="Download the saved form as CSV"><i class="ri-file-download-line"></i>Export CSV</a>
+                    <button type="button" id="general-btn" class="btn2" onclick="window.print()"><i class="ri-printer-line"></i>Print</button>
                     <button type="submit" id="general-btn" class="btn2"><i class="ri-save-3-line"></i>Save Draft</button>
                     <button type="submit" id="general-btn" class="btn1" name="generate" value="1"
                             data-confirm-title="Generate appraisal"
@@ -276,6 +280,10 @@
                 {{-- Back to whichever list the reader came from. --}}
                 <a href="{{ auth()->user()->isAdmin() ? route('appraisals.index') : route('my.appraisals.index') }}"
                    id="general-btn" class="btn2"><i class="ri-arrow-left-line"></i>Back</a>
+                @if (auth()->user()->isAdmin())
+                    <a href="{{ route('appraisals.export-one', $appraisal->id) }}" id="general-btn" class="btn2" download><i class="ri-file-download-line"></i>Export CSV</a>
+                @endif
+                <button type="button" id="general-btn" class="btn2" onclick="window.print()"><i class="ri-printer-line"></i>Print</button>
                 @if (auth()->user()->isAdmin() && $appraisal->isGenerated())
                     <form action="{{ route('appraisals.reopen', $appraisal->id) }}" method="POST" class="d-inline"
                           data-confirm-title="Reopen appraisal"

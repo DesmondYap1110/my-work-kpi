@@ -12,8 +12,11 @@ use App\Models\Assessment;
 use App\Models\AssessmentTemplate;
 use App\Models\KpiSetting;
 use App\Models\Staff;
+use App\Queries\AppraisalListQuery;
 use App\Services\AppraisalScheduleService;
 use App\Services\AssessmentScoreService;
+use App\Support\Csv;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\RedirectResponse;
@@ -59,6 +62,105 @@ class AppraisalController extends Controller implements BreadcrumbInterfaces
         return view('appraisals.index', [
             'members' => Staff::active()->excludingAdmin()->with('position')->orderBy('staff_name')->get(),
         ]);
+    }
+
+    /**
+     * The Appraisal list as CSV, with the list's own filters (member, team,
+     * position, status, period) - see AppraisalListQuery. Scores are the same
+     * figures as each appraisal's Summary.
+     */
+    public function export(Request $request, AppraisalListQuery $list): StreamedResponse
+    {
+        // reorder(): lazyById pages by ascending id, which a "newest first"
+        // order would fight with - the rows would come out incomplete.
+        $query = $list->forRequest($request)->with(['staff.team', 'position', 'reviewer'])->reorder();
+        $num = fn ($n) => $n === null ? null : round((float) $n, 2);
+
+        $rows = (function () use ($query, $num) {
+            // In chunks, so a long history never has to be in memory at once.
+            foreach ($query->lazyById(200) as $appraisal) {
+                $s = $this->scores->summary($appraisal);
+
+                yield [
+                    $appraisal->staff->staff_name ?? 'Unknown member',
+                    $appraisal->staff->email ?? null,
+                    $appraisal->staff->team->team_name ?? null,
+                    $appraisal->position->position_name ?? null,
+                    $appraisal->period_from?->format('Y-m-d'),
+                    $appraisal->period_to?->format('Y-m-d'),
+                    $appraisal->review_date?->format('Y-m-d'),
+                    $appraisal->next_assessment_date?->format('Y-m-d'),
+                    $appraisal->status->label(),
+                    $num($s['projects']['percentage']),
+                    $num($s['projects']['points']),
+                    $num($s['objectives']['percentage']),
+                    $num($s['objectives']['points']),
+                    $num($s['percentage']),
+                    $s['band']->label ?? null,
+                    $s['band']->outcome ?? null,
+                    $appraisal->reviewer->staff_name ?? null,
+                    $appraisal->generated_at?->format('Y-m-d H:i'),
+                    $appraisal->comments,
+                ];
+            }
+        })();
+
+        return Csv::download('appraisals-'.now()->format('Ymd-His').'.csv', [
+            'Member', 'Email', 'Team', 'Position', 'Period from', 'Period to', 'Review date', 'Next assessment',
+            'Status', 'Project %', 'Project points', 'Objectives %', 'Objective points', 'KPI score', 'Band', 'Outcome',
+            'Appraiser', 'Generated at', 'Comments',
+        ], $rows);
+    }
+
+    /**
+     * One review form as CSV - its details, every KPI objective item with the
+     * employee and reviewer marks, the project tasks behind the project marks,
+     * and the summary. One file, a Section column saying which part a row is.
+     */
+    public function exportOne(Assessment $appraisal): StreamedResponse
+    {
+        $appraisal->load(['staff.team', 'position', 'reviewer', 'template.bands', 'scores']);
+        $s = $this->scores->summary($appraisal);
+        $num = fn ($n) => $n === null ? null : round((float) $n, 2);
+
+        $rows = [];
+        // By reference: an arrow function would add to a copy of $rows.
+        $detail = function (string $label, $value) use (&$rows) {
+            $rows[] = ['Details', $label, $value, null, null, null, null, null];
+        };
+
+        $detail('Member', $appraisal->staff->staff_name ?? 'Unknown member');
+        $detail('Team', $appraisal->staff->team->team_name ?? null);
+        $detail('Position', $appraisal->position->position_name ?? null);
+        $detail('Review period', $appraisal->periodLabel());
+        $detail('Review date', $appraisal->review_date?->format('Y-m-d'));
+        $detail('Next assessment', $appraisal->next_assessment_date?->format('Y-m-d'));
+        $detail('Status', $appraisal->status->label());
+        $detail('Appraiser', $appraisal->reviewer->staff_name ?? null);
+
+        foreach ($s['objectives']['groups'] as $group) {
+            foreach ($group['rows'] as $row) {
+                $rows[] = ['KPI objectives', $group['category']->name, $row['objective'], $row['info']->title,
+                    $row['employee_score'], $row['reviewer_score'], $row['marks'] ? max($row['marks']) : null, null];
+            }
+        }
+
+        foreach ($s['projects']['tasks'] as $task) {
+            $rows[] = ['Projects', $task->project->title ?? null, $task->title, $task->tag->name ?? 'No tag',
+                null, null, $num($task->points()), $task->status->label()];
+        }
+
+        $rows[] = ['Summary', 'Projects', $num($s['projects']['percentage']).($s['projects']['percentage'] === null ? '' : '%'), null, null, null, $num($s['projects']['points']), 'of '.$s['projects']['share']];
+        $rows[] = ['Summary', 'KPI objectives', $num($s['objectives']['percentage']).($s['objectives']['percentage'] === null ? '' : '%'), null, null, null, $num($s['objectives']['points']), 'of '.$s['objectives']['share']];
+        $rows[] = ['Summary', 'KPI score', $num($s['percentage']), null, null, null, null, 'of 100'];
+        $rows[] = ['Summary', 'Band', $s['band']->label ?? null, $s['band']->outcome ?? null, null, null, null, null];
+        $rows[] = ['Summary', 'Other comments', $appraisal->comments, null, null, null, null, null];
+
+        $name = \Illuminate\Support\Str::slug($appraisal->staff->staff_name ?? 'member');
+
+        return Csv::download('appraisal-'.$name.'-'.$appraisal->period_from?->format('Ymd').'-'.$appraisal->period_to?->format('Ymd').'.csv', [
+            'Section', 'Category / Project / Field', 'Objective / Task / Value', 'Item / Tag', 'Employee mark', 'Reviewer mark', 'Best mark / Points', 'Status / Share',
+        ], $rows);
     }
 
     /**

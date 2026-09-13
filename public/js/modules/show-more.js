@@ -38,6 +38,8 @@ App.module('show-more', function () {
         function paint() {
             rows.forEach(function (row, i) {
                 row.hidden = !expanded && i >= limit;
+                // Lets print CSS show every row - a paper copy has no button.
+                row.classList.toggle('show-more-folded', row.hidden);
             });
             button.innerHTML = expanded
                 ? '<i class="ri-arrow-up-s-line"></i>Show less'

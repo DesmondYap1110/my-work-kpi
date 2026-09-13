@@ -34,6 +34,7 @@
 <script src="{{ \App\Support\Asset::url('js/modules/kpi-split.js') }}"></script>
 <script src="{{ \App\Support\Asset::url('js/modules/tag-position.js') }}"></script>
 <script src="{{ \App\Support\Asset::url('js/modules/appraisal-next-date.js') }}"></script>
+<script src="{{ \App\Support\Asset::url('js/modules/export-link.js') }}"></script>
 <script>window.datatablesEndpoint = @json(route('datatables.listing'));</script>
 <script src="{{ \App\Support\Asset::url('js/modules/datatables.js') }}"></script>
 

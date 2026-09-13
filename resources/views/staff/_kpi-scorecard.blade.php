@@ -2,7 +2,7 @@
     A member's KPI score out of 100, laid out the way it is calculated.
 
         Project marks   earned / target  ->  x of the project share
-      + KPI objectives  approved / max   ->  y of the objectives share
+      + KPI objectives  appraisal marks  ->  y of the objectives share
       = KPI score                             out of 100
 
     Every number comes from StaffKpiScoreService::finalScore(), and the two
@@ -10,7 +10,8 @@
     they always add up to what is printed beside them.
 
     Expects: $staff, $period (StaffKpiScoreService::reviewPeriod()), $finalScore,
-             $objectiveBreakdown, $completedProjects, $selectedProjectId, $projectScore
+             $appraisals, $selectedAppraisal, $appraisalObjectives
+             (AssessmentScoreService::objectives() for the selected appraisal)
 --}}
 @php
     $d = $finalScore['delivery_detail'];
@@ -89,9 +90,10 @@
             </p>
             <p class="kpi-sum-detail">
                 @if ($finalScore['objective'] === null)
-                    No approved objective marks yet.
+                    No generated appraisal in this period.
                 @else
-                    {{ $o['total_mark'] }} of {{ $o['max_possible'] }} marks approved
+                    {{ $fmt($o['earned']) }} of {{ $fmt($o['max']) }} rated marks
+                    &middot; {{ $o['appraisals'] }} {{ Str::plural('appraisal', $o['appraisals']) }}
                 @endif
             </p>
         </div>
@@ -178,27 +180,27 @@
             </div>
         </div>
 
-        {{-- KPI objectives: approved marks item by item. --}}
+        {{-- KPI objectives: the appraiser's marks item by item, from one of the
+             generated appraisals behind the objectives half. --}}
         <div class="col-12">
             <div class="kpi-panel-head">
                 <p class="kpi-panel-title mb-0">
                     KPI objectives
-                    <span class="kpi-item-desc">approved marks from completed projects</span>
+                    <span class="kpi-item-desc">marks from generated appraisals covering {{ $periodLabel }}</span>
                 </p>
                 <div class="kpi-panel-tools">
                     <input type="search" class="form-control kpi-panel-search" placeholder="Search category, objective or item" aria-label="Search KPI objectives" data-table-search="#kpi-objective-table">
-                    @if ($completedProjects->isNotEmpty())
+                    @if ($appraisals->count() > 1)
                         <form method="GET" action="" class="kpi-panel-filter">
-                            {{-- Keep the review period when switching project. --}}
+                            {{-- Keep the review period when switching appraisal. --}}
                             <input type="hidden" name="range" value="{{ $period['range'] }}">
                             @if ($period['range'] === 'custom')
                                 <input type="hidden" name="from" value="{{ $finalScore['from']->format('Y-m-d') }}">
                                 <input type="hidden" name="to" value="{{ $finalScore['to']->format('Y-m-d') }}">
                             @endif
-                            <select class="form-control" name="pid" aria-label="Project" onchange="this.form.submit()">
-                                <option value="">All completed projects</option>
-                                @foreach ($completedProjects as $project)
-                                    <option value="{{ $project->id }}" @selected($selectedProjectId == $project->id)>{{ $project->title }}</option>
+                            <select class="form-control" name="aid" aria-label="Appraisal" onchange="this.form.submit()">
+                                @foreach ($appraisals as $appraisal)
+                                    <option value="{{ $appraisal->id }}" @selected($selectedAppraisal?->id === $appraisal->id)>Appraisal {{ $appraisal->periodLabel() }}</option>
                                 @endforeach
                             </select>
                         </form>
@@ -206,70 +208,75 @@
                 </div>
             </div>
 
-            <div id="table-div">
-                <table class="table table-bordered align-middle" id="kpi-objective-table">
-                    <thead>
-                        <tr>
-                            <th>Objective</th>
-                            <th class="text-center">Marks</th>
-                            <th class="text-center">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($objectiveBreakdown as $group)
-                            <tr data-search-level="1"><td colspan="3" id="tb-sub-til">{{ $group['category'] }}</td></tr>
-                            @foreach ($group['objectives'] as $objective)
-                                <tr data-search-level="2"><td colspan="3" class="kpi-objective-row">{{ $objective['title'] }}</td></tr>
-                                @foreach ($objective['items'] as $item)
+            @if ($selectedAppraisal)
+                @php
+                    $appraisalUrl = ($self ?? false)
+                        ? route('my.appraisals.show', $selectedAppraisal->id)
+                        : route('appraisals.show', $selectedAppraisal->id);
+                @endphp
+                <div id="table-div">
+                    <table class="table table-bordered align-middle" id="kpi-objective-table">
+                        <thead>
+                            <tr>
+                                <th>Objective</th>
+                                <th class="text-center">Employee</th>
+                                <th class="text-center">Reviewer</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($appraisalObjectives['groups'] as $group)
+                                <tr data-search-level="1"><td colspan="3" id="tb-sub-til">{{ $group['category']->name }}</td></tr>
+                                @php $lastObjective = null; @endphp
+                                @foreach ($group['rows'] as $row)
+                                    @if ($row['objective'] !== $lastObjective)
+                                        <tr data-search-level="2"><td colspan="3" class="kpi-objective-row">{{ $row['objective'] }}</td></tr>
+                                        @php $lastObjective = $row['objective']; @endphp
+                                    @endif
+                                    @php $best = $row['marks'] ? max($row['marks']) : null; @endphp
                                     <tr>
-                                        <td class="kpi-item-cell">{{ $item['title'] }}</td>
+                                        <td class="kpi-item-cell">{{ $row['info']->title }}</td>
                                         <td class="text-center">
-                                            @if ($item['max'] > 0)
-                                                <strong>{{ $item['approved'] }}</strong> / {{ $item['max'] }}
-                                            @else
-                                                -
-                                            @endif
+                                            {{ $row['employee_score'] ?? '-' }}@if ($row['employee_score'] !== null && $best) <span class="kpi-muted">/ {{ $best }}</span>@endif
                                         </td>
                                         <td class="text-center">
-                                            @if ($item['pending'])
-                                                <span class="tb-status" id="tb-status-3">{{ $item['pending'] }} pending</span>
-                                            @endif
-                                            @if ($item['rejected'])
-                                                <span class="tb-status" id="tb-status-2">{{ $item['rejected'] }} rejected</span>
-                                            @endif
-                                            @if (! $item['pending'] && ! $item['rejected'])
+                                            @if ($row['reviewer_score'] !== null)
+                                                <strong>{{ $row['reviewer_score'] }}</strong>@if ($best) <span class="kpi-muted">/ {{ $best }}</span>@endif
+                                            @else
                                                 -
                                             @endif
                                         </td>
                                     </tr>
                                 @endforeach
-                            @endforeach
-                        @empty
-                            <tr><td colspan="3" class="text-center">This position has no KPI objectives yet.</td></tr>
-                        @endforelse
-                        <tr data-search-empty hidden><td colspan="3" class="text-center">No objective matches your search.</td></tr>
-                    </tbody>
-                    @php $objTotal = $projectScore ?? $o; @endphp
-                    <tfoot>
-                        <tr>
-                            <td class="text-end"><strong>{{ $selectedProjectId ? 'This project' : 'Approved' }}</strong></td>
-                            <td class="text-center">
-                                @if ($objTotal['max_possible'] > 0)
-                                    <strong>{{ $objTotal['total_mark'] }}</strong> / {{ $objTotal['max_possible'] }}
-                                @else
-                                    -
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                {{ $objTotal['max_possible'] > 0 ? $fmt($objTotal['percentage']).'%' : '' }}
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-            @if ($completedProjects->isEmpty())
+                            @empty
+                                <tr><td colspan="3" class="text-center">This position has no KPI objectives yet.</td></tr>
+                            @endforelse
+                            <tr data-search-empty hidden><td colspan="3" class="text-center">No objective matches your search.</td></tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="text-end">
+                                    <strong>Rated</strong>
+                                    <a href="{{ $appraisalUrl }}" id="tb-link" class="ms-2">Open appraisal</a>
+                                </td>
+                                <td colspan="2" class="text-center">
+                                    @if ($appraisalObjectives['max'] > 0)
+                                        <strong>{{ $fmt($appraisalObjectives['earned']) }}</strong> / {{ $fmt($appraisalObjectives['max']) }}
+                                        <span class="kpi-muted">({{ $fmt($appraisalObjectives['percentage']) }}%)</span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
                 <p id="footer-p" class="mb-0">
-                    Objective marks are recorded when a project this member worked on is completed - none was completed in this period.
+                    The reviewer's mark counts; the employee's own mark stands in only where the reviewer left an item blank.
+                </p>
+            @else
+                <p id="footer-p" class="mb-0">
+                    No generated appraisal covers this period, so KPI objectives are not scored yet.
+                    They come from the appraiser's marks once an appraisal is generated.
                 </p>
             @endif
         </div>

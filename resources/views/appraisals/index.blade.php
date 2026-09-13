@@ -5,7 +5,17 @@
 @section('content')
     {!! show_datatable_filter('AppraisalList') !!}
 
-    <x-add-button modal="addAppraisalModal">New Appraisal</x-add-button>
+    {{-- Export takes the filters above with it - see export-link.js. Print
+         prints the page of the list on screen. --}}
+    <div id="add-btn-div" class="d-flex justify-content-end flex-wrap gap-2">
+        <a href="{{ route('appraisals.export') }}" id="general-btn" class="btn2" download data-export-filters="AppraisalList">
+            <i class="ri-file-download-line"></i>Export CSV
+        </a>
+        <button type="button" id="general-btn" class="btn2" onclick="window.print()">
+            <i class="ri-printer-line"></i>Print
+        </button>
+        <x-button variant="primary" icon="ri-add-fill" data-bs-toggle="modal" data-bs-target="#addAppraisalModal">New Appraisal</x-button>
+    </div>
 
     {!! show_datatables('AppraisalList') !!}
 

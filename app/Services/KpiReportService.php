@@ -2,12 +2,9 @@
 
 namespace App\Services;
 
-use App\Enums\ProjectKpiStatus;
-use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
 use App\Models\KpiSetting;
 use App\Models\Project;
-use App\Models\ProjectKpi;
 use App\Models\ProjectTask;
 use App\Models\Staff;
 use Illuminate\Support\Carbon;
@@ -23,12 +20,12 @@ use Illuminate\Support\Collection;
  * across the company, to tens of queries rather than thousands.
  *
  *   project marks   tasks due or finished in the period, priced by tag points
- *   KPI objectives  approved marks on projects completed in the period
+ *   KPI objectives  appraiser marks on generated appraisals covering the period
  *   KPI score       the two blended at the position's project share
  */
 class KpiReportService
 {
-    public function __construct(private readonly StaffKpiScoreService $kpi)
+    public function __construct(private readonly AssessmentScoreService $appraisals)
     {
     }
 
@@ -46,23 +43,21 @@ class KpiReportService
 
         $ids = $members->pluck('id')->all();
         $delivery = $this->deliveryTotals($ids, $from, $to);
-        $completed = $this->completedProjectPairs($ids, $from, $to);
-        $approved = $this->approvedMarks($ids, $completed);
-        $maxPerProject = $this->maxMarkPerPosition($members);
+        // Every generated appraisal covering the period, for all members in one
+        // query; each is totalled once and remembered - see objectivesAcross().
+        $appraisals = $this->appraisals->generatedOverlapping($ids, $from, $to)->groupBy('staff_id');
         $companyShare = $this->companyShare ??= KpiSetting::current()->projectShare();
 
-        return $members->mapWithKeys(function (Staff $staff) use ($delivery, $completed, $approved, $maxPerProject, $companyShare) {
+        return $members->mapWithKeys(function (Staff $staff) use ($delivery, $appraisals, $companyShare) {
             // Project marks - ProjectDeliveryScoreService::forStaff().
             $d = $delivery->get($staff->id, ['earned' => 0.0, 'assigned' => 0.0, 'done' => 0, 'total' => 0]);
             $target = $staff->position?->project_target;
             $target = $target !== null && (float) $target > 0 ? (float) $target : null;
             $deliveryPct = ProjectDeliveryScoreService::percentage($d['earned'], $d['assigned'], $target);
 
-            // KPI objectives - StaffKpiScoreService::totalScore().
-            $projects = count($completed[$staff->id] ?? []);
-            $max = ($maxPerProject[$staff->position_id] ?? 0) * $projects;
-            $mark = (int) ($approved[$staff->id] ?? 0);
-            $objectivePct = $max > 0 ? round(($mark / $max) * 100, 2) : null;
+            // KPI objectives - StaffKpiScoreService::objectiveScore().
+            $o = $this->appraisals->objectivesAcross($appraisals->get($staff->id, collect()));
+            $objectivePct = $o['percentage'];
 
             // The position's own share wins - StaffKpiScoreService::projectShare().
             $own = $staff->position?->project_weight;
@@ -83,9 +78,9 @@ class KpiReportService
                 'target' => $target,
                 'tasks_done' => $d['done'],
                 'tasks_total' => $d['total'],
-                'mark' => $mark,
-                'max_mark' => $max,
-                'projects' => $projects,
+                'mark' => $o['earned'],
+                'max_mark' => $o['max'],
+                'appraisals' => $o['appraisals'],
             ]];
         });
     }
@@ -134,8 +129,16 @@ class KpiReportService
             ->map(function (Collection $rows) use ($template) {
                 $summary = $this->summary($rows);
 
+                // Average points of each half over the scored members, so the two
+                // stacked bars add up to the team's average KPI score.
+                $scored = $rows->filter(fn ($s) => $s['percentage'] !== null);
+
                 return [
                     'team' => $rows->first()['staff']->team->team_name ?? 'No team',
+                    // The team's highest KPI score, and whose it is.
+                    'top' => $scored->sortByDesc('percentage')->first(),
+                    'project_points' => $scored->isEmpty() ? null : round($scored->avg(fn ($s) => $s['project_points'] ?? 0), 2),
+                    'objective_points' => $scored->isEmpty() ? null : round($scored->avg(fn ($s) => $s['objective_points'] ?? 0), 2),
                     'members' => $summary['members'],
                     'scored' => $summary['scored'],
                     'percentage' => $summary['percentage'],
@@ -281,81 +284,6 @@ class KpiReportService
                 'total' => (int) $row->total,
             ]]);
     }
-
-    /**
-     * Completed projects each member had a task on, completed in the period -
-     * StaffKpiScoreService::completedProjectsFor(), for many members at once.
-     *
-     * @return array<int, array<int, int>>  staff id => project ids
-     */
-    private function completedProjectPairs(array $ids, Carbon $from, Carbon $to): array
-    {
-        $pairs = [];
-
-        Project::query()
-            ->join('project_task', 'project_task.project_id', '=', 'project.id')
-            ->whereNull('project_task.deleted_at')
-            ->whereIn('project_task.assignee_id', $ids)
-            ->where('project.status', ProjectStatus::Completed)
-            ->whereRaw('COALESCE(project.complete_date, project.updated_at) BETWEEN ? AND ?', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
-            ->distinct()
-            ->toBase()
-            ->get(['project_task.assignee_id', 'project.id'])
-            ->each(function ($row) use (&$pairs) {
-                $pairs[(int) $row->assignee_id][] = (int) $row->id;
-            });
-
-        return $pairs;
-    }
-
-    /**
-     * @param  array<int, array<int, int>>  $completed
-     * @return array<int, int>  staff id => approved mark
-     */
-    private function approvedMarks(array $ids, array $completed): array
-    {
-        if ($completed === []) {
-            return [];
-        }
-
-        $totals = [];
-
-        ProjectKpi::query()
-            ->whereIn('staff_id', $ids)
-            ->whereIn('project_id', collect($completed)->flatten()->unique()->all())
-            ->where('status', ProjectKpiStatus::Approved)
-            ->groupBy('staff_id', 'project_id')
-            ->selectRaw('staff_id, project_id, SUM(mark) AS mark')
-            ->toBase()
-            ->get()
-            ->each(function ($row) use ($completed, &$totals) {
-                if (in_array((int) $row->project_id, $completed[$row->staff_id] ?? [], true)) {
-                    $totals[(int) $row->staff_id] = ($totals[(int) $row->staff_id] ?? 0) + (int) $row->mark;
-                }
-            });
-
-        return $totals;
-    }
-
-    /**
-     * The best mark per completed project, once per position rather than once
-     * per member - it depends only on the position.
-     *
-     * @return array<int, int>
-     */
-    private function maxMarkPerPosition(Collection $members): array
-    {
-        // Remembered for the request: a 12-month trend asks for the same
-        // positions twelve times.
-        foreach ($members->unique('position_id') as $staff) {
-            $this->maxMarks[$staff->position_id] ??= $this->kpi->maxMarkPerProject($staff);
-        }
-
-        return $this->maxMarks;
-    }
-
-    /** @var array<int, int> position id => best mark per project */
-    private array $maxMarks = [];
 
     private ?float $companyShare = null;
 }

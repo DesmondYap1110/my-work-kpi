@@ -90,7 +90,44 @@
                 </div>
             </div>
         </div>
+
+        {{-- Export and print what is on screen: every link carries the
+             applied filters (the query string), not unsaved changes above. --}}
+        <div class="report-toolbar">
+            <span class="kpi-item-desc ms-0">{{ $from->format('d M Y') }} &ndash; {{ $to->format('d M Y') }}</span>
+            <div class="report-toolbar-actions">
+                <div class="dropdown">
+                    {{-- No .dropdown-toggle: the theme draws its caret over the
+                         label ("SV⌄"), so the arrow is an icon after the text. --}}
+                    <button type="button" id="general-btn" class="btn2 report-export-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="ri-file-download-line"></i>Export CSV<i class="ri-arrow-down-s-line report-export-caret"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        @foreach ($exports as $section => $label)
+                            <li>
+                                <a class="dropdown-item" download href="{{ route('kpi-report.export', request()->query() + ['section' => $section]) }}">{{ $label }}</a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+                <button type="button" id="general-btn" class="btn1" onclick="window.print()">
+                    <i class="ri-printer-line"></i>Print
+                </button>
+            </div>
+        </div>
     </form>
+
+    {{-- Printed in place of the filter bar, so a paper copy says what it covers. --}}
+    <div class="print-only report-print-head">
+        <h2>KPI Report</h2>
+        <p>
+            {{ $from->format('d M Y') }} &ndash; {{ $to->format('d M Y') }}
+            &middot; {{ request('team_id') ? ($teams[request('team_id')] ?? 'Team') : 'All teams' }}
+            &middot; {{ request('position_id') ? ($positions[request('position_id')] ?? 'Position') : 'All positions' }}
+            &middot; {{ request('staff_id') ? ($allMembers->firstWhere('id', (int) request('staff_id'))->staff_name ?? 'Member') : 'All members' }}
+            &middot; printed {{ now()->format('d M Y H:i') }}
+        </p>
+    </div>
 
     {{-- 1. KPI Summary --}}
     <div id="form-box" class="general-box">
@@ -241,7 +278,7 @@
     <div id="form-box" class="general-box">
         <div class="appraisal-section-head">
             <p id="form-sub-title" class="mb-0">Team Performance</p>
-            <span class="kpi-item-desc">Teams compared, then members ranked by KPI score</span>
+            <span class="kpi-item-desc">Teams compared by average KPI score</span>
         </div>
 
         {{-- Teams side by side. Status is the performance band the team's
@@ -254,6 +291,7 @@
                         <th class="text-center">Avg. KPI</th>
                         <th class="text-center">Avg. project</th>
                         <th class="text-center">Avg. objectives</th>
+                        <th class="text-center">Top performer</th>
                         <th class="text-center">Members</th>
                         <th class="text-center">Status</th>
                     </tr>
@@ -265,6 +303,14 @@
                             <td class="text-center"><strong>{{ $num($row['percentage']) }}</strong></td>
                             <td class="text-center">{{ $num($row['project'], '%') }}</td>
                             <td class="text-center">{{ $num($row['objective'], '%') }}</td>
+                            <td class="text-center">
+                                @if ($row['top'])
+                                    <a href="{{ route('staff.view-kpi', $row['top']['staff']->id) }}" id="tb-link">{{ $row['top']['staff']->staff_name }}</a>
+                                    <span class="kpi-item-desc">{{ $num($row['top']['percentage']) }}</span>
+                                @else
+                                    <span class="kpi-muted">-</span>
+                                @endif
+                            </td>
                             <td class="text-center">
                                 {{ $row['members'] }}
                                 @if ($row['scored'] < $row['members'])
@@ -280,15 +326,25 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="text-center">No teams match these filters.</td></tr>
+                        <tr><td colspan="7" class="text-center">No teams match these filters.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        @if ($ranking->whereNotNull('percentage')->isNotEmpty())
-            <div id="report-team-chart" class="report-chart"></div>
+        {{-- Teams compared: average project + objective points per team. --}}
+        @if ($teamChart->isNotEmpty())
+            <div id="report-team-chart" class="report-chart mb-0"></div>
         @endif
+    </div>
+
+    {{-- Member Ranking: every member in the filters, highest KPI score first,
+         whatever their team. --}}
+    <div id="form-box" class="general-box">
+        <div class="appraisal-section-head">
+            <p id="form-sub-title" class="mb-0">Member Ranking</p>
+            <span class="kpi-item-desc">All members ranked by KPI score</span>
+        </div>
         <div id="table-div">
             <table class="table table-bordered align-middle mb-0">
                 <thead>
@@ -394,16 +450,16 @@
                 }).render();
             }
 
-            var ranking = @json($rankingChart);
+            var teams = @json($teamChart);
             var teamEl = document.querySelector('#report-team-chart');
-            if (teamEl && ranking.length) {
+            if (teamEl && teams.length) {
                 new ApexCharts(teamEl, {
-                    chart: Object.assign({ type: 'bar', stacked: true, height: Math.max(220, ranking.length * 34 + 80) }, base),
+                    chart: Object.assign({ type: 'bar', stacked: true, height: Math.max(220, teams.length * 44 + 80) }, base),
                     series: [
-                        { name: 'Project', data: ranking.map(function (r) { return r.project; }) },
-                        { name: 'Objectives', data: ranking.map(function (r) { return r.objective; }) },
+                        { name: 'Avg. project points', data: teams.map(function (r) { return r.project; }) },
+                        { name: 'Avg. objective points', data: teams.map(function (r) { return r.objective; }) },
                     ],
-                    xaxis: { categories: ranking.map(function (r) { return r.name; }), max: 100, labels: { formatter: fmt } },
+                    xaxis: { categories: teams.map(function (r) { return r.name; }), max: 100, labels: { formatter: fmt } },
                     plotOptions: { bar: { horizontal: true, barHeight: '60%', borderRadius: 3 } },
                     colors: [primary, '#0ab39c'],
                     dataLabels: { enabled: false },

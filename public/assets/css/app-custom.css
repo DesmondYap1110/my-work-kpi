@@ -1515,6 +1515,117 @@ input.kpi-split-bar:focus-visible::-webkit-slider-thumb {
 .report-bar.is-fair span { background: #f7b84b; }
 .report-bar.is-poor span { background: #f06548; }
 
+/* Export / Print bar under the report filters. */
+.report-toolbar {
+    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--brand-border, #e9ebec);
+}
+.report-toolbar-actions {
+    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+}
+.report-toolbar .dropdown-item {
+    font-size: 13px;
+}
+#general-btn .report-export-caret {
+    margin: 0 0 0 6px;
+}
+
+/*
+ * Printing (KPI Report, appraisal form, appraisal list): just the content.
+ * The sidebar, top bar, breadcrumb, filters and buttons are screen-only; cards
+ * lose their shadow and keep together across page breaks where they can.
+ */
+.print-only {
+    display: none;
+}
+@media print {
+    @page {
+        margin: 12mm;
+    }
+    .app-menu,
+    .vertical-overlay,
+    #page-topbar,
+    #bc-section,
+    #footer-section,
+    .no-print,
+    .report-filter,
+    .show-more-wrap,
+    .appraisal-actions,
+    .kpi-help-btn,
+    #add-btn-div,
+    .js-datatable-filter,
+    .dataTables_length,
+    .dataTables_paginate,
+    .dataTables_info,
+    #loader-wrapper {
+        display: none !important;
+    }
+    .print-only {
+        display: block !important;
+    }
+    body,
+    .main-content,
+    .page-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+    }
+    .general-box {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    tr.show-more-folded {
+        display: table-row !important;
+    }
+    .col-xl-7,
+    .col-xl-5 {
+        width: 100% !important;
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    .report-equal {
+        height: auto !important;
+    }
+    table thead th {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .report-stat,
+    .report-stat-icon,
+    .report-bar span,
+    .tb-status {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    a {
+        text-decoration: none !important;
+    }
+}
+.report-print-head h2 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #111 !important;
+}
+.report-print-head p {
+    margin: 0 0 12px;
+    font-size: 12px;
+    color: #333;
+}
+
 /* Review Schedule header: "Notify me [3] days before due [Save]". */
 .appraisal-notice-form {
     gap: 8px;
@@ -1623,6 +1734,8 @@ input.kpi-split-bar:focus-visible::-webkit-slider-thumb {
     gap: 10px;
     display: flex;
     flex-wrap: wrap;
+    /* A link (Export CSV) and buttons side by side line up. */
+    align-items: center;
 }
 .appraisal-actions-buttons #general-btn {
     margin: 0;

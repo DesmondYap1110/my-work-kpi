@@ -132,6 +132,63 @@ class AssessmentScoreService
     }
 
     /**
+     * The KPI objectives half of a member's KPI score over a period: the
+     * ratings on every generated appraisal of theirs whose review period
+     * overlaps it, taken together. Earned and maximum count only rated items,
+     * exactly as on the appraisal itself, so one appraisal alone gives the
+     * same percentage as its own Summary.
+     *
+     * Null when no generated appraisal rated anything - nothing to score is not
+     * a score of zero, and the KPI blend then uses project marks alone.
+     *
+     * @param  Collection<int, Assessment>  $appraisals  generated, with scores loaded
+     * @return array{earned: float, max: float, percentage: float|null, appraisals: int}
+     */
+    public function objectivesAcross(Collection $appraisals): array
+    {
+        $earned = 0.0;
+        $max = 0.0;
+
+        foreach ($appraisals as $appraisal) {
+            $part = $this->objectivesCache[$appraisal->id] ??= $this->objectives($appraisal);
+            $earned += $part['earned'];
+            $max += $part['max'];
+        }
+
+        return [
+            'earned' => $earned,
+            'max' => $max,
+            'percentage' => $this->percentage($earned, $max),
+            'appraisals' => $appraisals->count(),
+        ];
+    }
+
+    /** @var array<int, array> appraisal id => objectives(), for a report that asks repeatedly */
+    private array $objectivesCache = [];
+
+    /** @var array<int, Collection> position id => categories with objectives and items */
+    private array $categoriesCache = [];
+
+    /**
+     * Generated appraisals whose review period overlaps [$from, $to], newest
+     * first, for one or many members.
+     *
+     * @param  array<int, int>  $staffIds
+     * @return Collection<int, Assessment>
+     */
+    public function generatedOverlapping(array $staffIds, $from, $to): Collection
+    {
+        return Assessment::query()
+            ->with(['scores', 'template.bands', 'position'])
+            ->whereIn('staff_id', $staffIds)
+            ->generated()
+            ->whereDate('period_from', '<=', $to)
+            ->whereDate('period_to', '>=', $from)
+            ->orderByDesc('period_to')
+            ->get();
+    }
+
+    /**
      * Project marks earned in the review period, measured the way the member's
      * KPI score measures them: against the position's target, or against the
      * work assigned when no target is set. Uses the position pinned to the
@@ -217,7 +274,9 @@ class AssessmentScoreService
      */
     private function categoriesFor(Assessment $assessment): Collection
     {
-        return KpiCategory::query()
+        // Remembered per position: a report scores many appraisals of the
+        // same few positions.
+        return $this->categoriesCache[(int) $assessment->position_id] ??= KpiCategory::query()
             ->with(['objectives' => fn ($q) => $q->with('infos')])
             ->where('position_id', $assessment->position_id)
             ->orderBy('sort_order')

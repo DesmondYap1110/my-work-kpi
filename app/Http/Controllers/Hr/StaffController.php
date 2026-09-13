@@ -231,26 +231,22 @@ class StaffController extends Controller implements BreadcrumbInterfaces
         );
         [$from, $to] = [$period['from'], $period['to']];
 
-        $completedProjects = $scoreService->completedProjectsFor($staff, $from, $to);
-        $selectedProjectId = $request->integer('pid') ?: null;
+        // The score out of 100 and both halves of it - project marks and KPI
+        // objectives - worked out by the same rule.
+        $finalScore = $scoreService->finalScore($staff, $from, $to);
+        $appraisals = $finalScore['objective_detail']['list'];
 
-        // Only a project this member completed in the period may be picked; any
-        // other id in the query string just shows all of them.
-        if ($selectedProjectId && ! $completedProjects->contains('id', $selectedProjectId)) {
-            $selectedProjectId = null;
-        }
+        // The objectives half item by item, from one of the generated
+        // appraisals behind it - the newest unless another is picked.
+        $selected = $appraisals->firstWhere('id', $request->integer('aid')) ?? $appraisals->first();
 
         return [
             'staff' => $staff,
             'period' => $period,
-            'completedProjects' => $completedProjects,
-            'selectedProjectId' => $selectedProjectId,
-            // The score out of 100 and both halves of it - project marks and
-            // KPI objectives - worked out by the same rule.
-            'finalScore' => $scoreService->finalScore($staff, $from, $to),
-            // The objectives half item by item, optionally for one project.
-            'objectiveBreakdown' => $scoreService->objectiveBreakdown($staff, $selectedProjectId, $from, $to),
-            'projectScore' => $selectedProjectId ? $scoreService->totalScore($staff, $selectedProjectId, $from, $to) : null,
+            'finalScore' => $finalScore,
+            'appraisals' => $appraisals,
+            'selectedAppraisal' => $selected,
+            'appraisalObjectives' => $selected ? app(\App\Services\AssessmentScoreService::class)->objectives($selected) : null,
             'self' => false,
         ];
     }

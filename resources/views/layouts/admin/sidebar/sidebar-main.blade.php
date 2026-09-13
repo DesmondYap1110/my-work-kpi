@@ -16,10 +16,6 @@
                      refuses everybody else is the 'admin' middleware on the
                      routes, and the same check on the list endpoint. --}}
                 @if (auth()->user()?->isAdmin())
-                    {{-- Member is the most-visited page, so it keeps a shortcut
-                         of its own as well as its place in the group below. --}}
-                    <x-sidebar.ui.list route="staff.index" icon="ri-user-3-line" label="Member" active="staff.*" />
-
                     <x-sidebar.ui.dropdown id="sb-hr" icon="ri-group-line" label="Human Resource"
                                            :active="['positions.*', 'teams.*', 'staff.*']">
                         <x-sidebar.ui.dropdown-list route="teams.index" label="Team" active="teams.*" />
@@ -45,10 +41,7 @@
                         <x-sidebar.ui.dropdown-list route="appraisals.schedule" label="Schedule" active="appraisals.schedule" />
                     </x-sidebar.ui.dropdown>
 
-                    <x-sidebar.ui.dropdown id="sb-kpi" icon="ri-bar-chart-2-line" label="KPI"
-                                           :active="['kpi.*', 'kpi-report.*', 'manage-pending.*']">
-                        <x-sidebar.ui.dropdown-list route="kpi-report.index" label="Report" active="kpi-report.*" />
-                    </x-sidebar.ui.dropdown>
+                    <x-sidebar.ui.list route="kpi-report.index" icon="ri-bar-chart-2-line" label="KPI Report" active="kpi-report.*" />
                 @else
                     {{-- A staff member's own pages: how they are scored, the
                          work that scores them, and the reviews of both. --}}
