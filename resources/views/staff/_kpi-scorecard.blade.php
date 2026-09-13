@@ -9,28 +9,54 @@
     parts use the same rule as the total (StaffKpiScoreService::points()), so
     they always add up to what is printed beside them.
 
-    Expects: $staff, $finalScore, $objectiveBreakdown, $completedProjects,
-             $selectedProjectId, $projectScore
+    Expects: $staff, $period (StaffKpiScoreService::reviewPeriod()), $finalScore,
+             $objectiveBreakdown, $completedProjects, $selectedProjectId, $projectScore
 --}}
 @php
     $d = $finalScore['delivery_detail'];
     $o = $finalScore['objective_detail'];
     $nominalProjectShare = round($finalScore['weight'] * 100);
     $fmt = fn ($n) => $n === null ? '-' : rtrim(rtrim(number_format((float) $n, 2), '0'), '.');
-    $period = $finalScore['from']->format('d M Y').' – '.$finalScore['to']->format('d M Y');
+    $periodLabel = $finalScore['from']->format('d M Y').' – '.$finalScore['to']->format('d M Y');
+    $lastAppraisal = $period['lastAppraisal'];
 @endphp
 
 <div id="form-box" class="general-box mb-3">
     <div class="kpi-card-head">
         <div>
             <p id="form-sub-title" class="mb-1">KPI Score</p>
-            <p id="footer-p" class="mb-0">{{ $period }}</p>
+            <p id="footer-p" class="mb-0">
+                {{ $periodLabel }}
+                @if ($lastAppraisal)
+                    <span class="kpi-item-desc">last appraisal {{ $lastAppraisal->periodLabel() }}</span>
+                @else
+                    <span class="kpi-item-desc">no appraisal yet</span>
+                @endif
+            </p>
         </div>
         <div class="kpi-card-total">
             <span class="kpi-card-total-value">{{ $fmt($finalScore['percentage']) }}</span>
             <span class="kpi-card-total-of">/ 100</span>
         </div>
     </div>
+
+    {{-- The review period. A preset submits straight away; picking a date
+         switches to Custom, applied with the button. --}}
+    <form method="GET" action="" class="kpi-period-form">
+        <select class="form-control" name="range" aria-label="Review period"
+                onchange="if (this.value !== 'custom') { this.form.from.disabled = this.form.to.disabled = true; this.form.submit(); }">
+            <option value="since_appraisal" @selected($period['range'] === 'since_appraisal') @disabled(! $lastAppraisal)>Since last appraisal</option>
+            <option value="last_appraisal" @selected($period['range'] === 'last_appraisal') @disabled(! $lastAppraisal)>Last appraisal period</option>
+            <option value="this_year" @selected($period['range'] === 'this_year')>This year</option>
+            <option value="custom" @selected($period['range'] === 'custom')>Custom dates</option>
+        </select>
+        <input type="date" class="form-control" name="from" aria-label="From" value="{{ $finalScore['from']->format('Y-m-d') }}"
+               onchange="this.form.range.value = 'custom'">
+        <span class="kpi-period-to">to</span>
+        <input type="date" class="form-control" name="to" aria-label="To" value="{{ $finalScore['to']->format('Y-m-d') }}"
+               onchange="this.form.range.value = 'custom'">
+        <button type="submit" id="general-btn" class="btn1" onclick="this.form.range.value = 'custom'"><i class="ri-filter-3-line"></i>Apply</button>
+    </form>
 
     {{-- The calculation, in the same words as the position's Project KPI box. --}}
     <div class="kpi-sum">
@@ -98,7 +124,7 @@
             <div class="kpi-panel-head">
                 <p class="kpi-panel-title mb-0">
                     Project marks
-                    <span class="kpi-item-desc">tasks due or completed {{ $period }}</span>
+                    <span class="kpi-item-desc">tasks due or completed {{ $periodLabel }}</span>
                 </p>
                 {{-- Filters as you type - see public/js/modules/table-search.js --}}
                 <input type="search" class="form-control kpi-panel-search" placeholder="Search task, project, tag or status" aria-label="Search project marks" data-table-search="#kpi-project-table">
@@ -163,6 +189,12 @@
                     <input type="search" class="form-control kpi-panel-search" placeholder="Search category, objective or item" aria-label="Search KPI objectives" data-table-search="#kpi-objective-table">
                     @if ($completedProjects->isNotEmpty())
                         <form method="GET" action="" class="kpi-panel-filter">
+                            {{-- Keep the review period when switching project. --}}
+                            <input type="hidden" name="range" value="{{ $period['range'] }}">
+                            @if ($period['range'] === 'custom')
+                                <input type="hidden" name="from" value="{{ $finalScore['from']->format('Y-m-d') }}">
+                                <input type="hidden" name="to" value="{{ $finalScore['to']->format('Y-m-d') }}">
+                            @endif
                             <select class="form-control" name="pid" aria-label="Project" onchange="this.form.submit()">
                                 <option value="">All completed projects</option>
                                 @foreach ($completedProjects as $project)
@@ -237,7 +269,7 @@
             </div>
             @if ($completedProjects->isEmpty())
                 <p id="footer-p" class="mb-0">
-                    Objective marks are recorded when a project this member worked on is completed.
+                    Objective marks are recorded when a project this member worked on is completed - none was completed in this period.
                 </p>
             @endif
         </div>

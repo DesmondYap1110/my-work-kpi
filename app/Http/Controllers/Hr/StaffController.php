@@ -221,10 +221,20 @@ class StaffController extends Controller implements BreadcrumbInterfaces
     {
         $staff->load(['position.objectives.infos', 'team']);
 
-        $completedProjects = $scoreService->completedProjectsFor($staff);
+        // Defaults to "since the last appraisal", so a reviewer sees what has
+        // happened since the member was last reviewed.
+        $period = $scoreService->reviewPeriod(
+            $staff,
+            $request->query('range'),
+            $request->query('from'),
+            $request->query('to'),
+        );
+        [$from, $to] = [$period['from'], $period['to']];
+
+        $completedProjects = $scoreService->completedProjectsFor($staff, $from, $to);
         $selectedProjectId = $request->integer('pid') ?: null;
 
-        // Only a project this member actually completed may be picked; any
+        // Only a project this member completed in the period may be picked; any
         // other id in the query string just shows all of them.
         if ($selectedProjectId && ! $completedProjects->contains('id', $selectedProjectId)) {
             $selectedProjectId = null;
@@ -232,14 +242,15 @@ class StaffController extends Controller implements BreadcrumbInterfaces
 
         return [
             'staff' => $staff,
+            'period' => $period,
             'completedProjects' => $completedProjects,
             'selectedProjectId' => $selectedProjectId,
             // The score out of 100 and both halves of it - project marks and
             // KPI objectives - worked out by the same rule.
-            'finalScore' => $scoreService->finalScore($staff),
+            'finalScore' => $scoreService->finalScore($staff, $from, $to),
             // The objectives half item by item, optionally for one project.
-            'objectiveBreakdown' => $scoreService->objectiveBreakdown($staff, $selectedProjectId),
-            'projectScore' => $selectedProjectId ? $scoreService->totalScore($staff, $selectedProjectId) : null,
+            'objectiveBreakdown' => $scoreService->objectiveBreakdown($staff, $selectedProjectId, $from, $to),
+            'projectScore' => $selectedProjectId ? $scoreService->totalScore($staff, $selectedProjectId, $from, $to) : null,
             'self' => false,
         ];
     }

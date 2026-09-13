@@ -977,6 +977,169 @@ input[type="file"].form-control:hover:not(:disabled):not([readonly])::file-selec
     color: var(--brand-text, #3b3b3b);
 }
 
+/*
+ * The Project KPI split slider - see kpi/objectives/_project-kpi and
+ * public/js/modules/kpi-split.js. Projects in the brand colour, objectives in
+ * the theme's teal, the same two colours on the slider, bar and cards.
+ */
+.kpi-split {
+    --split-project: var(--brand-primary, #6366f1);
+    --split-objectives: #129bd2;
+}
+.kpi-split-slider {
+    gap: 16px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+.kpi-split-end {
+    min-width: 110px;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+.kpi-split-end.is-objectives {
+    text-align: right;
+}
+.kpi-split-end-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.kpi-split-end-value {
+    font-size: 13px;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.kpi-split-end-value strong {
+    font-size: 26px;
+    font-weight: 700;
+}
+.kpi-split-end.is-project strong {
+    color: var(--split-project);
+}
+.kpi-split-end.is-objectives strong {
+    color: var(--split-objectives);
+}
+/* The bar is a range input: the track is painted in the two colours, meeting
+   at --split (set by kpi-split.js), and a white handle sits on the join. */
+input.kpi-split-bar {
+    width: 100%;
+    height: 22px;
+    margin: 10px 0 4px;
+    padding: 0;
+    cursor: pointer;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+}
+input.kpi-split-bar:focus {
+    outline: none;
+}
+input.kpi-split-bar::-webkit-slider-runnable-track {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(to right, var(--split-project) var(--split, 50%), var(--split-objectives) var(--split, 50%));
+}
+input.kpi-split-bar::-moz-range-track {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(to right, var(--split-project) var(--split, 50%), var(--split-objectives) var(--split, 50%));
+}
+input.kpi-split-bar::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+    margin-top: -5px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--split-project);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 20%);
+    -webkit-appearance: none;
+    appearance: none;
+}
+input.kpi-split-bar::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--split-project);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 20%);
+}
+input.kpi-split-bar:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px rgb(99 102 241 / 25%);
+}
+.kpi-split-card {
+    padding: 14px 16px;
+    border-radius: 5px;
+    border-top: 3px solid var(--split-project);
+    background: rgb(99 102 241 / 6%);
+}
+.kpi-split-card.is-objectives {
+    border-top-color: var(--split-objectives);
+    background: rgb(18 155 210 / 6%);
+}
+.kpi-split-card-title {
+    display: flex;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--brand-text, #1e293b);
+}
+.kpi-split-card-points {
+    gap: 6px;
+    display: inline-flex;
+    align-items: center;
+}
+.kpi-split-card-points input.form-control {
+    width: 72px !important;
+    height: 36px !important;
+    font-weight: 700;
+    text-align: center;
+    color: inherit;
+}
+.kpi-split-card.is-project .kpi-split-card-title span {
+    color: var(--split-project);
+}
+.kpi-split-card.is-objectives .kpi-split-card-title span {
+    color: var(--split-objectives);
+}
+.kpi-split-card-text {
+    font-size: 12px;
+    color: var(--brand-text, #3b3b3b);
+}
+.kpi-split-example {
+    max-width: 460px;
+    margin: 16px 0;
+    padding: 12px 16px;
+    border-radius: 5px;
+    border: 1px dashed #00000026;
+}
+.kpi-split-example-title {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+.kpi-split-example-row {
+    display: flex;
+    font-size: 13px;
+    padding: 3px 0;
+    justify-content: space-between;
+    color: var(--brand-text, #3b3b3b);
+}
+.kpi-split-example-row.is-total {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid #0000001a;
+}
+@media (max-width: 575px) {
+    .kpi-split-end {
+        min-width: 0;
+        flex: 1;
+    }
+}
+
 /* ---------------------------------------------------------------------------
    Member KPI scorecard - see staff/_kpi-scorecard.blade.php. Laid out as the
    calculation itself: project marks + KPI objectives = KPI score out of 100.
@@ -1079,6 +1242,32 @@ input[type="file"].form-control:hover:not(:disabled):not([readonly])::file-selec
 }
 .kpi-panel-filter select.form-control {
     min-width: 220px;
+}
+.kpi-period-form {
+    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 14px 0 18px;
+}
+.kpi-period-form select.form-control {
+    width: 210px !important;
+}
+.kpi-period-form input[type="date"].form-control {
+    width: 160px !important;
+}
+.kpi-period-form #general-btn {
+    margin: 0;
+}
+.kpi-period-to {
+    font-size: 13px;
+    color: var(--brand-text-muted, #6e6e6e);
+}
+@media (max-width: 575px) {
+    .kpi-period-form select.form-control,
+    .kpi-period-form input[type="date"].form-control {
+        width: 100% !important;
+    }
 }
 .kpi-panel-tools {
     gap: 12px;

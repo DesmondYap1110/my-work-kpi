@@ -69,7 +69,7 @@ class KpiSettingController extends Controller implements BreadcrumbInterfaces
             // period. Blank measures against the tasks they were given instead.
             'project_target' => ['nullable', 'numeric', 'min:0.01', 'max:100000'],
         ], [
-            'project_weight.between' => 'The project share must be between 0 and 100.',
+            'project_weight.between' => 'Points from projects must be between 0 and 100.',
             'project_target.min' => 'The project target must be more than 0, or left blank.',
         ]);
 

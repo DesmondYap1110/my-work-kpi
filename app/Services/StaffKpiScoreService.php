@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Enums\ProjectKpiStatus;
 use App\Enums\ProjectStatus;
+use App\Models\Assessment;
 use App\Models\KpiSetting;
 use App\Models\Project;
 use App\Models\Staff;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -60,12 +62,103 @@ class StaffKpiScoreService
      * my team", which counted every colleague's project as theirs; a project
      * has no team of its own any more.
      */
-    public function completedProjectsFor(Staff $staff): Collection
+    public function completedProjectsFor(Staff $staff, $from = null, $to = null): Collection
     {
         return Project::query()
             ->status(ProjectStatus::Completed)
             ->whereHas('tasks', fn ($q) => $q->where('assignee_id', $staff->id))
+            // Within a period: completed in it. complete_date is stamped when a
+            // project is marked Completed; older rows without one fall back to
+            // their last update.
+            ->when($from && $to, fn ($q) => $q->whereRaw(
+                'COALESCE(complete_date, updated_at) BETWEEN ? AND ?',
+                [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]
+            ))
+            ->orderByDesc('complete_date')
             ->get();
+    }
+
+    /**
+     * The period a KPI score is worked out over, from what the viewer picked.
+     *
+     *   since_appraisal  the day after the member's last generated appraisal
+     *                    period ended, up to today - "how have they done since
+     *                    we last reviewed them". The default when one exists.
+     *   last_appraisal   exactly the period that appraisal covered.
+     *   this_year        1 Jan - 31 Dec. The fallback with no appraisal yet.
+     *   custom           the two dates given.
+     *
+     * A choice that needs an appraisal the member has not had falls back to
+     * this year rather than failing.
+     *
+     * @return array{range: string, from: Carbon, to: Carbon, lastAppraisal: Assessment|null}
+     */
+    public function reviewPeriod(Staff $staff, ?string $range = null, ?string $from = null, ?string $to = null): array
+    {
+        $lastAppraisal = Assessment::query()
+            ->forStaff($staff->id)
+            ->generated()
+            ->whereNotNull('period_from')
+            ->whereNotNull('period_to')
+            ->orderByDesc('period_to')
+            ->first();
+
+        $range = in_array($range, self::PERIOD_RANGES, true)
+            ? $range
+            : ($lastAppraisal ? 'since_appraisal' : 'this_year');
+
+        if (in_array($range, ['since_appraisal', 'last_appraisal'], true) && ! $lastAppraisal) {
+            $range = 'this_year';
+        }
+
+        $start = $end = null;
+
+        if ($range === 'custom') {
+            $start = $this->parseDate($from);
+            $end = $this->parseDate($to);
+
+            if (! $start || ! $end) {
+                $range = $lastAppraisal ? 'since_appraisal' : 'this_year';
+            }
+        }
+
+        [$start, $end] = match ($range) {
+            'since_appraisal' => [
+                $lastAppraisal->period_to->copy()->addDay(),
+                // An appraisal whose period runs past today leaves nothing
+                // "since" it yet; show that single day rather than a backwards range.
+                now()->max($lastAppraisal->period_to->copy()->addDay()),
+            ],
+            'last_appraisal' => [$lastAppraisal->period_from->copy(), $lastAppraisal->period_to->copy()],
+            'custom' => [$start, $end],
+            default => [now()->startOfYear(), now()->endOfYear()],
+        };
+
+        if ($start->gt($end)) {
+            [$start, $end] = [$end, $start];
+        }
+
+        return [
+            'range' => $range,
+            'from' => $start->copy()->startOfDay(),
+            'to' => $end->copy()->endOfDay(),
+            'lastAppraisal' => $lastAppraisal,
+        ];
+    }
+
+    public const PERIOD_RANGES = ['since_appraisal', 'last_appraisal', 'this_year', 'custom'];
+
+    private function parseDate(?string $value): ?Carbon
+    {
+        if (! $value || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m-d', $value);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -76,14 +169,14 @@ class StaffKpiScoreService
      *
      * @return array{total_mark: int, max_possible: int, percentage: float}
      */
-    public function totalScore(Staff $staff, ?int $projectId = null): array
+    public function totalScore(Staff $staff, ?int $projectId = null, $from = null, $to = null): array
     {
         $maxPerProject = $this->maxMarkPerProject($staff);
 
         // pluck('id'): the projects table's key was renamed from project_id,
         // and this still asked for the old name - so it collected nulls, matched
         // no project_kpi rows, and every approved mark silently scored zero.
-        $projectIds = $this->completedProjectsFor($staff)->pluck('id');
+        $projectIds = $this->completedProjectsFor($staff, $from, $to)->pluck('id');
 
         if ($projectId) {
             $projectIds = $projectIds->filter(fn ($id) => $id === $projectId);
@@ -139,7 +232,9 @@ class StaffKpiScoreService
         $from ??= now()->startOfYear();
         $to ??= now()->endOfYear();
 
-        $objectiveScore = $this->totalScore($staff);
+        // Both halves over the same period: project marks from tasks due or
+        // finished in it, objective marks from projects completed in it.
+        $objectiveScore = $this->totalScore($staff, null, $from, $to);
         $objective = $objectiveScore['max_possible'] > 0 ? $objectiveScore['percentage'] : null;
 
         $deliveryDetail = $this->delivery->forStaff($staff, $from, $to);
@@ -208,7 +303,7 @@ class StaffKpiScoreService
      *
      * @return \Illuminate\Support\Collection<int, array{category: string, objectives: \Illuminate\Support\Collection}>
      */
-    public function objectiveBreakdown(Staff $staff, ?int $projectId = null): Collection
+    public function objectiveBreakdown(Staff $staff, ?int $projectId = null, $from = null, $to = null): Collection
     {
         $position = $staff->position;
 
@@ -216,7 +311,7 @@ class StaffKpiScoreService
             return collect();
         }
 
-        $projectIds = $this->completedProjectsFor($staff)->pluck('id');
+        $projectIds = $this->completedProjectsFor($staff, $from, $to)->pluck('id');
 
         if ($projectId) {
             $projectIds = $projectIds->filter(fn ($id) => $id === $projectId)->values();

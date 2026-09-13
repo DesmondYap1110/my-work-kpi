@@ -22,14 +22,14 @@
             <div class="row">
                 <div class="col-lg-6">
                     <div class="input-group">
-                        <label>Project share of the KPI<span>*</span></label>
+                        <label>Points from projects<span>*</span></label>
                         <div class="weighting-field">
                             <input type="number" class="form-control" name="project_weight"
                                    min="0" max="100" step="1" value="{{ $weight }}" required>
-                            <span class="weighting-suffix">out of 100</span>
+                            <span class="weighting-suffix">of 100</span>
                         </div>
                         <span id="note-p" class="d-block kpi-weighting-note">
-                            KPI objectives take the remaining {{ 100 - (int) $weight }}.
+                            KPI objectives give the remaining {{ 100 - (int) $weight }} points.
                         </span>
                     </div>
                 </div>
@@ -39,7 +39,7 @@
             {{-- Set on each position's KPI page, beside the objectives it
                  weighs against - see kpi/objectives/_project-kpi. --}}
             <p id="footer-p" class="mb-3">
-                A position can have its own project share and its own project marks target.
+                A position can have its own points from projects and its own project marks target.
                 Set them on the position's KPI page: <strong>Human Resource &rsaquo; Position</strong>,
                 then click <strong>Yes</strong> under KPI Assigned.
             </p>
@@ -50,7 +50,7 @@
                         <thead>
                             <tr>
                                 <th>Position with its own figure</th>
-                                <th class="text-center">Project share</th>
+                                <th class="text-center">Points from projects</th>
                                 <th class="text-center">Project marks target</th>
                                 <th class="text-center">Actions</th>
                             </tr>
