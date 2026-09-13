@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Staff;
 use App\Models\StaffPosition;
-use App\Models\Team;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -18,7 +17,6 @@ class AdminStaffSeeder extends Seeder
         }
 
         $adminPosition = StaffPosition::where('position_name', 'Administrator')->firstOrFail();
-        $team = Team::first();
 
         $password = env('ADMIN_PASSWORD') ?: Str::password(12);
 
@@ -28,7 +26,8 @@ class AdminStaffSeeder extends Seeder
             'password' => Hash::make($password),
             'is_active' => true,
             'position_id' => $adminPosition->id,
-            'team_id' => $team->id,
+            // The administrator sets teams up; it is not a member of one.
+            'team_id' => null,
         ]);
 
         if (! env('ADMIN_PASSWORD')) {
