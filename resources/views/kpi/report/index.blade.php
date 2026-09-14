@@ -24,7 +24,7 @@
     <form method="GET" action="{{ route('kpi-report.index') }}" id="form-box" class="general-box report-filter">
         <div class="row gx-3 gy-3 align-items-end">
             <div class="col-md-4 col-xl-2">
-                <div class="input-group mb-lg-0">
+                <div class="input-group mb-0">
                     <label>Period</label>
                     <select class="form-control" name="period" data-report-period>
                         @foreach ($periods as $value => $label)
@@ -34,19 +34,19 @@
                 </div>
             </div>
             <div class="col-md-4 col-xl-2" data-report-custom @if ($period !== 'custom') hidden @endif>
-                <div class="input-group mb-lg-0">
+                <div class="input-group mb-0">
                     <label>From</label>
                     <input type="date" class="form-control" name="from" value="{{ $from->format('Y-m-d') }}">
                 </div>
             </div>
             <div class="col-md-4 col-xl-2" data-report-custom @if ($period !== 'custom') hidden @endif>
-                <div class="input-group mb-lg-0">
+                <div class="input-group mb-0">
                     <label>To</label>
                     <input type="date" class="form-control" name="to" value="{{ $to->format('Y-m-d') }}">
                 </div>
             </div>
             <div class="col-md-4 col-xl-2">
-                <div class="input-group mb-lg-0">
+                <div class="input-group mb-0">
                     <label>Team</label>
                     <select class="form-control" name="team_id">
                         <option value="">All teams</option>
@@ -57,7 +57,7 @@
                 </div>
             </div>
             <div class="col-md-4 col-xl-2">
-                <div class="input-group mb-lg-0">
+                <div class="input-group mb-0">
                     <label>Position</label>
                     <select class="form-control" name="position_id">
                         <option value="">All positions</option>
@@ -68,7 +68,7 @@
                 </div>
             </div>
             <div class="col-md-4 col-xl-2">
-                <div class="input-group mb-lg-0">
+                <div class="input-group mb-0">
                     <label>Member</label>
                     {{-- Searchable: a company may have many members. --}}
                     <select class="form-control" name="staff_id" data-report-member>
