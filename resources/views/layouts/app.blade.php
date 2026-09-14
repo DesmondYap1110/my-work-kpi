@@ -30,6 +30,8 @@
 
     @include('layouts.admin.footer.mobile-menu')
 
+    <x-assistant-widget />
+
     @include('layouts.admin.master.master-script')
 </body>
 </html>

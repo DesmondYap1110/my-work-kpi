@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Appraisal\AppraisalController;
+use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\Appraisal\AppraisalFormController;
 use App\Http\Controllers\Appraisal\MyAppraisalController;
 use App\Http\Controllers\Auth\AuthController;
@@ -70,6 +71,11 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/my-appraisals', [MyAppraisalController::class, 'index'])->name('my.appraisals.index');
     Route::get('/my-appraisals/{appraisal}', [MyAppraisalController::class, 'show'])->name('my.appraisals.show');
     Route::put('/my-appraisals/{appraisal}', [MyAppraisalController::class, 'update'])->name('my.appraisals.update');
+
+    // KPI Assistant (the chat bubble), for everyone signed in. Throttled: each
+    // question runs a local AI model, which is heavy on the server.
+    Route::post('/assistant', [AssistantController::class, 'ask'])->middleware('throttle:15,1')->name('assistant.ask');
+    Route::delete('/assistant', [AssistantController::class, 'reset'])->name('assistant.reset');
 
     // Moving your own work along, and looking at what is attached to it. Both
     // check ownership in the controller: an administrator may touch any task,
