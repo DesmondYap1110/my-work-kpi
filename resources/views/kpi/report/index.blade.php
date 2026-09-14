@@ -22,7 +22,7 @@
         exactly the rules of a member's KPI page - see App\Services\KpiReportService.
     --}}
     <form method="GET" action="{{ route('kpi-report.index') }}" id="form-box" class="general-box report-filter">
-        <div class="row align-items-end">
+        <div class="row gx-3 gy-3 align-items-end">
             <div class="col-md-4 col-xl-2">
                 <div class="input-group mb-lg-0">
                     <label>Period</label>

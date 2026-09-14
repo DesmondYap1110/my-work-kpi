@@ -203,7 +203,9 @@ abstract class Datatables
 
         return '<div id="tb-box" class="general-box mb-3">'
             .'<div id="table-padding">'
-            .'<form class="row g-2 align-items-end js-datatable-filter" data-for="'.e($class).'">'
+            // gx-2 beside, gy-3 between rows: when the buttons wrap under the
+            // fields (a tablet) they get a clear gap instead of touching.
+            .'<form class="row gx-2 gy-3 align-items-end js-datatable-filter" data-for="'.e($class).'">'
             .$fields
             .'<div class="col-md-6 col-xl-3 datatable-filter-actions" id="filter-btn-div">'
             .'<button type="submit" id="general-btn" class="btn1"><i class="ri-filter-3-line"></i>Filter</button>'

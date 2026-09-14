@@ -1423,7 +1423,7 @@ input.kpi-split-bar:focus-visible::-webkit-slider-thumb {
 }
 /* KPI Report - resources/views/kpi/report/index.blade.php. */
 .report-filter-actions {
-    gap: 8px;
+    gap: 12px;
     display: flex;
     flex-wrap: wrap;
     padding-bottom: 2px;
@@ -1564,40 +1564,68 @@ input.kpi-split-bar:focus-visible::-webkit-slider-thumb {
  * card keeps its padding, full height and rounded glass look.
  */
 @media (max-width: 991px) {
+    /* The page: the sidebar colour pushed darker, with a faint glow at the
+       top behind the logo - so the card in front of it stands apart. */
     body:has(#form-section),
     #form-section {
         min-height: 100vh;
         background:
-            radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--brand-primary, #1896bd) 35%, transparent), transparent 55%),
-            radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--brand-accent, #24ebc5) 18%, transparent), transparent 50%),
-            var(--brand-sidebar, #000f2d) !important;
+            radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--brand-primary, #1896bd) 28%, transparent), transparent 45%),
+            color-mix(in srgb, var(--brand-sidebar, #000f2d) 55%, #000) !important;
     }
     #form-section {
         padding: 2.5rem 16px 2rem !important;
     }
+    /* No card on a phone or tablet: the form sits straight on the page, full
+       width with comfortable side margins - a card inside a small screen only
+       adds a second frame. */
     #form-section #form-div {
         max-height: none !important;
-        margin: 1.5rem auto 0;
+        margin: 2.5rem auto 0;
         max-width: 440px;
-        padding: 28px 22px !important;
-        border-radius: 16px;
+        padding: 0 17px !important;
+        border: 0;
+        border-radius: 0;
+        background: transparent !important;
+        box-shadow: none !important;
         backdrop-filter: none;
     }
+    /* Fields darker than the page, each with a soft border of its own. */
+    #form-section .form-control {
+        height: 44px !important;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--brand-sidebar, #000f2d) 50%, #000) !important;
+        border-color: rgb(255 255 255 / 18%) !important;
+    }
+    #form-section .btn1 {
+        height: 48px;
+        font-size: 15px;
+        border-radius: 8px;
+    }
+    #form-section #link-p,
+    #form-section #link-p a,
+    #form-section #form-div a {
+        font-size: 13px;
+    }
     #form-section #form-title {
-        font-size: 20px;
+        font-size: 24px;
     }
     #form-section #form-p {
-        font-size: 12px;
+        font-size: 14px;
     }
     #form-section .input-div label,
     #form-section .form-check-label {
-        font-size: 13px;
+        font-size: 15px;
     }
 }
 
-/* Filter / Reset under a list's filters: always side by side on one line. */
+/* Filter fields sit flush in their column; the row gutter supplies the gap. */
+.js-datatable-filter .input-group {
+    margin-bottom: 0 !important;
+}
+/* Filter / Reset under a list's filters: side by side, with room between. */
 #filter-btn-div.datatable-filter-actions {
-    gap: 8px;
+    gap: 12px;
     display: flex;
     flex-wrap: nowrap;
     align-items: flex-end;
