@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <!-- Dark green background with large translucent leaf shapes in the corners - login background. -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="75%">
+      <stop offset="0" stop-color="#0d4a30"/>
+      <stop offset="1" stop-color="#021a12"/>
+    </radialGradient>
+    <linearGradient id="leafA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22a65e" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#14532d" stop-opacity="0.35"/>
+    </linearGradient>
+    <linearGradient id="leafB" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a3e635" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#059669" stop-opacity="0.2"/>
+    </linearGradient>
+    <symbol id="leaf" viewBox="0 0 400 800">
+      <path d="M200 0 C 380 180 400 520 200 800 C 0 520 20 180 200 0 Z"/>
+      <path d="M200 40 L200 780" stroke="#d9f99d" stroke-opacity="0.35" stroke-width="4" fill="none"/>
+      <g stroke="#d9f99d" stroke-opacity="0.22" stroke-width="3" fill="none">
+        <path d="M200 200 C 260 170 300 150 330 110"/><path d="M200 200 C 140 170 100 150 70 110"/>
+        <path d="M200 360 C 270 320 320 290 355 240"/><path d="M200 360 C 130 320 80 290 45 240"/>
+        <path d="M200 520 C 265 480 310 450 340 405"/><path d="M200 520 C 135 480 90 450 60 405"/>
+      </g>
+    </symbol>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <use href="#leaf" x="-120" y="-180" width="520" height="1040" fill="url(#leafA)" transform="rotate(-28 140 340)"/>
+  <use href="#leaf" x="80" y="420" width="420" height="840" fill="url(#leafB)" transform="rotate(38 290 840)"/>
+  <use href="#leaf" x="1540" y="-220" width="480" height="960" fill="url(#leafB)" transform="rotate(32 1780 260)"/>
+  <use href="#leaf" x="1500" y="440" width="540" height="1080" fill="url(#leafA)" transform="rotate(-40 1770 980)"/>
+  <circle cx="960" cy="540" r="420" fill="#22a65e" opacity="0.08"/>
+</svg>

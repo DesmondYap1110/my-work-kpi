@@ -194,15 +194,18 @@ abstract class Datatables
             return '';
         }
 
+        // Two per row on a tablet (an iPad, sidebar open, has ~730px), four on a
+        // wide screen - a quarter of a tablet was too narrow for the fields
+        // and pushed Filter/Reset onto two lines, or off the page.
         $fields = collect($filters)
-            ->map(fn (Filter $filter) => '<div class="col-md-3">'.$filter->getHTML().'</div>')
+            ->map(fn (Filter $filter) => '<div class="col-md-6 col-xl-3">'.$filter->getHTML().'</div>')
             ->implode('');
 
         return '<div id="tb-box" class="general-box mb-3">'
             .'<div id="table-padding">'
             .'<form class="row g-2 align-items-end js-datatable-filter" data-for="'.e($class).'">'
             .$fields
-            .'<div class="col-md-3" id="filter-btn-div">'
+            .'<div class="col-md-6 col-xl-3 datatable-filter-actions" id="filter-btn-div">'
             .'<button type="submit" id="general-btn" class="btn1"><i class="ri-filter-3-line"></i>Filter</button>'
             .'<button type="reset" id="general-btn" class="btn2"><i class="ri-refresh-line"></i>Reset</button>'
             .'</div>'

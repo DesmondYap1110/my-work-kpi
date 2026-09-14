@@ -141,7 +141,8 @@ App.module('inline-edit', function () {
                 width: '100%',
                 closeOnSelect: false,
                 placeholder: $(this).data('placeholder'),
-                dropdownParent: $(this).parent(),
+                // On the page body, so a table that scrolls sideways cannot clip it.
+                dropdownParent: $(document.body),
             });
         });
     }

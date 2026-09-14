@@ -3,8 +3,8 @@
     Every tile links somewhere they are allowed to go - their own scorecard and
     their own tasks. Included by dashboard/index.blade.php.
 --}}
-    <div class="row">
-        <div class="col-lg-4">
+    <div class="row ft-tiles">
+        <div class="col-md-6 col-xl-4">
             <a id="ft-box" href="{{ route('my.kpi') }}">
                 <div id="ft-icon-div">
                     <div id="ft-icon">
@@ -19,7 +19,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-lg-4">
+        <div class="col-md-6 col-xl-4">
             <a id="ft-box" href="{{ route('my.tasks') }}">
                 <div id="ft-icon-div">
                     <div id="ft-icon">
@@ -32,7 +32,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-lg-4">
+        <div class="col-md-6 col-xl-4">
             <a id="ft-box" href="{{ route('my.tasks') }}">
                 <div id="ft-icon-div">
                     <div id="ft-icon">
@@ -45,7 +45,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-lg-4">
+        <div class="col-md-6 col-xl-4">
             <a id="ft-box" href="{{ route('my.tasks') }}">
                 <div id="ft-icon-div">
                     <div id="ft-icon">

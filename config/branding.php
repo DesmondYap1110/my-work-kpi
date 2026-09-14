@@ -83,8 +83,8 @@ return [
     */
 
     'background' => [
-        'image' => env('APP_BACKGROUND_IMAGE', 'assets/img/bg/bg-3.jpg'),
-        'colour' => env('APP_BACKGROUND_COLOR', '#0b0a1f'),
+        'image' => env('APP_BACKGROUND_IMAGE', 'assets/img/bg/green-waves.svg'),
+        'colour' => env('APP_BACKGROUND_COLOR', '#021a12'),
         'size' => env('APP_BACKGROUND_SIZE', 'cover'),
         'position' => env('APP_BACKGROUND_POSITION', 'center'),
         'repeat' => env('APP_BACKGROUND_REPEAT', 'no-repeat'),
@@ -114,64 +114,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Active theme preset
+    | Theme
     |--------------------------------------------------------------------------
     |
-    | Names a key from 'presets' below. Individual APP_*_COLOR env vars still
-    | win over whatever the preset supplies, so a project can pick a preset
-    | and then tweak one or two tokens.
+    | Colours are chosen in the app, under Settings > Theme Setting: a preset
+    | from 'presets' below, plus any colours the administrator changes. They
+    | are no longer read from .env. 'theme' is only the preset used until an
+    | administrator picks one (and after Reset to Default).
     |
     */
 
-    'theme' => env('APP_THEME', 'default'),
-    'mode' => env('APP_THEME_MODE', 'dark'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Colour tokens
-    |--------------------------------------------------------------------------
-    |
-    | Each key becomes a --brand-<key> custom property. Anything left null
-    | falls through to the active preset, and then to the stylesheet's own
-    | fallback value.
-    |
-    */
-
-    'colors' => [
-        'primary' => env('APP_PRIMARY_COLOR'),
-        'primary-hover' => env('APP_PRIMARY_HOVER_COLOR'),
-        'secondary' => env('APP_SECONDARY_COLOR'),
-        'secondary-hover' => env('APP_SECONDARY_HOVER_COLOR'),
-        'accent' => env('APP_ACCENT_COLOR'),
-        'highlight' => env('APP_HIGHLIGHT_COLOR'),
-
-        'background' => env('APP_BODY_COLOR'),
-        'surface' => env('APP_SURFACE_COLOR'),
-        'sidebar' => env('APP_SIDEBAR_COLOR'),
-        'navbar' => env('APP_NAVBAR_COLOR'),
-
-        'text' => env('APP_TEXT_COLOR'),
-        'text-muted' => env('APP_TEXT_MUTED_COLOR'),
-        'label' => env('APP_LABEL_COLOR'),
-        'link' => env('APP_LINK_COLOR'),
-        'border' => env('APP_BORDER_COLOR'),
-
-        'button' => env('APP_BUTTON_COLOR'),
-        'button-hover' => env('APP_BUTTON_HOVER_COLOR'),
-        'button-text' => env('APP_BUTTON_TEXT_COLOR'),
-
-        'input-bg' => env('APP_INPUT_BG_COLOR'),
-        'input-text' => env('APP_INPUT_TEXT_COLOR'),
-        'input-border' => env('APP_INPUT_BORDER_COLOR'),
-        'input-focus' => env('APP_INPUT_FOCUS_COLOR'),
-
-        'success' => env('APP_SUCCESS_COLOR'),
-        'warning' => env('APP_WARNING_COLOR'),
-        'danger' => env('APP_DANGER_COLOR'),
-        'danger-hover' => env('APP_DANGER_HOVER_COLOR'),
-        'info' => env('APP_INFO_COLOR'),
-        'pink' => env('APP_PINK_COLOR'),
-    ],
+    'theme' => 'light-green',
+    'mode' => 'dark',
 
     /*
     |--------------------------------------------------------------------------

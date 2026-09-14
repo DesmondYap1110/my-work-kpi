@@ -16,7 +16,7 @@
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/custom.min.css') }}" rel="stylesheet">
     <link href="{{ \App\Support\Asset::url('assets/css/theme-login.css') }}" rel="stylesheet">
-    <link href="{{ asset('assets/css/app-custom.css') }}" rel="stylesheet">
+    <link href="{{ \App\Support\Asset::url('assets/css/app-custom.css') }}" rel="stylesheet">
     @stack('styles')
 </head>
 <body>

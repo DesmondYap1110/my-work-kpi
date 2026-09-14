@@ -46,8 +46,8 @@
         </div>
     @endif
 
-    <div class="row">
-        <div class="col-lg-4">
+    <div class="row ft-tiles">
+        <div class="col-md-6 col-xl-4">
             <a id="ft-box" href="{{ route('manage-pending.index') }}">
                 <div id="ft-icon-div">
                     <div id="ft-icon">
@@ -60,7 +60,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-lg-4">
+        <div class="col-md-6 col-xl-4">
             <a id="ft-box" href="{{ route('positions.index') }}">
                 <div id="ft-icon-div">
                     <div id="ft-icon">
@@ -73,7 +73,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-lg-4">
+        <div class="col-md-6 col-xl-4">
             <a id="ft-box" href="{{ route('teams.index') }}">
                 <div id="ft-icon-div">
                     <div id="ft-icon">
@@ -86,7 +86,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-lg-4">
+        <div class="col-md-6 col-xl-4">
             <a id="ft-box" href="{{ route('staff.index') }}">
                 <div id="ft-icon-div">
                     <div id="ft-icon">
@@ -99,7 +99,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-lg-4">
+        <div class="col-md-6 col-xl-4">
             <a id="ft-box" href="{{ route('projects.index') }}">
                 <div id="ft-icon-div">
                     <div id="ft-icon">

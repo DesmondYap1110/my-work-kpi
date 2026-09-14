@@ -12,28 +12,55 @@ use Tests\TestCase;
  */
 class BrandingTest extends TestCase
 {
+    /**
+     * These tests are about config/branding.php, so the theme saved under
+     * Settings > Theme Setting (which would win over it) is taken out of play.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        \Illuminate\Support\Facades\Cache::forever(\App\Models\ThemeSetting::CACHE_KEY, ['preset' => null, 'colors' => []]);
+    }
+
     public function test_colour_tokens_are_emitted_as_css_variables(): void
     {
-        config()->set('branding.colors.primary', '#ABCDEF');
+        $this->saveTheme(null, ['primary' => '#ABCDEF']);
 
         $this->get('/login')
             ->assertOk()
             ->assertSee('--brand-primary: #ABCDEF;', false);
     }
 
-    public function test_a_preset_supplies_tokens_when_no_override_is_set(): void
+    public function test_a_preset_supplies_tokens_when_no_colour_is_changed(): void
     {
-        config()->set('branding.theme', 'indigo');
+        $this->saveTheme('indigo', []);
 
         $this->assertSame('#6366F1', Branding::colors()['primary']);
     }
 
-    public function test_an_explicit_colour_beats_the_preset(): void
+    public function test_a_colour_saved_in_theme_setting_beats_the_preset(): void
     {
-        config()->set('branding.theme', 'indigo');
-        config()->set('branding.colors.primary', '#123456');
+        $this->saveTheme('indigo', ['primary' => '#123456']);
 
         $this->assertSame('#123456', Branding::colors()['primary']);
+    }
+
+    public function test_env_colour_keys_no_longer_change_the_theme(): void
+    {
+        config()->set('branding.colors.primary', '#ABCDEF');
+
+        $this->assertNotSame('#ABCDEF', Branding::colors()['primary']);
+    }
+
+    /**
+     * Stands in for a saved Theme Setting row without touching the database.
+     *
+     * @param  array<string, string>  $colors
+     */
+    private function saveTheme(?string $preset, array $colors): void
+    {
+        \Illuminate\Support\Facades\Cache::forever(\App\Models\ThemeSetting::CACHE_KEY, ['preset' => $preset, 'colors' => $colors]);
     }
 
     public function test_the_logo_is_rendered_from_config(): void

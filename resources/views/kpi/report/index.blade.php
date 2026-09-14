@@ -23,7 +23,7 @@
     --}}
     <form method="GET" action="{{ route('kpi-report.index') }}" id="form-box" class="general-box report-filter">
         <div class="row align-items-end">
-            <div class="col-lg-2 col-md-4">
+            <div class="col-md-4 col-xl-2">
                 <div class="input-group mb-lg-0">
                     <label>Period</label>
                     <select class="form-control" name="period" data-report-period>
@@ -33,19 +33,19 @@
                     </select>
                 </div>
             </div>
-            <div class="col-lg-2 col-md-4" data-report-custom @if ($period !== 'custom') hidden @endif>
+            <div class="col-md-4 col-xl-2" data-report-custom @if ($period !== 'custom') hidden @endif>
                 <div class="input-group mb-lg-0">
                     <label>From</label>
                     <input type="date" class="form-control" name="from" value="{{ $from->format('Y-m-d') }}">
                 </div>
             </div>
-            <div class="col-lg-2 col-md-4" data-report-custom @if ($period !== 'custom') hidden @endif>
+            <div class="col-md-4 col-xl-2" data-report-custom @if ($period !== 'custom') hidden @endif>
                 <div class="input-group mb-lg-0">
                     <label>To</label>
                     <input type="date" class="form-control" name="to" value="{{ $to->format('Y-m-d') }}">
                 </div>
             </div>
-            <div class="col-lg-2 col-md-4">
+            <div class="col-md-4 col-xl-2">
                 <div class="input-group mb-lg-0">
                     <label>Team</label>
                     <select class="form-control" name="team_id">
@@ -56,7 +56,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-lg-2 col-md-4">
+            <div class="col-md-4 col-xl-2">
                 <div class="input-group mb-lg-0">
                     <label>Position</label>
                     <select class="form-control" name="position_id">
@@ -67,7 +67,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-lg-2 col-md-4">
+            <div class="col-md-4 col-xl-2">
                 <div class="input-group mb-lg-0">
                     <label>Member</label>
                     {{-- Searchable: a company may have many members. --}}
@@ -83,7 +83,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-lg-auto col-md-4">
+            <div class="col-md-8 col-xl-auto">
                 <div class="report-filter-actions">
                     <button type="submit" id="general-btn" class="btn1"><i class="ri-filter-3-line"></i>Apply</button>
                     <a href="{{ route('kpi-report.index') }}" id="general-btn" class="btn2"><i class="ri-refresh-line"></i>Reset</a>

@@ -8,7 +8,7 @@
         page straight away (the --brand-* variables on :root); nothing changes for
         anyone else until Save. See ThemeSettingController and Branding::colors().
     --}}
-    <form method="POST" action="{{ route('theme-setting.update') }}" id="theme-form" data-presets='@json($presets->keyBy('key')->map->colors)'>
+    <form method="POST" action="{{ route('theme-setting.update') }}" id="theme-form" enctype="multipart/form-data" data-presets='@json($presets->keyBy('key')->map->colors)'>
         @csrf @method('PUT')
 
         <div id="form-box" class="general-box">
@@ -84,6 +84,109 @@
                     </div>
                     <p class="theme-preview-text">Body text and a <a href="#" onclick="return false">link</a>.</p>
                     <span class="theme-preview-btn">Button</span>
+                </div>
+            </div>
+
+            {{-- The phone bottom menu, as it looks with these colours. --}}
+            <div class="theme-preview-phone" aria-hidden="true">
+                <span class="theme-preview-phone-label">On phones</span>
+                <div class="theme-preview-mobile">
+                    <i class="ri-user-3-line"></i>
+                    <i class="ri-clipboard-line"></i>
+                    <span class="theme-preview-mobile-active"><i class="ri-dashboard-2-line"></i></span>
+                    <i class="ri-bar-chart-2-line"></i>
+                    <i class="ri-survey-line"></i>
+                </div>
+            </div>
+        </div>
+
+        {{-- Login page background: an image (built-in or uploaded) or a plain
+             colour, darkened by the overlay so the form stays readable. --}}
+        @php
+            $currentImage = (string) ($login['image'] ?? '');
+            $selectedImage = old('login_image', match (true) {
+                $currentImage === '' => 'none',
+                $loginUploaded !== null && $currentImage === $loginUploaded => 'uploaded',
+                in_array($currentImage, $loginImages, true) => $currentImage,
+                default => $loginImages[0],
+            });
+            $loginColor = strtoupper(old('login_color', $login['colour'] ?? '#0B0A1F'));
+            $overlay = (int) old('login_overlay', $loginOverlay);
+        @endphp
+        <div id="form-box" class="general-box">
+            <div class="appraisal-section-head">
+                <p id="form-sub-title" class="mb-0">Login Page</p>
+                <span class="kpi-item-desc">Background behind the sign-in form</span>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-7">
+                    <label class="theme-field-label">Background image</label>
+                    <div class="login-bg-options">
+                        @foreach ($loginImages as $image)
+                            <label class="login-bg-option">
+                                <input type="radio" name="login_image" value="{{ $image }}" data-src="{{ asset($image) }}" @checked($selectedImage === $image)>
+                                <span class="login-bg-thumb" style="background-image: url('{{ asset($image) }}')"></span>
+                            </label>
+                        @endforeach
+                        @if ($loginUploaded)
+                            <label class="login-bg-option">
+                                <input type="radio" name="login_image" value="uploaded" data-src="{{ asset($loginUploaded) }}" @checked($selectedImage === 'uploaded')>
+                                <span class="login-bg-thumb" style="background-image: url('{{ asset($loginUploaded) }}')"><em>Uploaded</em></span>
+                            </label>
+                        @endif
+                        <label class="login-bg-option">
+                            <input type="radio" name="login_image" value="upload" data-upload @checked($selectedImage === 'upload')>
+                            <span class="login-bg-thumb is-upload"><i class="ri-upload-cloud-2-line"></i><em>Upload</em></span>
+                        </label>
+                        <label class="login-bg-option">
+                            <input type="radio" name="login_image" value="none" @checked($selectedImage === 'none')>
+                            <span class="login-bg-thumb is-none"><i class="ri-paint-fill"></i><em>Colour only</em></span>
+                        </label>
+                    </div>
+
+                    <div class="login-bg-upload" data-upload-field @if ($selectedImage !== 'upload') hidden @endif>
+                        <input type="file" class="form-control" name="login_upload" accept="image/jpeg,image/png,image/webp" aria-label="Login background image file">
+                        <span id="note-p" class="d-block appraisal-modal-note">JPG, PNG or WebP, up to 4 MB, at least 800 x 450 px. A wide photo (1920 x 1080) looks best.</span>
+                        @error('login_upload')
+                            <span class="unique-check-feedback">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="input-group theme-color-field">
+                                <label for="login-color">Background colour</label>
+                                <div class="theme-color-row">
+                                    <input type="color" id="login-color" class="theme-color-picker" value="{{ strtolower($loginColor) }}" data-login-color>
+                                    <input type="text" class="form-control theme-color-hex" name="login_color" value="{{ $loginColor }}" maxlength="7" pattern="#[0-9A-Fa-f]{6}" data-login-color-hex aria-label="Login background colour hex value">
+                                </div>
+                                @error('login_color')
+                                    <span class="unique-check-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <label for="login-overlay">Darken image <span class="login-overlay-value" data-overlay-value>{{ $overlay }}%</span></label>
+                                <input type="range" id="login-overlay" class="login-overlay-range" name="login_overlay" min="0" max="80" step="5" value="{{ $overlay }}" data-login-overlay>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <label class="theme-field-label">Preview</label>
+                    <div class="login-preview" data-login-preview
+                         style="background-color: {{ $loginColor }}; @if ($currentImage !== '') background-image: url('{{ asset($currentImage) }}'); @endif">
+                        <span class="login-preview-overlay" data-login-preview-overlay style="background: rgba(0,0,0,{{ $overlay / 100 }})"></span>
+                        <span class="login-preview-card">
+                            <span class="login-preview-logo"></span>
+                            <span class="login-preview-input"></span>
+                            <span class="login-preview-input"></span>
+                            <span class="login-preview-button"></span>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -178,6 +281,49 @@
                     apply(token, el.value);
                 }
             });
+
+            // Login page preview.
+            var preview = form.querySelector('[data-login-preview]');
+            var previewOverlay = form.querySelector('[data-login-preview-overlay]');
+            var uploadField = form.querySelector('[data-upload-field]');
+            var fileInput = form.querySelector('input[name="login_upload"]');
+            var uploadUrl = null;
+
+            function paintLogin() {
+                var picked = form.querySelector('input[name="login_image"]:checked');
+                var value = picked ? picked.value : 'none';
+                uploadField.hidden = value !== 'upload';
+                var src = value === 'upload' ? uploadUrl : (value === 'none' ? null : picked.getAttribute('data-src'));
+                preview.style.backgroundImage = src ? 'url("' + src + '")' : 'none';
+            }
+
+            form.querySelectorAll('input[name="login_image"]').forEach(function (r) { r.addEventListener('change', paintLogin); });
+            fileInput.addEventListener('change', function () {
+                if (uploadUrl) URL.revokeObjectURL(uploadUrl);
+                uploadUrl = fileInput.files[0] ? URL.createObjectURL(fileInput.files[0]) : null;
+                paintLogin();
+            });
+
+            var colorPicker = form.querySelector('[data-login-color]');
+            var colorHex = form.querySelector('[data-login-color-hex]');
+            colorPicker.addEventListener('input', function () {
+                colorHex.value = colorPicker.value.toUpperCase();
+                preview.style.backgroundColor = colorPicker.value;
+            });
+            colorHex.addEventListener('input', function () {
+                if (/^#[0-9A-Fa-f]{6}$/.test(colorHex.value)) {
+                    colorPicker.value = colorHex.value.toLowerCase();
+                    preview.style.backgroundColor = colorHex.value;
+                }
+            });
+
+            var overlay = form.querySelector('[data-login-overlay]');
+            overlay.addEventListener('input', function () {
+                previewOverlay.style.background = 'rgba(0,0,0,' + (overlay.value / 100) + ')';
+                form.querySelector('[data-overlay-value]').textContent = overlay.value + '%';
+            });
+
+            paintLogin();
 
             form.addEventListener('click', function (event) {
                 var button = event.target.closest('.theme-color-reset');

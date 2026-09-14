@@ -156,11 +156,11 @@ class Branding
     /**
      * The resolved colour map, each layer winning over the one before:
      *
-     *   default preset < active preset < APP_*_COLOR in .env < Settings > Theme Setting
+     *   default preset < chosen preset < colours changed in Settings > Theme Setting
      *
-     * The active preset is the one chosen in Theme Setting, else APP_THEME.
-     * Keys with no value anywhere are dropped so the stylesheet fallback
-     * applies instead.
+     * Colours are set only in the app - there is no .env override. The chosen
+     * preset is the one picked in Theme Setting, else config 'theme'. Keys with
+     * no value anywhere are dropped so the stylesheet fallback applies instead.
      *
      * @return array<string, string>
      */
@@ -171,7 +171,6 @@ class Branding
         return static::resolveColors(
             (array) static::get('presets', []),
             $saved['preset'] ?: (string) static::get('theme', 'default'),
-            (array) static::get('colors', []),
             static::expandCustomColors($saved['colors']),
         );
     }
@@ -181,20 +180,22 @@ class Branding
      * database.
      *
      * @param  array<string, array<string, string>>  $presets
-     * @param  array<string, string|null>  $env
      * @param  array<string, string>  $custom
      * @return array<string, string>
      */
-    public static function resolveColors(array $presets, string $theme, array $env, array $custom): array
+    public static function resolveColors(array $presets, string $theme, array $custom): array
     {
         $resolved = array_merge((array) ($presets['default'] ?? []), (array) ($presets[$theme] ?? []));
 
-        foreach ([$env, $custom] as $layer) {
-            foreach ($layer as $token => $value) {
-                if (filled($value)) {
-                    $resolved[$token] = $value;
-                }
+        foreach ($custom as $token => $value) {
+            if (filled($value)) {
+                $resolved[$token] = $value;
             }
+        }
+
+        // The phone bottom bar matches the sidebar unless it is given its own.
+        if (blank($resolved['mobile-menu'] ?? null) && filled($resolved['sidebar'] ?? null)) {
+            $resolved['mobile-menu'] = $resolved['sidebar'];
         }
 
         return array_filter($resolved, fn ($value) => filled($value));
@@ -283,7 +284,43 @@ class Branding
      */
     public static function backgroundStyles(): array
     {
+        $background = static::loginBackground();
+
+        return static::backgroundStylesFrom($background);
+    }
+
+    /**
+     * The login background settings: config/branding.php, with anything saved
+     * under Settings > Theme Setting on top. Overlay comes back as a CSS colour.
+     *
+     * @return array<string, mixed>
+     */
+    public static function loginBackground(): array
+    {
         $background = (array) static::get('background', []);
+        $saved = ThemeSetting::cached();
+
+        if (filled($saved['login_image'])) {
+            $background['image'] = $saved['login_image'] === 'none' ? '' : $saved['login_image'];
+        }
+
+        if (filled($saved['login_color']) && static::isHex($saved['login_color'])) {
+            $background['colour'] = $saved['login_color'];
+        }
+
+        if ($saved['login_overlay'] !== null) {
+            $background['overlay'] = 'rgba(0, 0, 0, '.round(max(0, min(80, (int) $saved['login_overlay'])) / 100, 2).')';
+        }
+
+        return $background;
+    }
+
+    /**
+     * @param  array<string, mixed>  $background
+     * @return array<string, string>
+     */
+    public static function backgroundStylesFrom(array $background): array
+    {
         $image = trim((string) ($background['image'] ?? ''));
         $overlay = trim((string) ($background['overlay'] ?? ''));
         $colour = $background['colour'] ?? '';
