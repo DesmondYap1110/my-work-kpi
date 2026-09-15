@@ -1,296 +1,328 @@
-# Laravel Admin Template
+# MyKPI — Staff KPI & Performance Appraisal System
 
-A Laravel 10 admin starter built on a Bootstrap 5 (Velzon) theme, with
-server-side AJAX datatables, a component-based Blade layout, and a
-**centralised branding layer** so a new project can be rebranded without
-touching application code.
+MyKPI is a web app for tracking how staff perform. It works out each person's
+KPI score from two things:
 
-- **Backend:** Laravel 10, PHP 8.1+
-- **Frontend:** Blade + Bootstrap 5 + jQuery + DataTables (no build step required)
-- **Datatables:** `app/Components/Datatables` — one list class per module behind a shared AJAX endpoint
-- **Filters:** `app/Components/Filters` — filter fields as objects
+1. **The work they deliver.** Tasks in projects carry points.
+2. **How they are appraised.** Staff fill in a self-assessment, and a reviewer
+   marks each objective.
+
+Admins get reports, charts and CSV exports. Staff can see their own score,
+tasks and appraisals. A built-in **AI assistant** answers questions about the
+data, such as "What is my KPI score?" or "Who is due for review?". It runs on a
+**local model**, so it needs no API key.
+
+It works on desktop, iPad and phone. On a phone, a menu bar sits at the bottom
+of the screen.
+
+> **Stack:** Laravel 13 · PHP 8.3 · MySQL 8 · Blade + Bootstrap 5 + jQuery ·
+> DataTables · ApexCharts · Select2 · laravel/ai + Ollama
+
+<!--
+Screenshots: add images to docs/screenshots/ and link them here, e.g.
+![Dashboard](docs/screenshots/dashboard.png)
+-->
 
 ---
 
-## Starting a new project
+## Contents
+
+- [Features](#features)
+- [How the KPI score is calculated](#how-the-kpi-score-is-calculated)
+- [Roles](#roles)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [KPI Assistant (local AI)](#kpi-assistant-local-ai)
+- [Configuration](#configuration)
+- [Testing](#testing)
+- [Project structure](#project-structure)
+
+---
+
+## Features
+
+### Human Resource
+- Manage **teams**, **positions** and **members**, with profile photos and
+  active or inactive status.
+- Open each member's **KPI page** to see their score broken down into project
+  and objective points.
+
+### KPI Setting (per position)
+- Set how much of the score comes from projects and how much from objectives,
+  for example **70 / 30**, **50 / 50**, or **0 / 100** for roles with no
+  project work.
+- Set a **project points target** for each position.
+- Choose which **project tags** the position uses.
+- Build the objective tree: **categories → objectives → scored items**, each
+  with the marks it allows.
+
+### Projects & Tasks
+- Projects belong to a team. Each task has an **assignee**, **priority**, due
+  date and **progress**, and can have **subtasks** or be marked as a
+  **milestone**.
+- A task moves through these statuses: **To Do → In Progress → Review →
+  Blocked → Done**.
+- **Tags** give tasks their points. Only the admin can tag a task, so staff
+  cannot set their own score.
+- Tasks can have files attached. The admin approves or rejects finished work.
+
+### Appraisals
+- The admin starts an appraisal for any period.
+- The **member fills in the Employee column** as a self-assessment. The
+  **reviewer** then adds their marks.
+- **Generate** finalises the appraisal and shares it with the member.
+  **Reopen** unlocks it for changes.
+- **Review Schedule:** each member can be reviewed weekly, monthly, every few
+  months or yearly. The admin is notified a set number of days before a review
+  is due.
+- **Performance bands** turn a score into a rating, such as *Excellent* or
+  *Needs Improvement*. You can edit the bands, the scale and the form parts in
+  Settings.
+- The appraisal list can be filtered by team and position (multi-select).
+- Each review form can be **exported to CSV** and **printed**.
+
+### KPI Report
+- **Summary cards:** highest, lowest and average score, and total projects.
+- **Performance trend:** monthly KPI chart.
+- **Team performance:** teams compared, with each team's top performer.
+- **Member ranking.**
+- **Project report:** completed tasks, points earned and completion rate.
+- **Task breakdown:** points by work category.
+- Filter by period, team, position or member. The report is **exported to CSV**
+  (by section) or **printed**.
+- Composite database indexes keep report queries fast as data grows.
+
+### Settings
+- **Theme Setting:** choose a colour preset or set your own colours, and pick
+  the login background image. Changes apply straight away without a code
+  change or rebuild.
+- **Project Tag Setting** and **Project Form Setup**.
+- **Change password.** Users can also reset a forgotten password by email.
+
+### KPI Assistant
+- A chat bubble on every page. You ask in plain English and the assistant
+  looks up the answer in the database.
+- It **only reads data**. Its tools can look up members, KPI scores, team
+  performance, appraisals (including who is due), tasks and projects. It can
+  also explain how to use the app.
+- **Access control is enforced in code, not left to the AI:**
+  - An admin can ask about anyone.
+  - A member can only get answers about themselves.
+
+---
+
+## How the KPI score is calculated
+
+```
+Project score   = points from tagged tasks completed in the period
+                  ÷ the position's project target
+
+Objective score = marks from generated appraisals that overlap the period
+                  (the reviewer's mark counts; if there is none, the employee's
+                  own mark is used)
+
+KPI score       = Project score × project weight
+                + Objective score × (100% − project weight)
+```
+
+If a member has no project work in the period, their objective score counts
+for 100%. If a position has no objectives, the project score counts for 100%.
+
+---
+
+## Roles
+
+| Role | Can do |
+| --- | --- |
+| **Admin** | Everything: set up HR, KPIs, tags, projects and appraisals, see reports, change the theme, ask the assistant about anyone |
+| **Member** | See their own KPI, tasks and appraisals, fill in self-assessments, create and plan projects, ask the assistant about themselves |
+
+Admin-only pages are blocked on the server by route middleware. Hiding them in
+the menu is not the only protection.
+
+---
+
+## Requirements
+
+- PHP **8.3+** with `openssl`, `pdo_mysql`, `mbstring`, `fileinfo` and `gd`
+- Composer 2.7+
+- MySQL 8 (or MariaDB 10.6+)
+- *(Optional, for the assistant)* [Ollama](https://ollama.com)
+
+No Node or frontend build is needed. The CSS and JS are served as static files
+from `public/`.
+
+---
+
+## Installation
 
 ```bash
-git clone <this-repo> new-project
-cd new-project
+git clone https://github.com/DesmondYap1110/my-work-kpi.git
+cd my-work-kpi
 
 composer install
 cp .env.example .env
 php artisan key:generate
+```
 
-# point .env at your database, then:
+Edit `.env` to point at your database:
+
+```dotenv
+APP_NAME="MyKPI"
+APP_URL=http://localhost:8000
+
+DB_DATABASE=mykpi
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Choose the first admin login. If you skip this, the account is
+`admin@mykpi.test` and a random password is printed once:
+
+```dotenv
+ADMIN_EMAIL=you@example.com
+ADMIN_PASSWORD=choose-a-strong-password
+```
+
+Then run:
+
+```bash
 php artisan migrate --seed
 php artisan storage:link
-
 php artisan serve
 ```
 
-There is **no frontend build step**. `npm install` / `npm run build` are not
-required — the theme ships as static CSS in `public/assets/`, and branding is
-injected at render time. (Vite is present but unused; wire it up only if you
-add your own JS/CSS pipeline.)
+Open http://localhost:8000 and sign in.
 
----
-
-## Rebranding This Template
-
-> **Full step-by-step runbook: [`docs/BRANDING.md`](docs/BRANDING.md)** — includes
-> verification steps, a troubleshooting table, and the contrast guidance for
-> picking sidebar colours. The section below is the summary.
-
-Everything below is driven by `config/branding.php`, which reads from `.env`.
-**You should not need to edit a single Blade file or stylesheet to rebrand.**
-
-After changing any value:
+The seeder creates only the admin account, the default positions and the
+appraisal form, so you start with no sample data. There are optional demo
+seeders:
 
 ```bash
-php artisan config:clear
+php artisan db:seed --class=TeamSeeder
+php artisan db:seed --class=KpiObjectiveInfoSeeder
 ```
 
-### How it fits together
+---
 
+## KPI Assistant (local AI)
+
+The assistant uses [`laravel/ai`](https://github.com/laravel/ai) with
+**Ollama**, so everything runs on your own machine. There is no API key and
+nothing is sent to a cloud service.
+
+```bash
+# 1. Install Ollama from https://ollama.com, then pull the model
+ollama pull qwen2.5:7b
+
+# 2. Make sure it is running (it listens on port 11434)
+ollama serve
 ```
-.env  →  config/branding.php  →  App\Support\Branding  →  <x-branding-styles />
-      →  :root { --brand-*: … }  →  public/assets/css/*.css  →  <x-*> components
-```
 
-Stylesheets consume tokens as `var(--brand-primary, #1896bd)`. The fallback is
-the original theme value, so each sheet still renders correctly on its own and
-an unset token simply keeps the shipped default.
-
-### Application name and company
+Optional `.env` settings (defaults shown):
 
 ```dotenv
-APP_NAME="Acme Portal"
-APP_COMPANY_NAME="Acme Sdn Bhd"
-APP_TAGLINE="Operations dashboard"
-APP_SUPPORT_EMAIL="support@acme.com"
+ASSISTANT_ENABLED=true
+ASSISTANT_PROVIDER=ollama
+ASSISTANT_MODEL=qwen2.5:7b
+ASSISTANT_TIMEOUT=180
+OLLAMA_URL=http://localhost:11434
 ```
 
-The footer line is generated as `© Copyright {year} {company}. All Rights
-Reserved.` Override it wholesale with `APP_COPYRIGHT="…"`.
+- **Speed:** on an ordinary CPU, an answer takes about 5–25 seconds.
+  A GPU makes it much faster.
+- **Limit:** each user can ask up to 15 questions per minute.
+- **Hiding it:** set `ASSISTANT_ENABLED=false` to remove the chat bubble.
+- **Guide text:** its answers about using the app come from
+  [`resources/ai/guide.md`](resources/ai/guide.md). Edit that file to change
+  them.
 
-### Logo and favicon
+---
 
-Drop your files into `public/images/` and point the keys at them. Paths are
-relative to `public/`, or absolute URLs if you serve assets from a CDN.
+## Configuration
 
-```dotenv
-APP_LOGO="images/acme-logo.svg"
-APP_LOGO_DARK="images/acme-logo-dark.svg"
-APP_LOGO_SMALL="images/acme-mark.svg"
-APP_FAVICON="images/favicon.ico"
-APP_APPLE_TOUCH_ICON="images/apple-touch-icon.png"
-APP_OG_IMAGE="images/og-image.png"
-```
-
-Only `APP_LOGO` is required. Each slot falls back down a chain
-(`login → light → logo`, `sidebar → light → logo`, `mobile → small → logo`),
-so one file is enough to get started. Set a slot explicitly when a surface
-needs something different:
-
-```dotenv
-APP_LOGO_SIDEBAR="images/acme-logo-white.svg"
-APP_LOGO_MOBILE="images/acme-mark.svg"
-```
-
-### Colours
-
-Pick a preset:
-
-```dotenv
-APP_THEME=indigo     # default | indigo | forest | slate
-```
-
-Or override individual tokens — these always beat the preset:
-
-```dotenv
-APP_PRIMARY_COLOR="#6366F1"
-APP_SECONDARY_COLOR="#312E81"
-APP_ACCENT_COLOR="#EC4899"
-APP_BODY_COLOR="#F8FAFC"
-APP_SIDEBAR_COLOR="#1E1B4B"
-APP_BUTTON_COLOR="#6366F1"
-APP_BUTTON_HOVER_COLOR="#4F46E5"
-APP_DANGER_COLOR="#EF4444"
-```
-
-**Available tokens** (each becomes `--brand-<name>`):
-
-| Group | Tokens |
+| What | Where |
 | --- | --- |
-| Brand | `primary`, `primary-hover`, `secondary`, `secondary-hover`, `accent`, `highlight` |
-| Surfaces | `background`, `surface`, `sidebar`, `navbar` |
-| Text | `text`, `text-muted`, `label`, `link` |
-| Controls | `button`, `button-hover`, `button-text`, `border` |
-| Inputs | `input-bg`, `input-text`, `input-border`, `input-focus` |
-| Status | `success`, `warning`, `danger`, `danger-hover`, `info`, `pink` |
+| Theme colours, login background | **Settings → Theme Setting** (stored in the database) |
+| Colour presets | `config/branding.php` → `presets` |
+| App name, logo, favicon, fonts | `.env` (`APP_NAME`, `APP_LOGO`, …), see [`docs/BRANDING.md`](docs/BRANDING.md) |
+| Appraisal form parts, scale, bands | **Settings → Project Form Setup** |
+| Review due notice (days before) | **Appraisal → Schedule** |
+| Assistant model and timeout | `config/assistant.php` / `.env` |
+| Password reset email | `MAIL_*` in `.env` |
 
-### Adding a theme preset
-
-Copy a block in the `presets` array of `config/branding.php`, rename it, change
-the values, then select it with `APP_THEME=yourpreset`. Presets live in PHP
-rather than separate CSS files so they compose with per-token env overrides.
-
-### Background image
+By default `MAIL_MAILER=log`, so password reset emails are written to
+`storage/logs/laravel.log` and not actually sent. To send real email, set up
+SMTP:
 
 ```dotenv
-APP_BACKGROUND_IMAGE="images/login-bg.jpg"
-APP_BACKGROUND_POSITION="center"
-APP_BACKGROUND_SIZE="cover"
-APP_BACKGROUND_OVERLAY="rgba(0, 0, 0, 0.55)"   # darken the photo
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=your@gmail.com
 ```
 
-Disable it and fall back to a flat colour:
-
-```dotenv
-APP_BACKGROUND_IMAGE=""
-APP_BACKGROUND_COLOR="#0b0a1f"
-```
-
-### Fonts
-
-```dotenv
-APP_FONT_FAMILY="'Inter', sans-serif"
-APP_FONT_HEADING="'Poppins', sans-serif"
-APP_GOOGLE_FONTS="Inter:wght@400;500;600;700|Poppins:wght@600;700"
-APP_FONT_SIZE="13px"
-```
-
-Separate multiple Google families with `|`. Set `APP_GOOGLE_FONTS=""` to load
-nothing at all (self-hosted or system fonts) — no stray request is emitted.
+Run `php artisan config:clear` after changing `.env`.
 
 ---
 
-## UI components
+## Testing
 
-Components live in `resources/views/components/` and render the theme's own
-markup, so they inherit the branding tokens automatically.
-
-```blade
-<x-button variant="primary" icon="ri-add-fill">Save</x-button>
-<x-button variant="secondary" :href="route('teams.index')">Cancel</x-button>
-
-<x-add-button modal="addTeamModal">Add Team</x-add-button>
-<x-add-button :href="route('staff.create')">Add Member</x-add-button>
-
-<x-card title="Filter" padded> … </x-card>
-
-<x-modal id="addTeamModal" title="Add Team" :action="route('teams.store')">
-    <x-form.input name="team_name" label="Team Name" required />
-</x-modal>
-
-<x-form.select name="team_id" label="Team" :options="$teams" placeholder="Select Team" required />
-<x-form.textarea name="remark" label="Remark" :rows="4" />
-
-{{-- Circular image picker with live preview; several per page is fine --}}
-<x-form.image-upload name="photo" :src="$photoUrl" />
-
-<x-alert type="success">Saved.</x-alert>
+```bash
+php artisan test
 ```
 
-Button variants map to the theme's button classes:
-`primary`→`btn1`, `secondary`→`btn2`, `success`→`btn3`, `danger`→`btn4`,
-`dark`→`btn5`, `muted`→`btn6` (disabled look).
+The tests cover:
 
-`resources/views/teams/index.blade.php` is the reference implementation — it
-went from 63 lines of raw markup to 18 using these components.
+- admin-only access
+- KPI score blending and project targets
+- appraisal scoring and the review schedule
+- theme colours and CSV export
+- the assistant's access rules
 
-### Layout structure
-
-```
-resources/views/layouts/
-    app.blade.php                       orchestrator only
-    guest.blade.php                     login/auth shell
-    admin/master/master-style.blade.php CSS imports + branding tokens
-    admin/master/master-script.blade.php JS imports
-    admin/header/header-main.blade.php
-    admin/header/breadcrumbs-main.blade.php
-    admin/sidebar/sidebar-main.blade.php
-    admin/content/content-main.blade.php
-    admin/footer/footer-main.blade.php
-    admin/footer/mobile-menu.blade.php
-```
-
-Breadcrumbs are controller-driven: implement `App\Interfaces\BreadcrumbInterfaces`
-and return the trail from `getBreadcrumbs()`. A view composer in
-`AppServiceProvider` feeds it to the layout, so no page declares its own.
+The assistant tests use a fake AI, so Ollama does not need to be running.
 
 ---
 
-## JavaScript structure
-
-There is no bundler, so scripts are plain `<script>` tags. `core.js` gives them
-one shape and one boot point:
+## Project structure
 
 ```
-public/js/
-    core.js                  App namespace + module registry
-    modules/                 TEMPLATE code - keep in a new project
-        layout.js            sidebar toggle + fullscreen button
-        loader.js            page/AJAX loading overlay
-        image-preview.js     data-image-preview file inputs
-        datatables.js        generic AJAX table initialiser
-    project/                 PROJECT code - replace in a new project
-        modals.js            edit-modal wiring for these screens
+app/
+  Ai/Agents/KpiAssistant.php     the assistant: instructions + tools per role
+  Ai/Tools/                      read-only, role-scoped database tools
+  Components/Datatables/         one class per AJAX list table
+  Http/Controllers/
+    Hr/                          teams, positions, members
+    Kpi/                         KPI setting, objectives, KPI Report
+    Project/                     projects, tasks, tags
+    Appraisal/                   appraisals, self-assessment, form setup
+    Settings/                    theme setting
+  Services/
+    StaffKpiScoreService.php     final KPI score (project + objective blend)
+    AssessmentScoreService.php   objective marks from appraisals
+    KpiReportService.php         report figures and charts
+    AppraisalScheduleService.php who is due for review
+  Support/Branding.php           theme colours → CSS variables
+  Support/Csv.php                safe CSV export (UTF-8 BOM, formula guard)
+config/
+  assistant.php  branding.php  datatables.php
+resources/
+  ai/guide.md                    what the assistant knows about using the app
+  views/                         Blade views, grouped by module
+public/
+  assets/                        theme CSS, icons, images
+  js/core.js, js/modules/        small JS modules, no bundler
+database/
+  migrations/  seeders/
+tests/
+  Feature/  Unit/
 ```
-
-Register a module instead of writing your own `DOMContentLoaded` wrapper:
-
-```js
-App.module('my-feature', function () {
-    // runs once, on DOM ready
-});
-```
-
-Two properties worth knowing:
-
-- **A failing module can't take down the others.** Each runs in its own
-  try/catch. This is exactly how the theme's `app.js` broke the sidebar — one
-  null reference early in a single IIFE aborted everything after it.
-- **Load order doesn't matter.** A module registered after boot runs
-  immediately, so a late-injected script still initialises.
-
-The `modules/` vs `project/` split is the important part for reuse: `modules/`
-is generic, while `project/modals.js` names specific screens (positions, teams,
-KPI objectives). A new project deletes `project/` and keeps `modules/`. Shared
-helpers are published on the namespace — `App.datatables.populateEditModal` is
-how project code reuses the generic modal behaviour.
-
-## Stylesheet layers
-
-| File | Role | Edit it? |
-| --- | --- | --- |
-| `bootstrap.min.css`, `app.min.css`, `icons.min.css` | Vendor theme | No |
-| `theme-dashboard.css` | Structure (spacing, sizing) | Rarely |
-| `theme-colors.css` | Skin — reads `var(--brand-*)` | No, use branding config |
-| `theme-login.css` | Login page | No |
-| `app-custom.css` | **Your deliberate overrides** | Yes |
-
-`app-custom.css` loads last and is the intended home for project-specific CSS.
-Keeping the theme sheets untouched means you can still diff them against the
-upstream theme.
 
 ---
 
-## Configuration dashboard (not implemented — by design)
+## License
 
-Branding here is **deploy-time** configuration, which suits a template: it is
-version-controlled, reviewable, and identical across every environment of a
-given project.
-
-A database-backed settings screen makes sense once non-developers need to
-change branding at runtime. The seam already exists — every lookup goes through
-`App\Support\Branding::get()`. Adding a `settings` table and checking it there
-would make the whole UI runtime-configurable without touching any view. That is
-the recommended path if you need it; it was left out to avoid shipping an
-unused migration, model, upload handler and permission check in a starter.
-
-Keep the split clear if you add it:
-
-- **`.env`** — infrastructure: `APP_KEY`, database, mail, API credentials
-- **Database settings** — appearance: logo, colours, background, display name
+Released under the [MIT License](https://opensource.org/licenses/MIT).
